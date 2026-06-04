@@ -1,5 +1,0 @@
-package pokemon
-
-object Pokemon {
-
-}

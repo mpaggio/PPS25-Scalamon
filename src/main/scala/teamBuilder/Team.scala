@@ -1,5 +1,0 @@
-package teamBuilder
-
-object Team {
-
-}
