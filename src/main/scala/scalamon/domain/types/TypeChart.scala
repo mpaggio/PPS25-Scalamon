@@ -26,3 +26,4 @@ object TypeChart:
 
   def effectiveness(attacking: Type, defending: Type): TypeEffectiveness =
     nonNeutralMatchUps.getOrElse((attacking, defending), Neutral)
+    
