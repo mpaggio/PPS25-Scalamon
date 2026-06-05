@@ -6,6 +6,8 @@ import TypeEffectiveness.*
 class TypeOpsTest extends AnyFunSuite:
   import Type.*
 
+  private val SuperEffectiveMultiplier = 2.0
+
   test("effectivenessAgainst returns SuperEffective for Fire against Grass") {
     assert(Fire.effectivenessAgainst(Grass) == SuperEffective)
   }
@@ -14,8 +16,8 @@ class TypeOpsTest extends AnyFunSuite:
     assert(Fire.effectivenessAgainst(Water) == NotVeryEffective)
   }
 
-  test("multiplierAgaist returns 2.0 for Fire against Grass") {
-    assert(Fire.multiplierAgainst(Grass) == 2.0)
+  test("multiplierAgaist returns the correct damage multiplier for Fire against Grass") {
+    assert(Fire.multiplierAgainst(Grass) == SuperEffectiveMultiplier)
   }
 
   test("isSuperEffectiveAgainst returns true for Psychic against Poison") {
