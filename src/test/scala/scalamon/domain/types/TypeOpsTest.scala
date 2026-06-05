@@ -28,6 +28,10 @@ class TypeOpsTest extends AnyFunSuite:
     assert(Grass.isNotVeryEffectiveAgainst(Poison))
   }
 
+  test("isNeutral returns true for Electric against Fire") {
+    assert(Electric.isNeutralAgainst(Fire))
+  }
+
   test("hasNoEffect returns false when there is no immunity") {
     assert(!Fire.hasNoEffectAgainst(Grass))
   }
