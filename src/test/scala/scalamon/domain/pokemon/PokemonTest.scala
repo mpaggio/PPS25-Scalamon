@@ -4,11 +4,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.pokemon.Ability.*
 import scalamon.domain.pokemon.PokedexADT.PokedexId
+import scalamon.domain.pokemon.StatADT.*
 import scalamon.domain.types.Type.*
 
 class PokemonTest extends AnyFunSuite:
 
-  val testStats = Stats(hp = 39, attack = 52, defense = 43, specialAttack = 60, specialDefense = 50, speed = 65)
+  val testStats = Stats(hp = fromInt(39), attack = fromInt(52), defense = fromInt(43), specialAttack = fromInt(60), specialDefense = fromInt(50), speed = fromInt(65))
   val testAbilitySlot = AbilitySlot(Blaze, None, Some(SolarScales))
   val validPokedexId: PokedexId = PokedexADT.fromInt(1)
 
