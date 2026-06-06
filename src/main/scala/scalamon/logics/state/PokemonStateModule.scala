@@ -1,22 +1,31 @@
 package scalamon.logics.state
 
+import scalamon.logics.state.PokemonStateModuleImpl.Stats
+
 trait PokemonStateModule:
   type PokemonState
+  type Stats
+  //type AlteratedStatus
 
-  def pokemonState(hp: Int): PokemonState
+  def pokemonState(hp: Int, stats: Stats): PokemonState
 
   extension (ps: PokemonState)
     def hp: Int
+    //def status: List[AlteratedStatus]
+    //def addStatus(status: AlteratedStatus): PokemonState
     def damage(amount: Int): PokemonState
     def heal(amount: Int): PokemonState
 
 
 object PokemonStateModuleImpl extends PokemonStateModule:
-  override type PokemonState = Int
+  case class Ps(hp: Int, stats: Stats)
+  override type PokemonState = Ps
+  override type Stats = StatsStateModuleImpl.StatsState
 
-  def pokemonState(hp: Int): PokemonState = hp
+  def pokemonState(hp: Int, stats: Stats): PokemonState = Ps(hp, stats)
 
   extension (ps: PokemonState)
-    infix def hp: Int = ps
-    infix def damage(amount: Int): PokemonState = pokemonState(ps.hp - amount)
-    infix def heal(amount: Int): PokemonState = pokemonState(ps.hp + amount)
+    infix def hp: Int = ps.hp
+    infix def damage(amount: Int): PokemonState = ps.copy(hp = ps.hp - amount)
+    infix def heal(amount: Int): PokemonState = ps.copy(hp = ps.hp + amount)
+    infix def stats(f: Stats => Stats): PokemonState = ps.copy(stats = f(ps.stats))

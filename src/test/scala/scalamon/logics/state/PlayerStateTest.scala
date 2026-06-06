@@ -3,9 +3,13 @@ package scalamon.logics.state
 import org.scalatest.funsuite.AnyFunSuite
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
+import scalamon.logics.state.StatsStateModuleImpl.statState
+import scalamon.domain.pokemon.Stats
 
 class PlayerStateTest extends AnyFunSuite:
-  val player: Ps = playerState(Map("Pikachu" -> pokemonState(10), "Charmander" -> pokemonState(10)), "Pikachu")
+  
+  val stats = statState(Stats(hp = 10, attack = 6, defense = 3, specialAttack = 4, specialDefense = 2, speed = 6))
+  val player = playerState(Map("Pikachu" -> pokemonState(10, stats), "Charmander" -> pokemonState(10, stats)), "Pikachu")
 
   test("test base"):
     assert(player.activeId == "Pikachu")

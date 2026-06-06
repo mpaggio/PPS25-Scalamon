@@ -1,18 +1,23 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
+import scalamon.domain.pokemon.Stats
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
+import scalamon.logics.state.StatModule.*
+import scalamon.logics.state.StatsStateModuleImpl.*
 
 class GameStateTest extends AnyFunSuite:
   test("general test"):   // TODO: split into multiple tests
 
     type Move = BattleState => BattleState
 
-    val myPokemon = pokemonState(10)
-    val mySecondPokemon = pokemonState(10)
-    val enemyPokemon = pokemonState(10)
+    val baseStats = statState(Stats(hp = 10, attack = 6, defense = 3, specialAttack = 4, specialDefense = 2, speed = 6))
+
+    val myPokemon = pokemonState(10, baseStats)
+    val mySecondPokemon = pokemonState(10, baseStats)
+    val enemyPokemon = pokemonState(10, baseStats)
     val player1 = playerState(Map("Pikachu" -> myPokemon,"Charmander" -> mySecondPokemon), "Pikachu")
     val player2 = playerState(Map("Bulbasaur" -> enemyPokemon), "Bulbasaur")
     val state = battleState(player1, player2)
@@ -23,8 +28,13 @@ class GameStateTest extends AnyFunSuite:
 
     val healAllMove: Move = _ user (_.allThat(ps => ps.hp < 10)(_ heal 2))
 
+    val weaknessMove: Move = _ enemy (_ active (_ stats (_ attack (_ decrease 2))))
+
+    //val paralaized = _ enemy (_ active (_ addStatus ()))
+
     assert(state._2.team("Bulbasaur").hp == 10)
     val newState = attackMove andThen masochistMove andThen healAllMove apply state
     assert(newState._2.team("Bulbasaur").hp == 6)
     assert(newState._1.team("Pikachu").hp == 10)
     assert(newState._1.team("Charmander").hp == 9)
+    assert(newState._1.team("Bulbasaur").stats.attack == 4)

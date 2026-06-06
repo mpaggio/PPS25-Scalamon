@@ -7,7 +7,7 @@ trait StateModule:
 trait BattleStateModule extends StateModule:
   type BattleState
   type PlayerState
-  type PassiveEffect = BattleState => BattleState
+  type PassiveEffect = (BattleState => BattleState) => List[BattleState => BattleState]
   override type InnerState = PlayerState
 
   def battleState(enemyPokemon: PlayerState, userPokemon: PlayerState): BattleState
@@ -23,7 +23,7 @@ object BattleStateImpl extends BattleStateModule:
   override type BattleState = Bs
   override type PlayerState = PlayerStateModuleImpl.PlayerState
   def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState): BattleState =
-    Bs(userPokemon, enemyPokemon, identity, List())
+    Bs(userPokemon, enemyPokemon, bs => List(bs), List())
 
   extension (bs: BattleState)
     infix def user(f: Function): BattleState = bs.copy(user = f(bs.user), enemy = bs.enemy)

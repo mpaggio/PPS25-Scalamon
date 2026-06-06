@@ -1,17 +1,20 @@
 package scalamon.logics
 
+import scalamon.logics.state.*
+import BattleStateImpl.*
+import PlayerStateModuleImpl.*
+import PokemonStateModuleImpl.*
+
+type Move = BattleState => BattleState
 
 object BattleEngine:
 
-  /*def resolve(gameState: GameState, playerActions: (StateExecutor, StateExecutor)): GameState =
-    val initialExecutors = List(
+  def resolve(battleState: BattleState, playerActions: (Move, Move)): BattleState =
+    val moves = List(
       playerActions._1,
       playerActions._2,
-    ) ++ gameState.players.flatMap(_.pokemons.flatMap(_.alterateStatus))
+    )
+    battleState
 
-    val sortedExecutors = initialExecutors.sortBy(_.priority())
-
-    val finalExecutors = gameState.modifiers.foldLeft(sortedExecutors):
-      (executors, modifier) => executors.flatMap(modifier)
-
-    finalExecutors.foldLeft(gameState)((state, executor) => executor.apply()(state))*/
+    /*val finalExecutors = battleState.passiveEffects.foldLeft(moves):
+      (move, modifier) => move.flatMap(modifier)*/
