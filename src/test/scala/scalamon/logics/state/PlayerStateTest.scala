@@ -1,6 +1,7 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
+import scalamon.domain.pokemon.StatADT.fromInt
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.statState
@@ -8,7 +9,15 @@ import scalamon.domain.pokemon.Stats
 
 class PlayerStateTest extends AnyFunSuite:
   
-  val stats = statState(Stats(hp = 10, attack = 6, defense = 3, specialAttack = 4, specialDefense = 2, speed = 6))
+  val stats = statState(Stats(
+    hp = fromInt(10),
+    attack = fromInt(6),
+    defense = fromInt(3),
+    specialAttack = fromInt(4),
+    specialDefense = fromInt(2),
+    speed = fromInt(6)
+  ))
+
   val player = playerState(Map("Pikachu" -> pokemonState(10, stats), "Charmander" -> pokemonState(10, stats)), "Pikachu")
 
   test("test base"):

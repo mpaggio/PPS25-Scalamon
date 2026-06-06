@@ -1,6 +1,5 @@
 package scalamon.logics.state
 
-import scalamon.logics.state.PokemonStateModuleImpl.Stats
 
 trait PokemonStateModule:
   type PokemonState

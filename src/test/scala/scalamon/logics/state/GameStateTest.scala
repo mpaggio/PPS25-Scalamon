@@ -2,6 +2,7 @@ package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
 import scalamon.domain.pokemon.Stats
+import scalamon.domain.pokemon.StatADT.*
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
@@ -12,8 +13,15 @@ class GameStateTest extends AnyFunSuite:
   test("general test"):   // TODO: split into multiple tests
 
     type Move = BattleState => BattleState
-
-    val baseStats = statState(Stats(hp = 10, attack = 6, defense = 3, specialAttack = 4, specialDefense = 2, speed = 6))
+    
+    val baseStats = statState(Stats(
+      hp = fromInt(10),
+      attack = fromInt(6),
+      defense = fromInt(3),
+      specialAttack = fromInt(4),
+      specialDefense = fromInt(2),
+      speed = fromInt(6)
+    ))
 
     val myPokemon = pokemonState(10, baseStats)
     val mySecondPokemon = pokemonState(10, baseStats)
@@ -37,4 +45,4 @@ class GameStateTest extends AnyFunSuite:
     assert(newState._2.team("Bulbasaur").hp == 6)
     assert(newState._1.team("Pikachu").hp == 10)
     assert(newState._1.team("Charmander").hp == 9)
-    assert(newState._1.team("Bulbasaur").stats.attack == 4)
+    assert(newState._1.team("Bulbasaur").stats.attack == fromInt(4))

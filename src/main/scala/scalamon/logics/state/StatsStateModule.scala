@@ -1,6 +1,7 @@
 package scalamon.logics.state
 
 import scalamon.domain.pokemon.Stats
+import scalamon.domain.pokemon.StatADT
 
 trait StatsStateModule:
   type StatsState
@@ -18,7 +19,7 @@ trait StatsStateModule:
 
 object StatsStateModuleImpl extends StatsStateModule:
   override type StatsState = Stats
-  override type Stat = StatModule.Stat
+  override type Stat = StatADT.Stat
 
   def statState(value: Stats): StatsState = value
 
@@ -31,9 +32,9 @@ object StatsStateModuleImpl extends StatsStateModule:
 
 
 object StatModule:
-  type Stat = Int
+  import StatADT.*
 
   extension (s: Stat)
-    infix def decrease(amount: Int): Stat = s - amount
-    infix def increase(amount: Int): Stat = s + amount
-    infix def multiply(factor: Double): Stat = (s * factor).toInt
+    infix def decrease(amount: Int): Stat = fromInt(s.toInt - amount)
+    infix def increase(amount: Int): Stat = fromInt(s.toInt + amount)
+    infix def multiply(factor: Double): Stat = fromInt((s.toInt * factor).toInt)
