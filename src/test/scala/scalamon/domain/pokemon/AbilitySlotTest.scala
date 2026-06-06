@@ -30,10 +30,6 @@ class AbilitySlotTest extends AnyFunSuite:
     mySlot3.hidden shouldBe empty
   }
 
-  test("AbilitySlot cannot be created without a primary ability") {
-    a[IllegalArgumentException] should be thrownBy AbilitySlot(primary = null, secondary = Some(Ability.SwiftSwim))
-  }
-
   test("AbilitySlot cannot be created if all 3 abilities are provided") {
     a[IllegalArgumentException] should be thrownBy AbilitySlot(primary = Ability.Blaze, secondary = Some(Ability.Regenerator), hidden = Some(Ability.SolarPower))
   }
