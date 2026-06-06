@@ -10,5 +10,7 @@ object Accuracy:
   def fromRatio(accuracy: Double): Accuracy =
     fromPercent((accuracy * 100.0).toInt)
 
-  extension (a: Accuracy)
-    def asString: String = s"Accuracy: $a%"
+  extension (accuracy: Accuracy)
+    def asString: String = s"Accuracy: $accuracy%"
+    def asInt: Int = accuracy
+    def asDouble: Double = accuracy.toDouble
