@@ -1,5 +1,6 @@
 package scalamon.logics.state
 
+import scalamon.domain.pokemon
 
 trait PokemonStateModule:
   type PokemonState
@@ -19,7 +20,7 @@ trait PokemonStateModule:
 object PokemonStateModuleImpl extends PokemonStateModule:
   case class Ps(hp: Int, stats: Stats)
   override type PokemonState = Ps
-  override type Stats = StatsStateModuleImpl.StatsState
+  override type Stats = pokemon.Stats
 
   def pokemonState(hp: Int, stats: Stats): PokemonState = Ps(hp, stats)
 

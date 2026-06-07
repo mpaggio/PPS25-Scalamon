@@ -41,8 +41,8 @@ class GameStateTest extends AnyFunSuite:
     //val paralaized = _ enemy (_ active (_ addStatus ()))
 
     assert(state._2.team("Bulbasaur").hp == 10)
-    val newState = attackMove andThen masochistMove andThen healAllMove apply state
+    val newState = attackMove andThen masochistMove andThen healAllMove andThen weaknessMove apply state
     assert(newState._2.team("Bulbasaur").hp == 6)
     assert(newState._1.team("Pikachu").hp == 10)
     assert(newState._1.team("Charmander").hp == 9)
-    assert(newState._1.team("Bulbasaur").stats.attack == fromInt(4))
+    assert(newState._2.team("Bulbasaur").stats.attack == fromInt(4))
