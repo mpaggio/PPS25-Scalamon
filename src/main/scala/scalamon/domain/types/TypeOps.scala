@@ -15,10 +15,9 @@ extension (attacking: Type)
 
   def isNotVeryEffectiveAgainst(defending: Type): Boolean =
     attacking.effectivenessAgainst(defending) == NotVeryEffective
-    
+
   def isNeutralAgainst(defending: Type): Boolean =
     attacking.effectivenessAgainst(defending) == Neutral
     
   def hasNoEffectAgainst(defending: Type): Boolean =
     attacking.effectivenessAgainst(defending) == NoEffect
-  
