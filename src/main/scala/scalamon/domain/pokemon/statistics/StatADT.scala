@@ -1,4 +1,4 @@
-package scalamon.domain.pokemon
+package scalamon.domain.pokemon.statistics
 
 object StatADT:
   

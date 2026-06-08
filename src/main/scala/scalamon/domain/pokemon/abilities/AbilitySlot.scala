@@ -1,4 +1,4 @@
-package scalamon.domain.pokemon
+package scalamon.domain.pokemon.abilities
 
 case class AbilitySlot(
   primary: Ability,

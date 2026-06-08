@@ -1,6 +1,6 @@
-package scalamon.domain.pokemon
+package scalamon.domain.pokemon.statistics
 
-import StatADT.Stat
+import scalamon.domain.pokemon.statistics.StatADT.Stat
 
 case class Stats(
   hp: Stat,

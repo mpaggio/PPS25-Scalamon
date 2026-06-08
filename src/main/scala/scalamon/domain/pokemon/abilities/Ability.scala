@@ -1,4 +1,4 @@
-package scalamon.domain.pokemon
+package scalamon.domain.pokemon.abilities
 
 enum Ability:
   // Fire-Type
@@ -10,7 +10,7 @@ enum Ability:
   // Electric-Type
   case Static, LightningRodLite, LightningRod, SurgeSurfer, Aftermath, VitalSpirit, VoltAbsorb, QuickFeet
   // Psychic-Type
-  case Synchronize, MagicGuard, Insomnia, Forewarn, Pressure, Unnerve, CloudNine, SwiftSwim
+  case Synchronize, MagicGuard, Insomnia, Forewarn, DrySkin, Pressure, Unnerve, CloudNine, SwiftSwim
   // Poison-Type
   case ShedSkin, StickyHold, PoisonTouch, Levitate, CursedBody, ShadowTag, LiquidOoze
   

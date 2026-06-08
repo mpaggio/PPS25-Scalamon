@@ -2,7 +2,8 @@ package scalamon.domain.pokemon
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
-import scalamon.domain.pokemon.StatADT.*
+import scalamon.domain.pokemon.statistics.StatADT.*
+import scalamon.domain.pokemon.statistics.Stats
 
 class StatsTest extends AnyFunSuite:
 

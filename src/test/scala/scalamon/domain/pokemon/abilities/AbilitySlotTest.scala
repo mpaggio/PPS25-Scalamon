@@ -2,6 +2,7 @@ package scalamon.domain.pokemon
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
+import scalamon.domain.pokemon.abilities.{Ability, AbilitySlot}
 
 class AbilitySlotTest extends AnyFunSuite:
 
