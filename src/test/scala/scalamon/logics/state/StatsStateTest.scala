@@ -1,24 +1,20 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
+import scalamon.domain.pokemon.pokedex.MyPokedex
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
+import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
 
 class StatsStateTest extends AnyFunSuite:
   test("test stat modifiers"):
     import scalamon.logics.state.StatsStateModuleImpl.*
-    import StatModule.*
     import scalamon.domain.pokemon.statistics.Stats
 
     type StatModifier = Stats => Stats
 
-    val stats = statState(Stats(
-      hp = fromInt(10),
-      attack = fromInt(6),
-      defense = fromInt(3),
-      specialAttack = fromInt(4),
-      specialDefense = fromInt(2),
-      speed = fromInt(6)
-    ))
+    val stats = pokemonInitialState(MyPokedex.allPokemons.head).modifiedStats
+
+
     assert(stats.hp == fromInt(10))
     assert(stats.attack == fromInt(6))
 

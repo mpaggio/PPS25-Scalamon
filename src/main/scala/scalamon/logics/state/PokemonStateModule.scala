@@ -1,36 +1,38 @@
 package scalamon.logics.state
 
-import scalamon.domain.pokemon
-import scalamon.domain.pokemon.statistics
-
-trait PokemonStateModule:
+trait PokemonStateModule extends StateComponent:
   type PokemonState
-  type Stats
+  type PokemonSpecies
   type AlteratedStatus
+  type StatsState
+  type HP
+  override type SubComponent = StatsState
 
-  def pokemonState(hp: Int, stats: Stats): PokemonState
+  def pokemonInitialState(species: PokemonSpecies): PokemonState
 
   extension (ps: PokemonState)
-    def hp: Int
     def status: List[AlteratedStatus]
     def addStatus(status: AlteratedStatus): PokemonState
-    def damage(amount: Int): PokemonState
-    def heal(amount: Int): PokemonState
+    def damage(amount: HP): PokemonState
+    def heal(amount: HP): PokemonState
+    def modifyStats(f: Modifier): PokemonState
 
 
 object PokemonStateModuleImpl extends PokemonStateModule:
-  case class Ps(hp: Int, stats: Stats, status: List[AlteratedStatus] = List())
+  case class Ps(currentHp: HP, modifiedStats: StatsState, status: List[AlteratedStatus] = List(), species: PokemonSpecies)
   override type PokemonState = Ps
-  override type Stats = pokemon.statistics.Stats
+  override type PokemonSpecies = scalamon.domain.pokemon.Pokemon
   override type AlteratedStatus = AlteratedStatusModuleImpl.AlteratedStatus
+  override type StatsState = StatsStateModuleImpl.StatsState
+  override type HP = Int
 
-  def pokemonState(hp: Int, stats: Stats): PokemonState = Ps(hp, stats)
+  def pokemonInitialState(species: PokemonSpecies): PokemonState =
+    Ps(species.baseStats.hp.toInt, species.baseStats, List(), species)
 
   extension (ps: PokemonState)
-    infix def hp: Int = ps.hp
-    infix def damage(amount: Int): PokemonState = ps.copy(hp = ps.hp - amount)
-    infix def heal(amount: Int): PokemonState = ps.copy(hp = ps.hp + amount)
-    infix def stats(f: Stats => Stats): PokemonState = ps.copy(stats = f(ps.stats))
+    infix def damage(amount: HP): PokemonState = ps.copy(currentHp = ps.currentHp - amount)
+    infix def heal(amount: HP): PokemonState = ps.copy(currentHp = ps.currentHp + amount)
+    infix def modifyStats(f: Modifier): PokemonState = ps.copy(modifiedStats = f(ps.modifiedStats))
     infix def status: List[AlteratedStatus] = ps.status
     infix def addStatus(status: AlteratedStatus): PokemonState = ps.copy(status = status :: ps.status)
 

@@ -1,37 +1,42 @@
 package scalamon.logics.state
 
-import scalamon.domain.pokemon.statistics.{StatADT, Stats}
-
-trait StatsStateModule:
+trait StatsStateModule extends StateComponent:
   type StatsState
+  type Stats
   type Stat
-  type StatModifier = Stat => Stat
+  override type SubComponent = Stat
 
-  def statState(value: Stats): StatsState
+  def statsInitialState(value: Stats): StatsState
 
   extension (ss: StatsState)
-    def attack(f: StatModifier): StatsState
-    def defense(f: StatModifier): StatsState
-    def specialAttack(f: StatModifier): StatsState
-    def specialDefense(f: StatModifier): StatsState
-    def speed(f: StatModifier): StatsState
+    def attack(f: Modifier): StatsState
+    def defense(f: Modifier): StatsState
+    def specialAttack(f: Modifier): StatsState
+    def specialDefense(f: Modifier): StatsState
+    def speed(f: Modifier): StatsState
+
+  extension (s: Stat)
+    infix def decrease(amount: Int): Stat
+    infix def increase(amount: Int): Stat
+    infix def multiply(factor: Double): Stat
+
 
 object StatsStateModuleImpl extends StatsStateModule:
-  override type StatsState = Stats
-  override type Stat = StatADT.Stat
+  import scalamon.domain.pokemon.statistics
+  import scalamon.domain.pokemon.statistics.StatADT.fromInt
 
-  def statState(value: Stats): StatsState = value
+  override type StatsState = statistics.Stats
+  override type Stats = statistics.Stats
+  override type Stat = statistics.StatADT.Stat
+
+  def statsInitialState(value: Stats): StatsState = value
 
   extension (ss: StatsState)
-    infix def attack(f: StatModifier): StatsState = ss.copy(attack = f(ss.attack))
-    infix def defense(f: StatModifier): StatsState = ss.copy(defense = f(ss.defense))
-    infix def specialAttack(f: StatModifier): StatsState = ss.copy(specialAttack = f(ss.specialAttack))
-    infix def specialDefense(f: StatModifier): StatsState = ss.copy(specialDefense = f(ss.specialDefense))
-    infix def speed(f: StatModifier): StatsState = ss.copy(speed = f(ss.speed))
-
-
-object StatModule:
-  import StatADT.*
+    infix def attack(f: Modifier): StatsState = ss.copy(attack = f(ss.attack))
+    infix def defense(f: Modifier): StatsState = ss.copy(defense = f(ss.defense))
+    infix def specialAttack(f: Modifier): StatsState = ss.copy(specialAttack = f(ss.specialAttack))
+    infix def specialDefense(f: Modifier): StatsState = ss.copy(specialDefense = f(ss.specialDefense))
+    infix def speed(f: Modifier): StatsState = ss.copy(speed = f(ss.speed))
 
   extension (s: Stat)
     infix def decrease(amount: Int): Stat = fromInt(s.toInt - amount)
