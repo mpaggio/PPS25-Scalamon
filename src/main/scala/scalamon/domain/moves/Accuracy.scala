@@ -3,12 +3,13 @@ package scalamon.domain.moves
 object Accuracy:
   opaque type Accuracy = Int
 
-  def fromPercent(accuracy: Int): Accuracy =
-    require(accuracy >= 0 && accuracy <= 100, s"Invalid accuracy: $accuracy")
+  def accuracyFromPercent(accuracy: Int): Accuracy =
+    accuracyFromRatio(accuracy.toDouble / 100.0)
     accuracy
 
-  def fromRatio(accuracy: Double): Accuracy =
-    fromPercent((accuracy * 100.0).toInt)
+  def accuracyFromRatio(accuracy: Double): Accuracy =
+    require(accuracy >= 0.0 && accuracy <= 1.0, s"Invalid accuracy: $accuracy")
+    (accuracy * 100.0).toInt
 
   extension (accuracy: Accuracy)
     def asString: String = s"Accuracy: $accuracy%"

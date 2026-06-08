@@ -3,12 +3,13 @@ package scalamon.domain.moves
 object Power:
   opaque type Power = Int
 
-  def fromInt(power: Int): Power =
-    require(power > 0 && power <= 250, s"Invalid power: $power")
+  def powerFromInt(power: Int): Power =
+    powerFromDouble(power)
     power
 
-  def fromDouble(power: Double): Power =
-    fromInt(power.toInt)
+  def powerFromDouble(power: Double): Power =
+    require(power > 0.0 && power <= 250.0, s"Invalid power: $power")
+    power.toInt
 
   extension (power: Power)
     def asString: String = s"Power: $power"
