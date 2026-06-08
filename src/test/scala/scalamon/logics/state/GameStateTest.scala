@@ -38,7 +38,9 @@ class GameStateTest extends AnyFunSuite:
 
     val weaknessMove: Move = _ enemy (_ active (_ stats (_ attack (_ decrease 2))))
 
-    //val paralaized = _ enemy (_ active (_ addStatus ()))
+    //val burn: Move = _ enemy (_ active (_.addStatus(_ duration 3)(_ damage 4)  ))
+    
+    //val paralaized = _ enemy (_ active (_ addStatus (moves (_ accuracy (_ decrease 1)))
 
     assert(state._2.team("Bulbasaur").hp == 10)
     val newState = attackMove andThen masochistMove andThen healAllMove andThen weaknessMove apply state
