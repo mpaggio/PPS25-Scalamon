@@ -1,8 +1,8 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.pokemon.Stats
-import scalamon.domain.pokemon.StatADT.*
+import scalamon.domain.pokemon.statistics.StatADT.*
+import scalamon.domain.pokemon.statistics.Stats
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*

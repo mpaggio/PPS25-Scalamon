@@ -1,7 +1,6 @@
 package scalamon.logics.state
 
-import scalamon.domain.pokemon.Stats
-import scalamon.domain.pokemon.StatADT
+import scalamon.domain.pokemon.statistics.{StatADT, Stats}
 
 trait StatsStateModule:
   type StatsState

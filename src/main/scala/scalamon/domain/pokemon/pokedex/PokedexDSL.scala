@@ -1,7 +1,9 @@
 package scalamon.domain.pokemon.pokedex
 
-import scalamon.domain.pokemon.StatADT.fromInt
-import scalamon.domain.pokemon.{Ability, AbilitySlot, PokedexADT, Pokemon, Stats}
+import scalamon.domain.pokemon.abilities.{Ability, AbilitySlot}
+import scalamon.domain.pokemon.statistics.StatADT.fromInt
+import scalamon.domain.pokemon.statistics.Stats
+import scalamon.domain.pokemon.{PokedexADT, Pokemon}
 import scalamon.domain.types.Type
 object PokedexDSL:
 

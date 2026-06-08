@@ -1,4 +1,4 @@
-package scalamon.domain.pokemon
+package scalamon.domain.pokemon.abilities
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*

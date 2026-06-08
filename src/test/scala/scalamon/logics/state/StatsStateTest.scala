@@ -1,13 +1,13 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.pokemon.StatADT.fromInt
+import scalamon.domain.pokemon.statistics.StatADT.fromInt
 
 class StatsStateTest extends AnyFunSuite:
   test("test stat modifiers"):
     import scalamon.logics.state.StatsStateModuleImpl.*
     import StatModule.*
-    import scalamon.domain.pokemon.Stats
+    import scalamon.domain.pokemon.statistics.Stats
 
     type StatModifier = Stats => Stats
 

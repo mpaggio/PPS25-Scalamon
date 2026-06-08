@@ -1,11 +1,11 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.pokemon.StatADT.fromInt
+import scalamon.domain.pokemon.statistics.StatADT.fromInt
+import scalamon.domain.pokemon.statistics.Stats
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.statState
-import scalamon.domain.pokemon.Stats
 
 class PlayerStateTest extends AnyFunSuite:
   
