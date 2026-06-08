@@ -1,23 +1,23 @@
 package scalamon.logics.state
 
-import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.pokemon.pokedex.MyPokedex
-import scalamon.domain.pokemon.statistics.StatADT.fromInt
-import scalamon.domain.pokemon.statistics.Stats
-import scalamon.logics.state.StatsStateModuleImpl.statsInitialState
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
+import scalamon.logics.state.PokemonStateModuleImpl.*
 
-class PokemonStateTest extends AnyFunSuite:
-  test("test damage and heal transformers"):
-    import scalamon.logics.state.PokemonStateModuleImpl.*
+class PokemonStateTest extends AnyWordSpec with Matchers with StateFixtures:
+  "A PokemonState" should:
+
+    "initialize with correct hp" in:
+      myPokemon.currentHp shouldEqual 39
+
+    "apply damage correctly" in:
+      val damagedPokemon = myPokemon damage 14
+      damagedPokemon.currentHp shouldEqual 25
+
+    "apply sequentially composed damage and heal correctly" in:
+      val damagedPokemon = myPokemon damage 14
+      val healedPokemon = damagedPokemon heal 5
+      healedPokemon.currentHp shouldEqual 30
 
 
 
-    val myPokemon = pokemonInitialState(MyPokedex.allPokemons.head)
-
-    assert(myPokemon.currentHp == 10)
-
-    val damagedPokemon = myPokemon damage 4
-    assert(damagedPokemon.currentHp == 6)
-
-    val healedPokemon = damagedPokemon heal 2
-    assert(healedPokemon.currentHp == 8)
