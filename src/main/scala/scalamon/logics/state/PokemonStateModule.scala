@@ -21,7 +21,7 @@ trait PokemonStateModule:
 object PokemonStateModuleImpl extends PokemonStateModule:
   case class Ps(hp: Int, stats: Stats, status: List[AlteratedStatus] = List())
   override type PokemonState = Ps
-  override type Stats = pokemon.Stats
+  override type Stats = pokemon.statistics.Stats
   override type AlteratedStatus = AlteratedStatusModuleImpl.AlteratedStatus
 
   def pokemonState(hp: Int, stats: Stats): PokemonState = Ps(hp, stats)
