@@ -5,7 +5,6 @@ object Accuracy:
 
   def accuracyFromPercent(accuracy: Int): Accuracy =
     accuracyFromRatio(accuracy.toDouble / 100.0)
-    accuracy
 
   def accuracyFromRatio(accuracy: Double): Accuracy =
     require(accuracy >= 0.0 && accuracy <= 1.0, s"Invalid accuracy: $accuracy")

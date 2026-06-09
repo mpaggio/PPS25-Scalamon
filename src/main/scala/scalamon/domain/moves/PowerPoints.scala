@@ -5,7 +5,6 @@ object PowerPoints:
 
   def powerPointsFromInt(pp: Int): PP =
     powerPointsFromDouble(pp)
-    pp
 
   def powerPointsFromDouble(pp: Double): PP =
     require(pp > 0.0 && pp <= 64.0, s"Invalid PP: $pp")

@@ -19,17 +19,20 @@ sealed trait Move:
 
 sealed trait NonDamagingMove extends Move:
   def category: StatusMoveCategory
+  def effect: MoveEffect
 
 sealed trait DamagingMove extends Move:
   def power: Power
   def category: DamageMoveCategory
+  def effect: Option[MoveEffect]
 
 case class StatusMove(
   name: String,
   pp: PP,
   accuracy: Accuracy,
   moveType: Type,
-  category: StatusMoveCategory) extends NonDamagingMove
+  category: StatusMoveCategory,
+  effect: MoveEffect) extends NonDamagingMove
 
 case class DamageMove(
   name: String,
@@ -37,7 +40,8 @@ case class DamageMove(
   pp: PP,
   accuracy: Accuracy,
   moveType: Type,
-  category: DamageMoveCategory) extends DamagingMove
+  category: DamageMoveCategory,
+  effect: Option[MoveEffect]) extends DamagingMove
 
 object MoveDSL:
   import scalamon.domain.moves.StatusMoveCategory.*
@@ -47,7 +51,8 @@ object MoveDSL:
     power: Option[Power] = None,
     pp: Option[PP] = None,
     accuracy: Option[Accuracy] = None,
-    moveType: Option[Type] = None)
+    moveType: Option[Type] = None,
+    moveEffect: Option[MoveEffect] = None)
 
   def move: MoveBuilder =
     MoveBuilder()
@@ -78,27 +83,26 @@ object MoveDSL:
     infix def withType(moveType: Type): MoveBuilder =
       builder.copy(moveType = Some(moveType))
 
+    infix def withEffect(effect: MoveEffect): MoveBuilder =
+      builder.copy(moveEffect = Some(effect))
+
     infix def as(category: DamageMoveCategory): DamageMove =
-      buildDamaging(category)
-
-    infix def as(category: StatusMoveCategory): StatusMove =
-      buildStatus(category)
-
-    private def buildStatus(category: StatusMoveCategory): StatusMove =
       require(
         builder.name.isDefined && builder.pp.isDefined &&
-          builder.accuracy.isDefined && builder.moveType.isDefined)
+          builder.accuracy.isDefined && builder.moveType.isDefined, "Missing mandatory fields")
+      require(builder.power.isDefined, "Power is required for damage moves")
+      DamageMove(
+        builder.name.get, builder.power.get,
+        builder.pp.get, builder.accuracy.get,
+        builder.moveType.get, category,
+        builder.moveEffect)
+
+    infix def as(category: StatusMoveCategory): StatusMove =
+      require(
+        builder.name.isDefined && builder.pp.isDefined &&
+          builder.accuracy.isDefined && builder.moveType.isDefined, "Missing mandatory fields")
+      require(builder.moveEffect.isDefined, "Status moves must have an effect")
       StatusMove(
         builder.name.get, builder.pp.get,
-        builder.accuracy.get, builder.moveType.get, category)
-
-    private def buildDamaging(category: DamageMoveCategory): DamageMove =
-      val base = buildStatus(Status)
-      require(builder.power.isDefined && builder.moveType.isDefined)
-      DamageMove(
-        base.name, builder.power.get,
-        base.pp, base.accuracy,
-        base.moveType, category)
-
-
-
+        builder.accuracy.get, builder.moveType.get,
+        category, builder.moveEffect.get)
