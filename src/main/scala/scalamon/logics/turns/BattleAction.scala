@@ -35,4 +35,3 @@ enum BattleAction:
                     to: PokemonRef,
                     priority: Int
                     )
-  
