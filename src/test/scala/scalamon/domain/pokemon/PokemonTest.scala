@@ -2,9 +2,10 @@ package scalamon.domain.pokemon
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
-import scalamon.domain.pokemon.PokedexADT.PokedexId
+import scalamon.domain.pokemon.pokedex.PokedexADT.PokedexId
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.abilities.AbilitySlot
+import scalamon.domain.pokemon.pokedex.PokedexADT
 import scalamon.domain.pokemon.statistics.StatADT.*
 import scalamon.domain.pokemon.statistics.Stats
 import scalamon.domain.types.Type.*
