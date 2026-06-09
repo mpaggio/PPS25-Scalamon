@@ -13,7 +13,8 @@ trait PlayerStateModule extends StateComponent:
     def bench(f: Modifier): PlayerState
     def all(f: Modifier): PlayerState
     def allThat(p: PokemonState => Boolean)(f: Modifier): PlayerState
-    def switchActive(newActive: String): PlayerState
+    def switchActive(newActive: PokemonId): PlayerState
+    def getActive: PokemonState
 
 
 object PlayerStateModuleImpl extends PlayerStateModule:
@@ -21,7 +22,8 @@ object PlayerStateModuleImpl extends PlayerStateModule:
   override type PlayerState = Ps
   override type PokemonState = PokemonStateModuleImpl.PokemonState
   override type PokemonId = String
-  def playerState(team: Map[String, PokemonState], active: String): PlayerState = Ps(team, active)
+
+  def playerState(team: Map[PokemonId, PokemonState], active: PokemonId): PlayerState = Ps(team, active)
 
   private def mapValues[K, V](m: Map[K, V])(f: V => V): Map[K, V] = m.map(e => (e._1, f(e._2)))
 
@@ -37,4 +39,6 @@ object PlayerStateModuleImpl extends PlayerStateModule:
     infix def allThat(p: PokemonState => Boolean)(f: Modifier): PlayerState =
       ps.copy(team = mapValues(ps.team)(s => if p(s) then f(s) else s))
 
-    infix def switchActive(newActive: String): PlayerState = Ps(ps._1, newActive)
+    infix def switchActive(newActive: PokemonId): PlayerState = Ps(ps._1, newActive)
+
+    def getActive: PokemonState = ps.team(ps.activeId)

@@ -1,45 +1,40 @@
 package scalamon.logics.state
 
-import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.pokemon.pokedex.MyPokedex
-import scalamon.domain.pokemon.statistics.StatADT.fromInt
-import scalamon.domain.pokemon.statistics.Stats
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
-import scalamon.logics.state.StatsStateModuleImpl.statsInitialState
 
-class PlayerStateTest extends AnyFunSuite:
+class PlayerStateTest extends AnyWordSpec with Matchers with StateFixtures:
+  "A PlayerState" should:
 
+    "initialize correctly" in:
+      player1.activeId shouldEqual "Pikachu"
+      player1.team("Pikachu").currentHp shouldEqual 39
+      player1.team("Charmander").currentHp shouldEqual 45
 
-  val myPokemon = pokemonInitialState(MyPokedex.allPokemons.head)
-  val mySecondPokemon = pokemonInitialState(MyPokedex.allPokemons(1))
-  val player = playerState(Map("Pikachu" -> myPokemon, "Charmander" -> mySecondPokemon), "Pikachu")
+    "apply modifier to active pokemon" in:
+      val newPlayer = player1 active (_ damage 10)
+      newPlayer.team("Pikachu").currentHp shouldEqual 29
+      newPlayer.team("Charmander").currentHp shouldEqual 45
 
-  test("test base"):
-    assert(player.activeId == "Pikachu")
-    assert(player.team("Pikachu").currentHp == 10)
-    assert(player.team("Charmander").currentHp == 10)
+    "switch active pokemon" in:
+      val newPlayer = player1 switchActive "Charmander"
+      newPlayer.activeId shouldEqual "Charmander"
 
-  test("test active"):
-    val newPlayer = player active (_ damage 4)
-    assert(newPlayer.team("Pikachu").currentHp == 6)
-    assert(newPlayer.team("Charmander").currentHp == 10)
+    "apply modifier to benched pokemons" in:
+      val newPlayer = player1 bench (_ damage 5)
+      newPlayer.team("Pikachu").currentHp shouldEqual 39
+      newPlayer.team("Charmander").currentHp shouldEqual 40
 
-  test("test switch active"):
-    val newPlayer = player switchActive "Charmander"
-    assert(newPlayer.activeId == "Charmander")
+    "apply modifier to all pokemons" in:
+      val newPlayer = player1 all (_ damage 5)
+      newPlayer.team("Pikachu").currentHp shouldEqual 34
+      newPlayer.team("Charmander").currentHp shouldEqual 40
 
-  test("test bench"):
-    val newPlayer = player bench (_ damage 3)
-    assert(newPlayer.team("Pikachu").currentHp == 10)
-    assert(newPlayer.team("Charmander").currentHp == 7)
+    "apply modifier to filtered pokemons" in:
+      val damagedPlayer = player1 all (_ damage 10) // Pika 29, Char 35
+      val healedPlayer = damagedPlayer.allThat(ps => ps.currentHp < 30)(_ heal 10)
+      healedPlayer.team("Pikachu").currentHp shouldEqual 39
+      healedPlayer.team("Charmander").currentHp shouldEqual 35
 
-  test("test all"):
-    val newPlayer = player all (_ damage 2)
-    assert(newPlayer.team("Pikachu").currentHp == 8)
-    assert(newPlayer.team("Charmander").currentHp == 8)
-    
-  test("test allThat"):
-    val newPlayer = player.allThat(ps => ps.currentHp < 10)(_ heal 2)
-    assert(newPlayer.team("Pikachu").currentHp == 10)
-    assert(newPlayer.team("Charmander").currentHp == 10)

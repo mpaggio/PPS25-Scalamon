@@ -1,5 +1,9 @@
 package scalamon.domain.pokemon.statistics
 
+/**
+ * Module defining the statistic value as an opaque type.
+ * Centralizes the validation that every statistic must be a positive integer.
+ */
 object StatADT:
   
   opaque type Stat = Int
