@@ -14,3 +14,11 @@ object StatADT:
     
   extension (stat: Stat)
     def toInt: Int = stat
+
+  enum StatKind:
+    case Hp
+    case Attack
+    case Defense
+    case SpecialAttack
+    case SpecialDefense
+    case Speed
