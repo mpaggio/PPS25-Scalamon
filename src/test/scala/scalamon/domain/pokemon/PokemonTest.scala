@@ -66,3 +66,13 @@ class PokemonTest extends AnyFunSuite:
     )
   }
 
+  test("A pokemon created with Normal Type should throw an IllegalArgumentException") {
+    a[IllegalArgumentException] should be thrownBy Pokemon(
+      pokedexId = validPokedexId,
+      name = "NormalPokemon",
+      pokemonType = Normal,
+      baseStats = testStats,
+      abilitySlot = testAbilitySlot
+    )
+  }
+

@@ -1,6 +1,7 @@
 package scalamon.domain.pokemon
 
 import scalamon.domain.types.Type
+import scalamon.domain.types.Type.*
 import scalamon.domain.pokemon.pokedex.PokedexADT.PokedexId
 import scalamon.domain.pokemon.abilities.AbilitySlot
 import scalamon.domain.pokemon.statistics.Stats
@@ -24,3 +25,4 @@ case class Pokemon(
   abilitySlot: AbilitySlot
 ):
   require(name.trim.nonEmpty, "Pokemon name must be a non-empty string")
+  require(pokemonType != Normal, "In our Domain, a Pokèmon cannot be of type Normal")
