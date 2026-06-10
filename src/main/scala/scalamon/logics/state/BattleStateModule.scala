@@ -26,4 +26,3 @@ object BattleStateImpl extends BattleStateModule:
     infix def setAmbient(effect: PassiveEffect): BattleState = bs.copy(ambient = effect)
     infix def addPassiveEffect(effect: PassiveEffect): BattleState = 
       bs.copy(passiveEffects = effect :: bs.passiveEffects)
-      
