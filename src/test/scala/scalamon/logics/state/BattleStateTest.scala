@@ -16,20 +16,20 @@ class BattleStateTest extends AnyWordSpec with Matchers with StateFixtures:
 
     "correctly update active enemy pokemon" in:
       type Move = BattleState => BattleState
-      val attackMove: Move = _ enemy (_ active (_ damage 10))
+      val attackMove: Move = _ enemy (_ active (_ currentHp (_ decrease 10)))
       val newState = attackMove(battle)
       newState.enemy.team("Squirtle").currentHp shouldEqual 34
 
     "correctly update user bench pokemon" in:
       type Move = BattleState => BattleState
-      val masochistMove: Move = _ user (_ bench (_ damage 5))
+      val masochistMove: Move = _ user (_ bench (_ currentHp (_ decrease 5)))
       val newState = masochistMove(battle)
       newState.user.team("Charmander").currentHp shouldEqual 39
       newState.user.team("Bulbasaur").currentHp shouldEqual 40
 
     "apply move conditionally to user team" in:
       type Move = BattleState => BattleState
-      val healAllMove: Move = _ user (_.allThat(ps => ps.currentHp < 40)(_ heal 10))
+      val healAllMove: Move = _ user (_.allThat(ps => ps.currentHp.toInt < 40)(_ currentHp (_ increase 10)))
       // Charmander is 39 so it gets healed, Bulbasaur is 45 so it is skipped.
       val newState = healAllMove(battle)
       newState.user.team("Charmander").currentHp shouldEqual 49
@@ -43,9 +43,9 @@ class BattleStateTest extends AnyWordSpec with Matchers with StateFixtures:
 
     "chain multiple moves correctly" in:
       type Move = BattleState => BattleState
-      val attackMove: Move = _ enemy (_ active (_ damage 10))
-      val masochistMove: Move = _ user (_ bench (_ damage 5))
-      val healAllMove: Move = _ user (_.allThat(ps => ps.currentHp < 40)(_ heal 10))
+      val attackMove: Move = _ enemy (_ active (_ currentHp (_ decrease 10)))
+      val masochistMove: Move = _ user (_ bench (_ currentHp (_ decrease 5)))
+      val healAllMove: Move = _ user (_.allThat(ps => ps.currentHp.toInt < 40)(_ currentHp (_ increase 10)))
       val weaknessMove: Move = _ enemy (_ active (_ modifyStats (_ attack (_ decrease 5))))
       val chainedMove = attackMove andThen masochistMove andThen healAllMove andThen weaknessMove
       val newState = chainedMove(battle)

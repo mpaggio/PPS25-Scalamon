@@ -12,18 +12,32 @@ object StateTransformerModuleImpl extends StateTransformerModule:
 
 
 import StateTransformerModuleImpl.*
+import PokemonStateModuleImpl.*
+import scalamon.domain.moves.DamageMove
+import scalamon.logics.state.StatsStateModuleImpl.*
 
-trait InstantEffect extends StateTransformer
+type InstantEffect = StateTransformer
 
-case class SwitchAction(newId: PlayerStateModuleImpl.PokemonId) extends InstantEffect:
+trait Action extends InstantEffect
+
+case class SwitchAction(newId: PlayerStateModuleImpl.PokemonId) extends Action:
   override def apply(battleState: BattleState): BattleState = battleState user (_ switchActive newId )
+
+case class DamageAction(move: DamageMove) extends Action:   // implicit parameter for damage calculation ??
+  override def apply(battleState: BattleState): BattleState =
+    val amount = battleState.user.getActive.modifiedStats.attack.toInt * move.power.asInt // example
+    // val damageAmount = DamageMoveCalculator(battleState, move)
+    battleState enemy (_ active (_ currentHp (_ decrease amount)))
 
 trait PassiveEffect(selector: StateTransformer => Boolean)(mapper: TransformerFlatMapper) extends TransformerFlatMapper:
   override def apply(battleState: StateTransformer): List[StateTransformer] =
     if selector(battleState) then mapper(battleState) else List(battleState)
 
 enum Ability(selector: StateTransformer => Boolean)(mapper: TransformerFlatMapper) extends PassiveEffect(selector)(mapper):
-  case ShadowTag extends Ability({ case SwitchAction(_) => true })(b => List())
+  case ShadowTag extends Ability({ case SwitchAction(_) => true })(bs => List())
+  case MagicGuard extends Ability({ case DamageAction(_) => false })(bs => List())
+  case Regenerator extends Ability({ case SwitchAction(_) => true })(bs => List(bs, s => s user (_ active (_ currentHp (_ increase 3)))))
+
 
 trait AlteredStatus
 
