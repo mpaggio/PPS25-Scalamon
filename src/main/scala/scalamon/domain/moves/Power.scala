@@ -5,7 +5,6 @@ object Power:
 
   def powerFromInt(power: Int): Power =
     powerFromDouble(power)
-    power
 
   def powerFromDouble(power: Double): Power =
     require(power > 0.0 && power <= 250.0, s"Invalid power: $power")
