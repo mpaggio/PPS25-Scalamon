@@ -11,7 +11,7 @@ trait StateFixtures:
   val myPokemon = pokemonInitialState(charmanderSpecies) // HP 39, Atk 52, Def 43
   val mySecondPokemon = pokemonInitialState(bulbasaurSpecies) // HP 45, Atk 49, Def 49
   val enemyPokemon = pokemonInitialState(squirtleSpecies) // HP 44, Atk 48, Def 65
-  val player1 = playerState(Map("Pikachu" -> myPokemon, "Charmander" -> mySecondPokemon), "Pikachu")
-  val player2 = playerState(Map("Bulbasaur" -> enemyPokemon), "Bulbasaur")
+  val player1 = playerState(Map("Charmander" -> myPokemon, "Bulbasaur" -> mySecondPokemon), "Charmander")
+  val player2 = playerState(Map("Squirtle" -> enemyPokemon), "Squirtle")
   val battle = battleState(player1, player2)
 

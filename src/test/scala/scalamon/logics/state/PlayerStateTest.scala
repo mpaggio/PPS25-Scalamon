@@ -9,32 +9,36 @@ class PlayerStateTest extends AnyWordSpec with Matchers with StateFixtures:
   "A PlayerState" should:
 
     "initialize correctly" in:
-      player1.activeId shouldEqual "Pikachu"
-      player1.team("Pikachu").currentHp shouldEqual 39
-      player1.team("Charmander").currentHp shouldEqual 45
+      player1.activeId shouldEqual "Charmander"
+      player1.team("Charmander").currentHp shouldEqual 39
+      player1.team("Bulbasaur").currentHp shouldEqual 45
+
+    "find the active pokemon" in:
+      val activePokemon = player1.getActive
+      activePokemon shouldEqual player1.team("Charmander")
 
     "apply modifier to active pokemon" in:
       val newPlayer = player1 active (_ damage 10)
-      newPlayer.team("Pikachu").currentHp shouldEqual 29
-      newPlayer.team("Charmander").currentHp shouldEqual 45
+      newPlayer.team("Charmander").currentHp shouldEqual 29
+      newPlayer.team("Bulbasaur").currentHp shouldEqual 45
 
     "switch active pokemon" in:
-      val newPlayer = player1 switchActive "Charmander"
-      newPlayer.activeId shouldEqual "Charmander"
+      val newPlayer = player1 switchActive "Bulbasaur"
+      newPlayer.activeId shouldEqual "Bulbasaur"
 
     "apply modifier to benched pokemons" in:
       val newPlayer = player1 bench (_ damage 5)
-      newPlayer.team("Pikachu").currentHp shouldEqual 39
-      newPlayer.team("Charmander").currentHp shouldEqual 40
+      newPlayer.team("Charmander").currentHp shouldEqual 39
+      newPlayer.team("Bulbasaur").currentHp shouldEqual 40
 
     "apply modifier to all pokemons" in:
       val newPlayer = player1 all (_ damage 5)
-      newPlayer.team("Pikachu").currentHp shouldEqual 34
-      newPlayer.team("Charmander").currentHp shouldEqual 40
+      newPlayer.team("Charmander").currentHp shouldEqual 34
+      newPlayer.team("Bulbasaur").currentHp shouldEqual 40
 
     "apply modifier to filtered pokemons" in:
       val damagedPlayer = player1 all (_ damage 10) // Pika 29, Char 35
       val healedPlayer = damagedPlayer.allThat(ps => ps.currentHp < 30)(_ heal 10)
-      healedPlayer.team("Pikachu").currentHp shouldEqual 39
-      healedPlayer.team("Charmander").currentHp shouldEqual 35
+      healedPlayer.team("Charmander").currentHp shouldEqual 39
+      healedPlayer.team("Bulbasaur").currentHp shouldEqual 35
 

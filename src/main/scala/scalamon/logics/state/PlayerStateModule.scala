@@ -10,15 +10,15 @@ trait PlayerStateModule extends StateComponent:
 
   extension (ps: PlayerState)
     def active(f: Modifier): PlayerState
+    def switchActive(newActive: PokemonId): PlayerState
     def bench(f: Modifier): PlayerState
     def all(f: Modifier): PlayerState
     def allThat(p: PokemonState => Boolean)(f: Modifier): PlayerState
-    def switchActive(newActive: PokemonId): PlayerState
-    def getActive: PokemonState
-
 
 object PlayerStateModuleImpl extends PlayerStateModule:
-  case class Ps(team: Map[String, PokemonState], activeId: String)
+  case class Ps(team: Map[String, PokemonState], activeId: String):
+    def getActive: PokemonState = team(activeId)
+
   override type PlayerState = Ps
   override type PokemonState = PokemonStateModuleImpl.PokemonState
   override type PokemonId = String
@@ -28,8 +28,8 @@ object PlayerStateModuleImpl extends PlayerStateModule:
   private def mapValues[K, V](m: Map[K, V])(f: V => V): Map[K, V] = m.map(e => (e._1, f(e._2)))
 
   extension (ps: PlayerState)
-    infix def active(f: Modifier): PlayerState =
-      ps.copy(team = ps.team.updated(ps.activeId, f(ps.team(ps.activeId))))
+    infix def active(f: Modifier): PlayerState = ps.copy(team = ps.team.updated(ps.activeId, f(ps.getActive)))
+    infix def switchActive(newActive: PokemonId): PlayerState = Ps(ps._1, newActive)
 
     infix def bench(f: Modifier): PlayerState =
       ps.copy(team = ps.team.map(e => if e._1 == ps.activeId then (e._1, e._2) else (e._1, f(e._2))))
@@ -39,6 +39,3 @@ object PlayerStateModuleImpl extends PlayerStateModule:
     infix def allThat(p: PokemonState => Boolean)(f: Modifier): PlayerState =
       ps.copy(team = mapValues(ps.team)(s => if p(s) then f(s) else s))
 
-    infix def switchActive(newActive: PokemonId): PlayerState = Ps(ps._1, newActive)
-
-    def getActive: PokemonState = ps.team(ps.activeId)

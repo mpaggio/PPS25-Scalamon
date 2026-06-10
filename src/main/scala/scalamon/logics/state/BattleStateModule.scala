@@ -11,8 +11,6 @@ trait BattleStateModule extends StateComponent:
     def user(f: Modifier): BattleState
     def enemy(f: Modifier): BattleState
     def switchUserEnemy: BattleState
-    def ambient: PassiveEffect
-    def passiveEffects: List[PassiveEffect]
 
 object BattleStateImpl extends BattleStateModule:
   case class Bs(user: PlayerState, enemy: PlayerState, ambient: PassiveEffect, passiveEffects: List[PassiveEffect])
@@ -24,9 +22,8 @@ object BattleStateImpl extends BattleStateModule:
   extension (bs: BattleState)
     infix def user(f: Modifier): BattleState = bs.copy(user = f(bs.user), enemy = bs.enemy)
     infix def enemy(f: Modifier): BattleState = bs.copy(user = bs.user, enemy = f(bs.enemy))
-    def switchUserEnemy: BattleState = bs.copy(user = bs.enemy, enemy = bs.user)
-    def ambient: PassiveEffect = bs.ambient
-    def setAmbient(effect: PassiveEffect): BattleState = bs.copy(ambient = effect)
-    def passiveEffects: List[PassiveEffect] = bs.passiveEffects
-    def addPassiveEffect(effect: PassiveEffect): BattleState = 
+    infix def switchUserEnemy: BattleState = bs.copy(user = bs.enemy, enemy = bs.user)
+    infix def setAmbient(effect: PassiveEffect): BattleState = bs.copy(ambient = effect)
+    infix def addPassiveEffect(effect: PassiveEffect): BattleState = 
       bs.copy(passiveEffects = effect :: bs.passiveEffects)
+      
