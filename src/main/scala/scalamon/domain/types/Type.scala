@@ -1,6 +1,7 @@
 package scalamon.domain.types
 
 enum Type:
+  case Normal
   case Fire
   case Water
   case Grass
