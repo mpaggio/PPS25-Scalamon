@@ -22,7 +22,7 @@ class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
     thunder.category shouldBe Physical
 
   test("DSL should create a DamageMove with a side effect with a fluent syntax"):
-    val thunder: DamagingMove = move named "Thunder" withPower 110 withPP 10 withAccuracy 70 withType Electric withEffect (Effect applying Paralysis withProbability 10) as Special
+    val thunder: DamagingMove = move named "Thunder" withPower 110 withPP 10 withAccuracy 70 withType Electric withEffect (Effect applying Paralyzed withProbability 10) as Special
     thunder.name shouldBe "Thunder"
     thunder.power.asInt shouldBe 110
     thunder.pp.asInt shouldBe 10

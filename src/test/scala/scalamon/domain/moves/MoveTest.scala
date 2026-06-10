@@ -12,7 +12,7 @@ import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
 
 class MoveTest extends org.scalatest.funsuite.AnyFunSuite:
   
-  val paralysisEffect = AlteredState(Paralysis, accuracyFromPercent(100))
+  val paralysisEffect = AlteredState(Paralyzed, accuracyFromPercent(100))
   val statDropEffect = StatChange(Speed, -1, accuracyFromPercent(10))
 
   test("Moves should be of two possible types (damage and status)"):

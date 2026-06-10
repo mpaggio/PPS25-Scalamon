@@ -10,12 +10,12 @@ import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
 class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
 
   test("DSL should create an AlteredState effect with a fluent syntax"):
-    val effect: MoveEffect = Effect applying Paralysis withProbability 10
-    effect shouldBe AlteredState(Paralysis, accuracyFromPercent(10))
+    val effect: MoveEffect = Effect applying Paralyzed withProbability 10
+    effect shouldBe AlteredState(Paralyzed, accuracyFromPercent(10))
 
   test("DSL should create a Burn effect"):
-    val effect: MoveEffect = Effect applying Burn withProbability 30
-    effect shouldBe AlteredState(Burn, accuracyFromPercent(30))
+    val effect: MoveEffect = Effect applying Burned withProbability 30
+    effect shouldBe AlteredState(Burned, accuracyFromPercent(30))
 
   test("DSL should create a StatChange effect"):
     val effect: MoveEffect = Effect changing SpecialDefense by (-1) withProbability 10
@@ -32,3 +32,7 @@ class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
   test("DSL should create a Recharge effect"):
     val effect: MoveEffect = Effect recharging 1
     effect shouldBe Recharge(1)
+
+  test("DSL should create a critical multiplier effect"):
+    val effect: MoveEffect = Effect multiplyingCriticalBy 8
+    effect shouldBe CriticalMultiplier(8)
