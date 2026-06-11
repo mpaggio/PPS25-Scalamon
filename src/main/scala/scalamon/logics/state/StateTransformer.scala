@@ -8,7 +8,7 @@ trait StateTransformerModule:
 object StateTransformerModuleImpl extends StateTransformerModule:
   override type BattleState = BattleStateImpl.BattleState
 
-
+/*
 // Example of how to use the StateTransformerModule to implement abilities and effects in a Pokemon battle system.
 
 import StateTransformerModuleImpl.*
@@ -28,6 +28,7 @@ trait PassiveEffect(selector: (StateTransformer, Origin) => Boolean)(mapper: Tra
     if selector(battleState, origin) then mapper(battleState) else List(battleState)
 
 trait Action extends StateTransformer
+// type Action = List[StateTransformer]
 
 // Example actions:
 
@@ -54,7 +55,7 @@ enum Ability(selector: (StateTransformer, Origin) => Boolean, mapper: Transforme
 
   case MagicGuard extends Ability(
     {
-      case (DamageAction(_), Origin.Opponent) => false
+      case (DamageAction(_), Origin.Opponent) => false    // errata
       case _ => false
     },
     _ => Nil
@@ -74,14 +75,14 @@ enum Ability(selector: (StateTransformer, Origin) => Boolean, mapper: Transforme
 // Engine example:
 
 object BattleEngine:
-  
+
   private val switchProspective: StateTransformer = s => s.switchUserEnemy
 
   def resolveTurn(initialState: BattleState, p1Action: List[StateTransformer], p2Action: List[StateTransformer]): BattleState =
-    
+
     // automatically sort by speed and insert switchProspective where needed
     val actionTimeline = p1Action.::(switchProspective) ++ p2Action
-    
+
     // resolve on list using like flatMap
     val actionWithPassives = resolvePassiveEffects(p1Action, initialState)   // Can passive trigger passive??
 
@@ -91,8 +92,8 @@ object BattleEngine:
   private def resolvePassiveEffects(actions: List[StateTransformer], battleState: BattleState): List[StateTransformer] =
 
     val passiveAbilities: List[(Origin, Ability)] = List(
-      (Origin.Self, Ability.Regenerator),  //  battleState.user.getActive.species.abilitySlot.primary
-      (Origin.Opponent, Ability.ShadowTag)  // battleState.enemy.getActive.species.abilitySlot.primary ...
+      (Origin.Self, Ability.Regenerator),  //  battleState.self.getActive.species.abilitySlot.primary
+      (Origin.Opponent, Ability.ShadowTag)  // battleState.oppotent.getActive.species.abilitySlot.primary ...
     )
 
     actions.flatMap(action => action match
@@ -102,3 +103,4 @@ object BattleEngine:
         currentActions.flatMap(act => ability.apply(act, origin))
       )
     )
+*/
