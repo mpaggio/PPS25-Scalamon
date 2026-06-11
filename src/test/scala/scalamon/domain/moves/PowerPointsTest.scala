@@ -14,19 +14,24 @@ class PowerPointsTest extends org.scalatest.funsuite.AnyFunSuite:
     pp2.asString shouldBe "PP: 30"
 
   test("Power points should be created starting from a valid Double (0.0 < x <= 64.0)"):
-    val pp1: PP = powerPointsFromDouble(30.0)
-    pp1.asString shouldBe "PP: 30"
-    val pp2: PP = powerPointsFromDouble(30.0)
-    pp2.asString shouldBe "PP: 30"
+    val pp1: PP = powerPointsFromDouble(1.0)
+    pp1.asString shouldBe "PP: 1"
+    val pp2: PP = powerPointsFromDouble(64.0)
+    pp2.asString shouldBe "PP: 64"
     assertThrows[IllegalArgumentException](powerPointsFromDouble(64.1))
     assertThrows[IllegalArgumentException](powerPointsFromDouble(0.0))
     assertThrows[IllegalArgumentException](powerPointsFromDouble(-1.0))
 
+  test("Power points from double should be created only from whole valid values"):
+    assertThrows[IllegalArgumentException](powerPointsFromDouble(63.9))
+    assertThrows[IllegalArgumentException](powerPointsFromDouble(23.6))
+    assertThrows[IllegalArgumentException](powerPointsFromDouble(1.1))
+
   test("Power points should be created starting from a valid Int (0 < x <= 64)"):
-    val pp1: PP = powerPointsFromInt(64)
-    pp1.asString shouldBe "PP: 64"
-    val pp2: PP = powerPointsFromInt(1)
-    pp2.asString shouldBe "PP: 1"
+    val pp1: PP = powerPointsFromInt(1)
+    pp1.asString shouldBe "PP: 1"
+    val pp2: PP = powerPointsFromInt(64)
+    pp2.asString shouldBe "PP: 64"
     assertThrows[IllegalArgumentException](powerPointsFromInt(65))
     assertThrows[IllegalArgumentException](powerPointsFromInt(0))
     assertThrows[IllegalArgumentException](powerPointsFromInt(-1))

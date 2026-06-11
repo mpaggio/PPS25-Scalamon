@@ -7,7 +7,7 @@ object Power:
     powerFromDouble(power)
 
   def powerFromDouble(power: Double): Power =
-    require(power > 0.0 && power <= 250.0, s"Invalid power: $power")
+    require(power.isWhole && power > 0.0 && power <= 250.0, s"Invalid power: $power")
     power.toInt
 
   extension (power: Power)

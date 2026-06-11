@@ -22,6 +22,11 @@ class AccuracyTest extends org.scalatest.funsuite.AnyFunSuite:
     assertThrows[IllegalArgumentException](accuracyFromRatio(1.5))
     assertThrows[IllegalArgumentException](accuracyFromRatio(-0.5))
 
+  test("Accuracy from ratio should truncate decimal percentages"):
+    accuracyFromRatio(0.999).asInt shouldBe 99
+    accuracyFromRatio(0.501).asInt shouldBe 50
+    accuracyFromRatio(0.009).asInt shouldBe 0
+
   test("Accuracy should be created only starting from a valid percentage, expressed in Int (0 <= x <= 100)"):
     val acc1: Accuracy = accuracyFromPercent(100)
     acc1.asString shouldBe "Accuracy: 100%"

@@ -18,9 +18,15 @@ class PowerTest extends org.scalatest.funsuite.AnyFunSuite:
     pwr1.asString shouldBe "Power: 250"
     val pwr2: Power = powerFromDouble(1.0)
     pwr2.asString shouldBe "Power: 1"
-    assertThrows[IllegalArgumentException](powerFromDouble(250.5))
+    assertThrows[IllegalArgumentException](powerFromDouble(251.0))
     assertThrows[IllegalArgumentException](powerFromDouble(0.0))
-    assertThrows[IllegalArgumentException](powerFromDouble(-0.5))
+    assertThrows[IllegalArgumentException](powerFromDouble(-1.0))
+
+  test("Power points from double should be created only from whole valid values"):
+    assertThrows[IllegalArgumentException](powerFromDouble(249.9))
+    assertThrows[IllegalArgumentException](powerFromDouble(23.6))
+    assertThrows[IllegalArgumentException](powerFromDouble(1.1))
+    assertThrows[IllegalArgumentException](powerFromDouble(0.1))
 
   test("Power should be created starting from a valid Int (0 < x <= 250)"):
     val pwr1: Power = powerFromInt(250)

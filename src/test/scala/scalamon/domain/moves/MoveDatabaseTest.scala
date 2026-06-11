@@ -16,7 +16,8 @@ class MoveDatabaseTest extends org.scalatest.funsuite.AnyFunSuite:
     assert(MoveDatabase.nonDamagingMoves.forall(_.isInstanceOf[NonDamagingMove]))
 
   test("Damaging moves and non damaging moves should partition all moves"):
-    assert(MoveDatabase.damagingMoves.size + MoveDatabase.nonDamagingMoves.size == MoveDatabase.allMoves.size)
+    val total: Int = MoveDatabase.damagingMoves.size + MoveDatabase.nonDamagingMoves.size
+    assert(total == MoveDatabase.allMoves.size)
 
   test("Of type should return only moves of the requested type"):
     val fireMoves = MoveDatabase.allMoves.ofType(Fire)

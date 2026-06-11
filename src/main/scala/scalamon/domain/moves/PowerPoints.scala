@@ -7,7 +7,7 @@ object PowerPoints:
     powerPointsFromDouble(pp)
 
   def powerPointsFromDouble(pp: Double): PP =
-    require(pp > 0.0 && pp <= 64.0, s"Invalid PP: $pp")
+    require(pp.isWhole && pp > 0.0 && pp <= 64.0, s"Invalid PP: $pp")
     pp.toInt
 
   extension (pp: PP)
