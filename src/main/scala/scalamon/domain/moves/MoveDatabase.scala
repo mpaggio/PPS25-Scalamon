@@ -9,8 +9,22 @@ import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
 
+/**
+ * Repository of all available moves in the game.
+ *
+ * This object acts as an in-memory database containing:
+ * - Predefined moves grouped by type.
+ * - Helper methods to filter and query moves.
+ *
+ * It is intended as a static reference dataset.
+ */
 object MoveDatabase:
 
+  /**
+   * Complete set of all defined moves in the game.
+   *
+   * Includes both damaging and non-damaging moves across all types.
+   */
   val allMoves: Set[Move] = Set(
     // NORMAL
     move named "Body slam"
@@ -153,14 +167,51 @@ object MoveDatabase:
       as Status
   )
 
+  /**
+   * Extracts all damage move (damaging moves).
+   *
+   * @return subset of allMoves containing only DamagingMoves instances.
+   */
   def damagingMoves: Set[DamagingMove] =
     allMoves.collect({case m: DamagingMove => m})
 
+  /**
+   * Extracts all status move (non-damaging moves).
+   *
+   * @return subset of allMoves containing only NonDamagingMoves instances.
+   */
   def nonDamagingMoves: Set[NonDamagingMove] =
     allMoves.collect({case m: NonDamagingMove => m})
 
+  /**
+   * Extension methods for querying collections of moves.
+   *
+   * Provides utility operations to filter and search moves
+   * in a declarative and functional style.
+   */
   extension (moves: Set[Move])
+
+    /**
+     * Filters moves by their elemental type.
+     *
+     * @param t elemental type to filter by.
+     * @return subset of moves matching the given type.
+     */
     infix def ofType(t: Type): Set[Move] = moves.filter(_.moveType == t)
+
+    /**
+     * Searches a move by its name (case-insensitive).
+     *
+     * @param name name of the move to search.
+     * @return an optional Move if found.
+     */
     infix def findByName(name: String): Option[Move] = moves.find(_.name.equalsIgnoreCase(name))
+
+    /**
+     * Filters damaging moves by their category (Physical or Special).
+     *
+     * @param category damage category to filter by.
+     * @return subset of damaging moves matching the given category.
+     */
     infix def ofCategory(category: DamageMoveCategory): Set[DamagingMove] =
       moves.collect({case m: DamagingMove if m.category == category => m})
