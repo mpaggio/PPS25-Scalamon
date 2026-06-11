@@ -16,9 +16,9 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
   override type Move = scalamon.domain.moves.DamageMove
 
   def getDamage(state: BattleState, move: Move): Damage =
-    val a = state.user.getActive.modifiedStats.attack
-    val d = state.enemy.getActive.modifiedStats.defense
-    val stab = if (state.user.getActive.species.pokemonType == move.moveType) {
+    val a = state.self.getActive.modifiedStats.attack
+    val d = state.opponent.getActive.modifiedStats.defense
+    val stab = if (state.self.getActive.species.pokemonType == move.moveType) {
       1.5
     } else {
       1.0

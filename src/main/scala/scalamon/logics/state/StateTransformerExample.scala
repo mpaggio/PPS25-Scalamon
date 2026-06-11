@@ -18,41 +18,35 @@ import scalamon.logics.state.StatsStateModuleImpl.*
 
 
 enum Origin:
-  case User, Enemy
-  def opponent: Origin = this match
-    case User  => Enemy
-    case Enemy => User
-
-enum From:
   case Self, Opponent
 
 
 trait PeriodicEffect
 
-trait PassiveEffect(selector: (StateTransformer, From) => Boolean)(mapper: TransformerFlatMapper):
-  def apply(battleState: StateTransformer, from: From): List[StateTransformer] =
-    if selector(battleState, from) then mapper(battleState) else List(battleState)
+trait PassiveEffect(selector: (StateTransformer, Origin) => Boolean)(mapper: TransformerFlatMapper):
+  def apply(battleState: StateTransformer, origin: Origin): List[StateTransformer] =
+    if selector(battleState, origin) then mapper(battleState) else List(battleState)
 
 trait Action extends StateTransformer
 
 // Example actions:
 
 case class SwitchAction(newId: PlayerStateModuleImpl.PokemonId) extends Action:
-  override def apply(battleState: BattleState): BattleState = battleState user (_ switchActive newId )
+  override def apply(battleState: BattleState): BattleState = battleState self (_ switchActive newId )
 
 case class DamageAction(move: DamageMove) extends Action:   // implicit parameter for damage calculation ??
   override def apply(battleState: BattleState): BattleState =
-    val amount = battleState.user.getActive.modifiedStats.attack.toInt * move.power.asInt // example
+    val amount = battleState.self.getActive.modifiedStats.attack.toInt * move.power.asInt // example
     // val amount = DamageMoveCalculator(battleState, move)
-    battleState enemy (_ active (_ currentHp (_ decrease amount)))
+    battleState opponent (_ active (_ currentHp (_ decrease amount)))
 
 // Example abilities:
 
-enum Ability(selector: (StateTransformer, From) => Boolean, mapper: TransformerFlatMapper) extends PassiveEffect(selector)(mapper):
+enum Ability(selector: (StateTransformer, Origin) => Boolean, mapper: TransformerFlatMapper) extends PassiveEffect(selector)(mapper):
 
   case ShadowTag extends Ability(
     {
-      case (SwitchAction(_), From.Opponent) => true
+      case (SwitchAction(_), Origin.Opponent) => true
       case _ => false
     },
     _ => Nil
@@ -60,7 +54,7 @@ enum Ability(selector: (StateTransformer, From) => Boolean, mapper: TransformerF
 
   case MagicGuard extends Ability(
     {
-      case (DamageAction(_), From.Opponent) => false
+      case (DamageAction(_), Origin.Opponent) => false
       case _ => false
     },
     _ => Nil
@@ -68,10 +62,10 @@ enum Ability(selector: (StateTransformer, From) => Boolean, mapper: TransformerF
 
   case Regenerator extends Ability(
     {
-      case (SwitchAction(_), From.Self) => true
+      case (SwitchAction(_), Origin.Self) => true
       case _ => false
     },
-    bs => List(bs, s => s user (_ active (_ currentHp (_ increase 3))))
+    bs => List(bs, s => s self (_ active (_ currentHp (_ increase 3))))
   )
 
 
@@ -79,25 +73,32 @@ enum Ability(selector: (StateTransformer, From) => Boolean, mapper: TransformerF
 
 // Engine example:
 
+object BattleEngine:
+  
+  private val switchProspective: StateTransformer = s => s.switchUserEnemy
 
-case class TargetedInstantEffect(actor: Origin, action: StateTransformer)
+  def resolveTurn(initialState: BattleState, p1Action: List[StateTransformer], p2Action: List[StateTransformer]): BattleState =
+    
+    // automatically sort by speed and insert switchProspective where needed
+    val actionTimeline = p1Action.::(switchProspective) ++ p2Action
+    
+    // resolve on list using like flatMap
+    val actionWithPassives = resolvePassiveEffects(p1Action, initialState)   // Can passive trigger passive??
+
+    actionWithPassives.foldLeft(initialState)((state, effect) => effect(state))   // final fold
 
 
-def resolvePassiveEffects(timeline: List[TargetedInstantEffect], battleState: BattleState): List[TargetedInstantEffect] =
+  private def resolvePassiveEffects(actions: List[StateTransformer], battleState: BattleState): List[StateTransformer] =
 
-  val activeAbilities: List[(Origin, Ability)] = List(
-    (Origin.User, Ability.Regenerator),  //  battleState.user.getActive.species.abilitySlot.primary
-    (Origin.Enemy, Ability.ShadowTag)  // battleState.enemy.getActive.species.abilitySlot.primary
-  )
+    val passiveAbilities: List[(Origin, Ability)] = List(
+      (Origin.Self, Ability.Regenerator),  //  battleState.user.getActive.species.abilitySlot.primary
+      (Origin.Opponent, Ability.ShadowTag)  // battleState.enemy.getActive.species.abilitySlot.primary ...
+    )
 
-  timeline.flatMap:
-    case TargetedInstantEffect(actor, action) =>
-      val finalActions = activeAbilities.foldLeft(List(action))((currentActions, entry) =>
-        val (abilityOwner, ability) = entry
-
-        val relation = if actor == abilityOwner then From.Self else From.Opponent
-
-        currentActions.flatMap(act => ability.apply(act, relation))
+    actions.flatMap(action => action match
+      case switchProspective => List(action)
+      case _ => passiveAbilities.foldLeft(List(action))((currentActions, entry) =>
+        val (origin, ability) = entry // !!
+        currentActions.flatMap(act => ability.apply(act, origin))
       )
-
-      finalActions.map(act => TargetedInstantEffect(actor, act))
+    )
