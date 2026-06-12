@@ -1,8 +1,10 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
+import scalamon.domain.moves.DamageMove
 import scalamon.domain.moves.DamageMoveCategory.*
 import scalamon.domain.moves.MoveDSL.move
+import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
 import scalamon.domain.pokemon.statistics.Stats
@@ -23,29 +25,29 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     speed = fromInt(60)
   )
 
-  val attackerSpecies = MyPokedex.allPokemons.find(_.name == "Charmander").get
-  val defenderSpecies = MyPokedex.allPokemons.find(_.name == "Bulbasaur").get
+  val attackerSpecies: Pokemon = MyPokedex.allPokemons.find(_.name == "Charmander").get
+  val defenderSpecies: Pokemon = MyPokedex.allPokemons.find(_.name == "Bulbasaur").get
 
-  val attackerPokemonState = pokemonInitialState(attackerSpecies)
-  val defenderPokemonState = pokemonInitialState(defenderSpecies)
+  val attackerPokemonState: PokemonStateModuleImpl.Ps = pokemonInitialState(attackerSpecies)
+  val defenderPokemonState: PokemonStateModuleImpl.Ps = pokemonInitialState(defenderSpecies)
 
-  val playerAtk = playerState(
+  val playerAtk: PlayerStateModuleImpl.Ps = playerState(
     team = Map("Charmander" -> attackerPokemonState),
     active = "Charmander"
   )
-  val playerDef = playerState(
+  val playerDef: PlayerStateModuleImpl.Ps = playerState(
     team = Map("Bulbasaur" -> defenderPokemonState),
     active = "Bulbasaur"
   )
 
-  val state = battleState(playerAtk, playerDef)
+  val state: BattleStateImpl.Bs = battleState(playerAtk, playerDef)
 
-  val physicalMove = move named "Tackle" withPower 40 withPP 35 withAccuracy 100 withType Normal as Physical
-  val specialMove = move named "Flamethrower" withPower 90 withPP 15 withAccuracy 100 withType Fire as Special
-  val stabMove = move named "Ember" withPower 40 withPP 25 withAccuracy 100 withType Fire as Special
-  val superMove = move named "Surf" withPower 90 withPP 15 withAccuracy 100 withType Water as Special
-  val notVeryEffectiveMove = move named "Vine Whip" withPower 45 withPP 25 withAccuracy 100 withType Grass as Special
-  val noEffectMove = move named "Thunder Wave" withPower 1 withPP 20 withAccuracy 90 withType Electric as Special
+  val physicalMove: DamageMove = move named "Tackle" withPower 40 withPP 35 withAccuracy 100 withType Normal as Physical
+  val specialMove: DamageMove = move named "Flamethrower" withPower 90 withPP 15 withAccuracy 100 withType Fire as Special
+  val stabMove: DamageMove = move named "Ember" withPower 40 withPP 25 withAccuracy 100 withType Fire as Special
+  val superMove: DamageMove = move named "Surf" withPower 90 withPP 15 withAccuracy 100 withType Water as Special
+  val notVeryEffectiveMove: DamageMove = move named "Vine Whip" withPower 45 withPP 25 withAccuracy 100 withType Grass as Special
+  val noEffectMove: DamageMove = move named "Thunder Wave" withPower 1 withPP 20 withAccuracy 90 withType Electric as Special
 
   test("getDamage should return a positive value with valid inputs"){
     val damage = getDamage(state, physicalMove)
@@ -157,7 +159,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage with STAB & SuperEffective should produce higher damage than without STAB and Neutral effectiveness") {
     val NoSTABAndNeutralDamage = getDamage(state, physicalMove)
     val STABAndSuperEffectiveDamage = getDamage(state, stabMove)
-    
+
     assert(STABAndSuperEffectiveDamage > NoSTABAndNeutralDamage,
       s"Expected STAB + Super Effective damage ($STABAndSuperEffectiveDamage) to be greater than no STAB + Neutral damage ($NoSTABAndNeutralDamage), " +
         s"but got $STABAndSuperEffectiveDamage <= $NoSTABAndNeutralDamage")
