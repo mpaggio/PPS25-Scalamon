@@ -81,3 +81,84 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     assert(damageTank < damageNormal,
       s"Expected boosted damage ($damageTank) < normal damage ($damageNormal)")
   }
+
+  test("getDamage should increase if attacker's specialAttack stat increases (Special)") {
+    val boostedPlayerAtk = playerState(
+      team = Map("Charmander" -> (attackerPokemonState modifyStats (ss => StatsStateModuleImpl.specialAttack(ss)(_ increase 50)))),
+      active = "Charmander"
+    )
+    val stateNormal = battleState(playerAtk, playerDef)
+    val stateBoosted = battleState(boostedPlayerAtk, playerDef)
+
+    val damageNormal = getDamage(stateNormal, specialMove)
+    val damageBoosted = getDamage(stateBoosted, specialMove)
+
+    assert(damageBoosted > damageNormal,
+      s"Expected boosted damage ($damageBoosted) > normal damage ($damageNormal)")
+  }
+
+  test("getDamage should decrease if defender's specialDefense stat increases (Special)") {
+    val tankPlayerDef = playerState(
+      team = Map("Bulbasaur" -> (defenderPokemonState modifyStats (ss => StatsStateModuleImpl.specialDefense(ss)(_ increase 50)))),
+      active = "Bulbasaur"
+    )
+    val stateNormal = battleState(playerAtk, playerDef)
+    val stateTank = battleState(playerAtk, tankPlayerDef)
+
+    val damageNormal = getDamage(stateNormal, specialMove)
+    val damageTank = getDamage(stateTank, specialMove)
+
+    assert(damageTank < damageNormal,
+      s"Expected tank damage ($damageTank) > normal damage ($damageNormal)")
+  }
+
+  test("getDamage should use different stats for Physical and Special move categories") {
+    val damagePhysical = getDamage(state, physicalMove)
+    val damageSpecial = getDamage(state, specialMove)
+
+    assert(damagePhysical != damageSpecial,
+      "Expected different damage values for Physical and Special moves, but got the same value")
+  }
+
+  test("getDamage should produce higher damage for higher move power") {
+    val lowPowerMove = move named "Low" withPower 20 withPP 35 withAccuracy 100 withType Normal as Physical
+    val highPowerMove = move named "High" withPower 80 withPP 35 withAccuracy 100 withType Normal as Physical
+    val damageLow = getDamage(state, lowPowerMove)
+    val damageHigh = getDamage(state, highPowerMove)
+    assert(damageHigh > damageLow,
+      s"Expected higher power move to deal more damage, but got $damageHigh <= $damageLow")
+  }
+
+  test("getDamage with STAB should be greater than without STAB, all else equal") {
+    val noSTABMove = move named "Tackle" withPower 40 withPP 35 withAccuracy 100 withType Normal as Special
+    val stabMove = move named "Ember" withPower 40 withPP 25 withAccuracy 100 withType Fire as Special
+    val damageNoSTAB = getDamage(state, noSTABMove)
+    val damageSTAB = getDamage(state, stabMove)
+    assert(damageSTAB > damageNoSTAB,
+      s"Expected STAB ($damageSTAB) to be greater than no STAB ($damageNoSTAB), but got $damageSTAB <= $damageNoSTAB")
+  }
+
+  test("getDamage should apply X2 multiplier when move is SuperEffective"){
+    val damageNeutral = getDamage(state, physicalMove)
+    val damageSuperEffective = getDamage(state, specialMove)
+    assert(damageSuperEffective > damageNeutral,
+      s"Expected super effective damage ($damageSuperEffective) to be greater than neutral damage ($damageNeutral)," +
+        s" but got $damageSuperEffective <= $damageNeutral")
+  }
+
+  test("getDamage should apply 0.5 multiplier when move is NotVeryEffective"){
+    val damageNeutral = getDamage(state, physicalMove)
+    val damageNotVeryEffective = getDamage(state, notVeryEffectiveMove)
+    assert(damageNotVeryEffective < damageNeutral,
+      s"Expected not very effective damage ($damageNotVeryEffective) to be less than neutral damage ($damageNeutral)," +
+        s" but got $damageNotVeryEffective >= $damageNeutral")
+  }
+
+  test("getDamage with STAB & SuperEffective should produce higher damage than without STAB and Neutral effectiveness") {
+    val NoSTABAndNeutralDamage = getDamage(state, physicalMove)
+    val STABAndSuperEffectiveDamage = getDamage(state, stabMove)
+    
+    assert(STABAndSuperEffectiveDamage > NoSTABAndNeutralDamage,
+      s"Expected STAB + Super Effective damage ($STABAndSuperEffectiveDamage) to be greater than no STAB + Neutral damage ($NoSTABAndNeutralDamage), " +
+        s"but got $STABAndSuperEffectiveDamage <= $NoSTABAndNeutralDamage")
+  }
