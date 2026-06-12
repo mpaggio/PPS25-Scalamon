@@ -14,6 +14,7 @@ import scalamon.logics.state.DamageMoveCalculatorImpl.getDamage
 import scalamon.logics.state.PlayerStateModuleImpl.playerState
 import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
 import scalamon.logics.state.StatsStateModuleImpl.*
+import scalamon.logics.state.DamagePolicy.Medium.given
 
 class DamageMoveCalculatorTest extends AnyFunSuite:
   val baseStats = Stats(
@@ -163,4 +164,28 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     assert(STABAndSuperEffectiveDamage > NoSTABAndNeutralDamage,
       s"Expected STAB + Super Effective damage ($STABAndSuperEffectiveDamage) to be greater than no STAB + Neutral damage ($NoSTABAndNeutralDamage), " +
         s"but got $STABAndSuperEffectiveDamage <= $NoSTABAndNeutralDamage")
+  }
+
+  test("getDamage should be lower in Easy Mode than in Medium Mode") {
+    import scalamon.logics.state.DamagePolicy.Easy.given
+    val easyDamage = getDamage(state, physicalMove)
+    {
+      import scalamon.logics.state.DamagePolicy.Medium.given
+      val mediumDamage = getDamage(state, physicalMove)
+      assert(easyDamage < mediumDamage,
+      s"Expected damage in Easy Mode ($easyDamage) to be less than damage in Medium Mode ($mediumDamage)," +
+        s" but got $easyDamage >= $mediumDamage")
+    }
+  }
+
+  test("getDamage should be lower in Medium Mode than in Hard Mode") {
+    import scalamon.logics.state.DamagePolicy.Medium.given
+    val mediumDamage = getDamage(state, physicalMove)
+    {
+      import scalamon.logics.state.DamagePolicy.Hard.given
+      val hardDamage = getDamage(state, physicalMove)
+      assert(mediumDamage < hardDamage,
+        s"Expected damage in Medium Mode ($mediumDamage) to be less than damage in Hard Mode ($hardDamage)," +
+          s" but got $mediumDamage >= $hardDamage")
+    }
   }

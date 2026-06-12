@@ -6,7 +6,7 @@ trait DamageMoveCalculator:
   type Damage
   type Move
 
-  def getDamage(state: BattleState, move: Move): Damage
+  def getDamage(state: BattleState, move: Move)(using DamagePolicy): Damage
 
 object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
@@ -18,7 +18,7 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
   override type Damage = Int
   override type Move = scalamon.domain.moves.DamageMove
 
-  def getDamage(state: BattleState, move: Move): Damage =
+  def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy): Damage =
     val attacker = state.self.getActive
     val defender = state.opponent.getActive
 
@@ -36,6 +36,6 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
     val typeEffectiveness = move.moveType.multiplierAgainst(defender.species.pokemonType)
 
-    (baseFormula * stab * typeEffectiveness).toInt
+    (baseFormula * stab * typeEffectiveness * policy.multiplier).toInt
 
     // MANCA IL WEATHER MULTIPLIER, MA NON E' ANCORA IMPLEMENTATO !!
