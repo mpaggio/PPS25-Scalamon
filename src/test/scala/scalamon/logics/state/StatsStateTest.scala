@@ -6,25 +6,28 @@ import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.domain.pokemon.statistics.Stats
 
 class StatsStateTest extends AnyWordSpec with Matchers with StateFixtures:
+  
+  type StatModifier = StatsState => StatsState
+  
   "A StatsState" should:
     "correctly store initial stats" in:
       val stats = myPokemon.modifiedStats
-      stats.hp.toInt shouldEqual 39
-      stats.attack.toInt shouldEqual 52
-      stats.defense.toInt shouldEqual 43
+      stats.hp shouldEqual 39
+      stats.attack shouldEqual 52
+      stats.defense shouldEqual 43
 
     "apply single stat modifier correctly" in:
       val stats = myPokemon.modifiedStats
-      val weakModifier: Stats => Stats = _ attack (_ decrease 10)
+      val weakModifier: StatModifier = _ attack (_ decrease 10)
       val newStats = weakModifier(stats)
       newStats.attack.toInt shouldEqual 42
       newStats.defense.toInt shouldEqual 43
 
     "apply sequentially composed stat modifiers" in:
       val stats = myPokemon.modifiedStats
-      val weakModifier: Stats => Stats = _ attack (_ decrease 2)
-      val armorModifier: Stats => Stats = _ defense (_ increase 2)
-      val slowModifier: Stats => Stats = _ speed (_ multiply 0.5)
+      val weakModifier: StatModifier = _ attack (_ decrease 2)
+      val armorModifier: StatModifier = _ defense (_ increase 2)
+      val slowModifier: StatModifier = _ speed (_ multiply 0.5)
       val newStats = weakModifier andThen armorModifier andThen slowModifier apply stats
       newStats.attack.toInt shouldEqual 50
       newStats.defense.toInt shouldEqual 45

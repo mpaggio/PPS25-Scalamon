@@ -17,6 +17,7 @@ trait PokemonStateModule extends StateComponent:
 
 
 object PokemonStateModuleImpl extends PokemonStateModule:
+  import StatsStateModuleImpl.*
   case class Ps(currentHp: HP, modifiedStats: StatsState, status: List[AlteredStatus] = List(), species: PokemonSpecies)
   override type PokemonState = Ps
   override type PokemonSpecies = scalamon.domain.pokemon.Pokemon
@@ -25,10 +26,9 @@ object PokemonStateModuleImpl extends PokemonStateModule:
   override type HP = StatsStateModuleImpl.Stat
 
   def pokemonInitialState(species: PokemonSpecies): PokemonState =
-    Ps(species.baseStats.hp, species.baseStats, List(), species)
+    Ps(species.baseStats.hp.toInt, statsInitialState(species.baseStats), List(), species)
 
   extension (ps: PokemonState)
     infix def currentHp(f: HP => HP): PokemonState = ps.copy(currentHp = f(ps.currentHp))
     infix def modifyStats(f: Modifier): PokemonState = ps.copy(modifiedStats = f(ps.modifiedStats))
     infix def addStatus(status: AlteredStatus): PokemonState = ps.copy(status = status :: ps.status)
-
