@@ -22,16 +22,22 @@ trait StatsStateModule extends StateComponent:
 
 
 object StatsStateModuleImpl extends StatsStateModule:
-  import scalamon.domain.pokemon.statistics
-  import scalamon.domain.pokemon.statistics.StatADT.fromInt
 
-  override type StatsState = statistics.Stats
-  override type Stats = statistics.Stats
-  override type Stat = statistics.StatADT.Stat
-
-  def statsInitialState(value: Stats): StatsState = value
+  case class Ss(hp: Stat, attack: Stat, defense: Stat, specialAttack: Stat, specialDefense: Stat, speed: Stat)
+  override type StatsState = Ss
+  override type Stats = scalamon.domain.pokemon.statistics.Stats
+  override type Stat = Int
+  def statsInitialState(value: Stats): StatsState = Ss(
+    value.hp.toInt,
+    value.attack.toInt,
+    value.defense.toInt,
+    value.specialAttack.toInt,
+    value.specialDefense.toInt,
+    value.speed.toInt
+  )
 
   extension (ss: StatsState)
+    infix def maxHp(f: Modifier): StatsState = ss.copy(hp = f(ss.hp))
     infix def attack(f: Modifier): StatsState = ss.copy(attack = f(ss.attack))
     infix def defense(f: Modifier): StatsState = ss.copy(defense = f(ss.defense))
     infix def specialAttack(f: Modifier): StatsState = ss.copy(specialAttack = f(ss.specialAttack))
@@ -39,6 +45,6 @@ object StatsStateModuleImpl extends StatsStateModule:
     infix def speed(f: Modifier): StatsState = ss.copy(speed = f(ss.speed))
 
   extension (s: Stat)
-    infix def decrease(amount: Int): Stat = fromInt(s.toInt - amount)
-    infix def increase(amount: Int): Stat = fromInt(s.toInt + amount)
-    infix def multiply(factor: Double): Stat = fromInt((s.toInt * factor).toInt)
+    infix def decrease(amount: Int): Stat = s - amount
+    infix def increase(amount: Int): Stat = s + amount
+    infix def multiply(factor: Double): Stat = (s * factor).toInt

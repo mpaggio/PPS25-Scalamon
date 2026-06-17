@@ -39,7 +39,7 @@ class BattleStateTest extends AnyWordSpec with Matchers with StateFixtures:
       type Move = BattleState => BattleState
       val weaknessMove: Move = _ opponent (_ active (_ modifyStats (_ attack (_ decrease 5))))
       val newState = weaknessMove(battle)
-      newState.opponent.team("Squirtle").modifiedStats.attack.toInt shouldEqual 43
+      newState.opponent.team("Squirtle").modifiedStats.attack shouldEqual 43
 
     "chain multiple moves correctly" in:
       type Move = BattleState => BattleState
@@ -57,4 +57,4 @@ class BattleStateTest extends AnyWordSpec with Matchers with StateFixtures:
       newState.opponent.team("Squirtle").currentHp shouldEqual 34
       newState.self.team("Charmander").currentHp shouldEqual 49
       newState.self.team("Bulbasaur").currentHp shouldEqual 40
-      newState.opponent.team("Squirtle").modifiedStats.attack.toInt shouldEqual 43
+      newState.opponent.team("Squirtle").modifiedStats.attack shouldEqual 43
