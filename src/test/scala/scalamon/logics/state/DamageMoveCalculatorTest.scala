@@ -4,6 +4,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import scalamon.domain.moves.DamageMove
 import scalamon.domain.moves.DamageMoveCategory.*
 import scalamon.domain.moves.MoveDSL.move
+import scalamon.domain.moves.MoveDatabase.*
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
@@ -15,6 +16,7 @@ import scalamon.logics.state.PlayerStateModuleImpl.playerState
 import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.state.DamagePolicy.Medium.given
+import scalamon.logics.state.MoveStateModuleImpl.*
 
 class DamageMoveCalculatorTest extends AnyFunSuite:
   val baseStats = Stats(
@@ -29,8 +31,13 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   val attackerSpecies: Pokemon = MyPokedex.allPokemons.find(_.name == "Charmander").get
   val defenderSpecies: Pokemon = MyPokedex.allPokemons.find(_.name == "Bulbasaur").get
 
-  val attackerPokemonState: PokemonStateModuleImpl.Ps = pokemonInitialState(attackerSpecies)
-  val defenderPokemonState: PokemonStateModuleImpl.Ps = pokemonInitialState(defenderSpecies)
+  val attackerMoves: Map[String, MoveState] =
+    allMoves.ofType(attackerSpecies.pokemonType).take(4).map(m => m.name -> moveInitialState(m)).toMap
+  val defenderMoves: Map[String, MoveState] =
+    allMoves.ofType(defenderSpecies.pokemonType).take(4).map(m => m.name -> moveInitialState(m)).toMap
+
+  val attackerPokemonState: PokemonStateModuleImpl.Ps = pokemonInitialState(attackerSpecies, attackerMoves)
+  val defenderPokemonState: PokemonStateModuleImpl.Ps = pokemonInitialState(defenderSpecies, defenderMoves)
 
   val playerAtk: PlayerStateModuleImpl.Ps = playerState(
     team = Map("Charmander" -> attackerPokemonState),
