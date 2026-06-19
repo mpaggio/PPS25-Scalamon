@@ -17,6 +17,8 @@ trait PokemonStateModule extends StateComponent:
     def addStatus(status: AlteredStatus): PokemonState
     def updateMove(moveName: String)(f: MoveState => MoveState): PokemonState
     def moveState(moveName: String): MoveState
+    def takeDamage(amount: Int): PokemonState
+    def heal(amount: Int): PokemonState
 
 
 object PokemonStateModuleImpl extends PokemonStateModule:
@@ -44,4 +46,6 @@ object PokemonStateModuleImpl extends PokemonStateModule:
     infix def updateMove(moveName: String)(f: MoveState => MoveState): PokemonState =
       ps.copy(moves = ps.moves.updated(moveName, f(ps.moves(moveName))))
     def moveState(moveName: String): MoveState = ps.moves(moveName)
+    infix def takeDamage(amount: Int): PokemonState = ps.currentHp(_ decrease amount)
+    infix def heal(amount: Int): PokemonState = ps.currentHp(_ increase amount)
 
