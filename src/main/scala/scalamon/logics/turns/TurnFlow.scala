@@ -4,20 +4,19 @@ import scalamon.logics.turns.BattleAction.{SwitchPokemon, UseMove}
 
 final case class TurnChoises(first: BattleAction, second: BattleAction)
 
-final case class Turn(actions: List[ScheduledAction])
-
 trait TurnFlow:
-  def startTurn(choises: TurnChoises, speedOf: PokemonRef => Speed): Turn
+  def startTurn(choises: TurnChoises, speedOf: PokemonRef => Speed): TurnExecutionPlan
 
 object TurnFlow:
   def apply(resolver: ActionOrderResolver): TurnFlow = new TurnFlow:
-    override def startTurn(choises: TurnChoises, speedOf: PokemonRef => Speed): Turn =
-      val scheduledAction = List(choises.first, choises.second).map(schedule(_, speedOf))
-      Turn(resolver.order(scheduledAction))
+    override def startTurn(choises: TurnChoises, speedOf: PokemonRef => Speed): TurnExecutionPlan =
+      val scheduledAction = List(choises.first, choises.second).map(_.scheduleWith(speedOf))
+      TurnExecutionPlan(resolver.order(scheduledAction))
 
-  private def schedule(action: BattleAction, speedOf: PokemonRef => Speed): ScheduledAction =
-    ScheduledAction(action = action, speed = speedOf(userOf(action)))
+    extension (action: BattleAction)
+      def user: PokemonRef = action match
+        case UseMove(_, user, _, _, _) => user
+        case SwitchPokemon(_, from, _, _) => from
 
-  private def userOf(action: BattleAction): PokemonRef = action match
-    case UseMove(_, user, _, _, _) => user
-    case SwitchPokemon(_, from, _, _) => from
+      def scheduleWith(speedOf: PokemonRef => Speed): ScheduledAction =
+        ScheduledAction(action = action, speed = speedOf(action.user))
