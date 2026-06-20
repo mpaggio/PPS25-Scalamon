@@ -1,4 +1,4 @@
-package scalamon.domain.moves
+  package scalamon.domain.moves
 
 import Accuracy.*
 import Power.*
