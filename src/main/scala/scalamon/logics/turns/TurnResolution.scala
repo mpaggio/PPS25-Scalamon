@@ -9,6 +9,8 @@ enum TurnResult:
   case SelfWins(state: BattleState)
   case SelfLoses(state: BattleState)
   case ForcedSwitch(state: BattleState, candidates: List[PokemonRef])
+  case OpponentForcedSwitch(state: BattleState, candidates: List[PokemonRef])
+  case BothForcedSwitch(state: BattleState, selfCandidates: List[PokemonRef], opponentCandidates: List[PokemonRef])
 
 trait TurnResolutionModule:
   def isKnockedOut(pokemon: PokemonState): Boolean
@@ -35,9 +37,14 @@ object TurnResolutionImpl extends TurnResolutionModule:
     ).toList
 
   override def resolveTurn(state: BattleState): TurnResult = state match
+    case state if isDefeated(state.self) && isDefeated(state.opponent) => TurnResult.SelfLoses(state)
+    case state if isDefeated(state.self) && needsForcedSwitch(state.opponent)    => TurnResult.SelfLoses(state)
+    case state if isDefeated(state.opponent) && needsForcedSwitch(state.self)    => TurnResult.SelfWins(state)
+    case state if needsForcedSwitch(state.self) && needsForcedSwitch(state.opponent) => TurnResult.BothForcedSwitch(state, aliveBench(state.self), aliveBench(state.opponent))
+    case state if needsForcedSwitch(state.self) => TurnResult.ForcedSwitch(state, aliveBench(state.self))
+    case state if needsForcedSwitch(state.opponent) => TurnResult.OpponentForcedSwitch(state, aliveBench(state.opponent))
     case state if isDefeated(state.opponent) => TurnResult.SelfWins(state)
     case state if isDefeated(state.self) => TurnResult.SelfLoses(state)
-    case state if needsForcedSwitch(state.self) => TurnResult.ForcedSwitch(state, aliveBench(state.self))
     case state => TurnResult.Ongoing(state)
 
   override def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState =

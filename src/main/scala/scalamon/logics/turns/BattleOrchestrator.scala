@@ -8,6 +8,7 @@ import scalamon.logics.turns.BattleAction.*
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
 import scalamon.domain.moves.MoveDatabase.findByName
+import scalamon.logics.turns.TurnResult.BothForcedSwitch
 
 final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, ProbabilityRoll):
   def runTurn(state: BattleState, choices: TurnChoises, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
@@ -17,6 +18,8 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
     val finalState = result match
       case TurnResult.Ongoing(s) => endTurn(s)
       case TurnResult.ForcedSwitch(s, _) => s
+      case TurnResult.OpponentForcedSwitch(s, _) => s
+      case TurnResult.BothForcedSwitch(s, _, _) => s
       case TurnResult.SelfWins(s) => s
       case TurnResult.SelfLoses(s) => s
     (finalState, result)
@@ -45,3 +48,10 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
 
   private def resolveMove(moveRef: MoveRef): Option[Move] =
     MoveDatabase.allMoves.findByName(moveRef.value)
+
+  def applyForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
+    val newSelf = TurnResolutionImpl.applyForcedSwitch(state.self, newActive)
+    state.copy(self = newSelf)
+
+  def applyOpponentForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
+    state opponent (_ switchActive newActive.value)
