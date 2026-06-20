@@ -1,13 +1,15 @@
 package scalamon.domain.moves
 
 import Accuracy.*
+import scalamon.domain.moves.MoveEffect.*
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.MoveStateModuleImpl.*
-import scalamon.logics.state.DamageMoveCalculatorImpl.{getDamage, Damage}
+import scalamon.logics.state.DamageMoveCalculatorImpl.{Damage, getDamage}
 import scalamon.logics.state.DamagePolicy
+
 import scala.util.Random
 
 trait MoveActionModule:
@@ -32,9 +34,18 @@ object MoveActionModuleImpl extends MoveActionModule:
           if checkAccuracy(move.accuracy) then move match
             case damageMove: DamageMove =>
               val damageAmount: Damage = getDamage(stateAfterPp, damageMove)
-              stateAfterPp opponent (_ active (_ currentHp (_ decrease damageAmount)))
-            case statusMove: StatusMove =>
-              stateAfterPp
+              val stateAfterDamage: BattleState =
+                stateAfterPp opponent (_ active (_ currentHp (_ decrease damageAmount)))
+              damageMove.effect match
+                case Some(recoil: Recoil) =>
+                  val recoilAmount = recoil.percentage * activePokemon.species.baseStats.hp.toInt / 100
+                  stateAfterDamage self (_ active (_ takeDamage recoilAmount))
+                case _ => stateAfterDamage
+            case statusMove: StatusMove => statusMove.effect match
+              case healing: Heal =>
+                val healAmount = healing.percentage * activePokemon.species.baseStats.hp.toInt / 100
+                stateAfterPp self (_ active (_ heal (healAmount)))
+              case _ => stateAfterPp
           else
             stateAfterPp
     )
