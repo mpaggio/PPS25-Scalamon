@@ -6,12 +6,12 @@ trait DamagePolicy:
 object DamagePolicy:
   object Easy:
     given DamagePolicy with
-      override def multiplier: Double = 0.85
+      override def multiplier: Double = 0.1
 
   object Medium:
     given DamagePolicy with
-      override def multiplier: Double = 1.0
+      override def multiplier: Double = 0.2
 
   object Hard:
     given DamagePolicy with
-      override def multiplier: Double = 1.15
+      override def multiplier: Double = 0.3

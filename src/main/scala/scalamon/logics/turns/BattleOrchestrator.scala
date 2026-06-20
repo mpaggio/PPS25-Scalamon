@@ -26,7 +26,25 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
 
   private def executeScheduled(state: BattleState, scheduled: ScheduledAction): BattleState =
     scheduled.action match
-      case UseMove(_, attacking, _, moveRef, _) =>  executeMove(state, attacking, moveRef)
+      case UseMove(_, attacking, _, moveRef, _) =>
+        val attackerHp = state.self.team.get(attacking.value)
+          .orElse(state.opponent.team.get(attacking.value))
+          .map(_.currentHp)
+          .getOrElse(0)
+        if attackerHp <= 0 then
+          println(s"  ${attacking.value} è KO e non può attaccare!")
+          state
+        else
+          val newState = executeMove(state, attacking, moveRef)
+          val defenderRef = scheduled.action match
+            case UseMove(_, _, defending, _, _) => defending.value
+            case _ => "?"
+          val defenderHp = newState.self.team.get(defenderRef)
+            .orElse(newState.opponent.team.get(defenderRef))
+            .map(_.currentHp)
+            .getOrElse(0)
+          println(s"  ${attacking.value} usa ${moveRef.value} → $defenderRef HP: $defenderHp")
+          newState
       case SwitchPokemon(_, from, to, _) =>
         if state.self.team.contains(from.value) then
           state self (_ switchActive to.value)
