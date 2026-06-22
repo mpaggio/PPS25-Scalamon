@@ -57,7 +57,7 @@ class TurnFlowTest extends AnyFunSuite:
 
   test("TurnFlow builds and orders scheduled actions from player choises"):
     val flow = TurnFlow(ActionOrderResolver.default)
-    val choises = TurnChoises(
+    val choises = TurnChoices(
       first = UseMove(
         trainerId = TrainerId("p1"),
         attacking = PokemonRef("bulbasaur"),

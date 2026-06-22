@@ -10,7 +10,7 @@ import scalamon.logics.state.MoveStateModuleImpl.moveInitialState
 import scalamon.logics.state.PlayerStateModuleImpl.playerState
 import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
 import scalamon.logics.turns.BattleAction.UseMove
-import scalamon.logics.turns.{ActionOrderResolver, BattleOrchestrator, MoveRef, PokemonRef, Speed, TrainerId, TurnChoises, TurnFlow, TurnResult}
+import scalamon.logics.turns.{ActionOrderResolver, BattleOrchestrator, MoveRef, PokemonRef, Speed, TrainerId, TurnChoices, TurnFlow, TurnResult}
 import scalamon.logics.turns.TurnResult.*
 
 object BattleSimulation extends App:
@@ -78,7 +78,7 @@ object BattleSimulation extends App:
     val player2Action = UseMove(TrainerId("Player2"), PokemonRef(state.opponent.activeId), PokemonRef(state.self.activeId),
                         MoveRef(move2Name), priority = 0)
 
-    val (newState, result) = orchestrator.runTurn(state, TurnChoises(player1Action, player2Action), speedOf)
+    val (newState, result) = orchestrator.runTurn(state, TurnChoices(player1Action, player2Action), speedOf)
     state = newState
 
     printState(state, turn)

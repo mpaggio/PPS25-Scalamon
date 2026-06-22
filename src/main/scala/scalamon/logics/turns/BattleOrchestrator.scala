@@ -11,7 +11,7 @@ import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
 
 final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, ProbabilityRoll):
-  def runTurn(state: BattleState, choices: TurnChoises, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
     val afterExecution = plan.orderedActions.foldLeft(state)(executeScheduled)
     val result = resolveTurn(afterExecution)
