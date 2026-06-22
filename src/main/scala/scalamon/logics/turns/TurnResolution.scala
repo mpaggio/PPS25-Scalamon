@@ -4,6 +4,10 @@ import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 
+/**
+ * Determines the outcome of a turn based on the current state of the battle,
+ * and applies any necessary end-of-turn effects.
+ */
 enum TurnResult:
   case Ongoing(state: BattleState)
   case SelfWins(state: BattleState)
@@ -12,6 +16,11 @@ enum TurnResult:
   case OpponentForcedSwitch(state: BattleState, candidates: List[PokemonRef])
   case BothForcedSwitch(state: BattleState, selfCandidates: List[PokemonRef], opponentCandidates: List[PokemonRef])
 
+/**
+ * Defines the interface for turn resolution logic, including methods to check for knockouts,
+ * determine if a player is defeated, and resolve the outcome of a turn.
+ * It also includes methods to apply forced switches and handle end-of-turn effects.
+ */
 trait TurnResolutionModule:
   def isKnockedOut(pokemon: PokemonState): Boolean
   def isDefeated(player: PlayerState): Boolean
@@ -36,6 +45,12 @@ object TurnResolutionImpl extends TurnResolutionModule:
       case(id, pokemon) if id != player.activeId && !isKnockedOut(pokemon) => PokemonRef(id) }
     ).toList
 
+  /**
+   * Resolves the outcome of a turn based on the current state of the battle.
+   * It checks for various conditions such as knockouts and forced switches.
+   * @param state The current state of the battle after all actions have been executed.
+   * @return  the result of the turn, which can be of the types described in the TurnResult enum.
+   */
   override def resolveTurn(state: BattleState): TurnResult = state match
     case state if isDefeated(state.self) && isDefeated(state.opponent) => TurnResult.SelfLoses(state)
     case state if isDefeated(state.self) && needsForcedSwitch(state.opponent)    => TurnResult.SelfLoses(state)

@@ -1,5 +1,8 @@
 package scalamon.logics.state
 
+/**
+ * This trait defines the interface for calculating the move's damage on the battle.
+ */
 trait DamageMoveCalculator:
   type BattleState
   type StatsState
@@ -18,6 +21,13 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
   override type Damage = Int
   override type Move = scalamon.domain.moves.DamageMove
 
+  /**
+   * Calculates the move's damage following the standard Pokémon damage formula.
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @param policy the difficulty level of the battle
+   * @return the calculated damage as an integer
+   */
   def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy): Damage =
     val attacker = state.self.getActive
     val defender = state.opponent.getActive
@@ -25,8 +35,8 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
     // (((((2 * 50) / 5) + 2) * Power * (A / D)) / 50 + 2).floor * STAB * TypeEffectiveness * WhetherMultiplier
 
     val (atk, def_) = move.category.match
-      case Physical => (attacker.modifiedStats.attack.toInt, defender.modifiedStats.defense.toInt)
-      case Special => (attacker.modifiedStats.specialAttack.toInt, defender.modifiedStats.specialDefense.toInt)
+      case Physical => (attacker.modifiedStats.attack, defender.modifiedStats.defense)
+      case Special => (attacker.modifiedStats.specialAttack, defender.modifiedStats.specialDefense)
 
     val power = move.power.asInt
 

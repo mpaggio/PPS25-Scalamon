@@ -32,7 +32,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
           .map(_.currentHp)
           .getOrElse(0)
         if attackerHp <= 0 then
-          println(s"  ${attacking.value} è KO e non può attaccare!")
+          println(s"  ${attacking.value} e' KO e non puo' attaccare!")
           state
         else
           val newState = executeMove(state, attacking, moveRef)
@@ -43,7 +43,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
             .orElse(newState.opponent.team.get(defenderRef))
             .map(_.currentHp)
             .getOrElse(0)
-          println(s"  ${attacking.value} usa ${moveRef.value} → $defenderRef HP: $defenderHp")
+          println(s"  ${attacking.value} usa ${moveRef.value} | $defenderRef HP: $defenderHp")
           newState
       case SwitchPokemon(_, from, to, _) =>
         if state.self.team.contains(from.value) then
