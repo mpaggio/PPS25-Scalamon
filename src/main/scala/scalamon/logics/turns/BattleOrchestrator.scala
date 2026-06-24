@@ -37,7 +37,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
    * a function returning the speed of a Pokémon reference
    * @return
    * the updated battle state together with the resolved turn result
-   */ 
+   */
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
     val afterExecution = plan.orderedActions.foldLeft(state)(executeScheduled)
@@ -82,14 +82,18 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
     val oriented =
       if state.self.team.contains(attacking.value) then state
       else state.switchUserEnemy
+    val activePokemon = oriented.self.team(oriented.self.activeId)
     resolveMove(moveRef) match
       case Some(move) =>
-        val afterMove =
-          MoveAction(move).execute.foldLeft(oriented)((s, f) => f(s))
-        if state.self.team.contains(attacking.value) then afterMove
-        else afterMove.switchUserEnemy
+        val currentMoveState = activePokemon.moveState(move.name)
+        if currentMoveState.currentPp <= 0 then
+          println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
+          state
+        else
+          val afterMove = MoveAction(move).execute.foldLeft(oriented)((s, f) => f(s))
+          if state.self.team.contains(attacking.value) then afterMove
+          else afterMove.switchUserEnemy
       case None => state
-
 
   private def resolveMove(moveRef: MoveRef): Option[Move] =
     MoveDatabase.allMoves.findByName(moveRef.value)
