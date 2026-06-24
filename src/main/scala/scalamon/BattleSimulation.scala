@@ -88,7 +88,7 @@ object BattleSimulation extends App:
 
       case ForcedSwitch(_, candidates) =>
         val koName = state.self.getActive.species.name
-        println(s"$koName è andato KO!")
+        println(s"$koName e' andato KO!")
         candidates.headOption match
           case Some(newActive) =>
             println(s"Player1 manda in campo ${newActive.value}")
@@ -98,7 +98,7 @@ object BattleSimulation extends App:
 
       case OpponentForcedSwitch(_, candidates) =>
         val koName = state.opponent.getActive.species.name
-        println(s"$koName è andato KO!")
+        println(s"$koName e' andato KO!")
         candidates.headOption match
           case Some(newActive) =>
             println(s" Player2 manda in campo ${newActive.value}")
@@ -107,8 +107,8 @@ object BattleSimulation extends App:
             running = false
 
       case BothForcedSwitch(_, selfCandidates, opponentCandidates) =>
-        println(s"\n${state.self.getActive.species.name} è andato KO!")
-        println(s"\n${state.opponent.getActive.species.name} è andato KO!")
+        println(s"\n${state.self.getActive.species.name} e' andato KO!")
+        println(s"\n${state.opponent.getActive.species.name} e' andato KO!")
         selfCandidates.headOption match
           case Some(newActive) =>
             println(s"Player1 manda in campo ${newActive.value}!")
@@ -122,14 +122,14 @@ object BattleSimulation extends App:
 
       case SelfWins(finalState) =>
         if finalState.opponent.getActive.currentHp <= 0 then
-          println(s"${finalState.opponent.getActive.species.name} è andato KO!")
-        println(s"Player2 non ha più Pokémon a disposizione!")
+          println(s"${finalState.opponent.getActive.species.name} e' andato KO!")
+        println(s"Player2 non ha piu' Pokemon a disposizione!")
         println("PLAYER1 VINCE!")
         running = false
       case SelfLoses(finalState) =>
         if finalState.self.getActive.currentHp <= 0 then
-          println(s"${finalState.self.getActive.species.name} è andato KO!")
-        println(s"Player1 non ha più Pokémon a disposizione!")
+          println(s"${finalState.self.getActive.species.name} e' andato KO!")
+        println(s"Player1 non ha piu' Pokemon a disposizione!")
         println("PLAYER2 VINCE!")
         running = false
 
