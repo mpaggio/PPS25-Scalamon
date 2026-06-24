@@ -10,7 +10,34 @@ import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
 
+/**
+ * Coordinates the execution and resolution of a battle turn.
+ *
+ * A battle orchestrator schedules the selected actions, executes them in order,
+ * resolves the resulting turn outcome, and applies any end-of-turn updates when needed.
+ *
+ * @constructor
+ *   creates a battle orchestrator using the provided turn flow
+ * @param turnFlow
+ *   the component used to schedule and order turn actions
+ */
 final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, ProbabilityRoll):
+  /**
+   * Executes a full turn starting from the current state and the chosen actions.
+   *
+   * The turn is scheduled, all actions are executed in order, the resulting
+   * outcome is resolved, and end-of-turn effects are applied when the battle
+   * remains ongoing.
+   *
+   * @param state
+   * the current battle state
+   * @param choices
+   * the actions selected for the turn
+   * @param speedOf
+   * a function returning the speed of a Pokémon reference
+   * @return
+   * the updated battle state together with the resolved turn result
+   */ 
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
     val afterExecution = plan.orderedActions.foldLeft(state)(executeScheduled)

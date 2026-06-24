@@ -4,6 +4,12 @@ object TypeChart:
   import Type.*
   import TypeEffectiveness.*
 
+  /**
+   * Type effectiveness chart for matchups between attacking and defending types.
+   *
+   * This object stores all non-neutral interactions and provides a lookup
+   * method to compute the resulting effectiveness for a given pair of types.
+   */
   private object TypeSyntax:
     extension (attacking: Type)
       infix def strongAgainst(defending: Type): ((Type, Type), TypeEffectiveness) =
@@ -37,6 +43,19 @@ object TypeChart:
     Poison weakAgainst Poison
   )
 
+  /**
+   * Computes the effectiveness of an attacking type against a defending type.
+   *
+   * Returns the specific matchup effectiveness when it is explicitly defined
+   * in the chart, or `Neutral` otherwise.
+   *
+   * @param attacking
+   * the attacking type
+   * @param defending
+   * the defending type
+   * @return
+   * the effectiveness of the matchup
+   */
   def effectiveness(attacking: Type, defending: Type): TypeEffectiveness =
     nonNeutralMatchUps.getOrElse((attacking, defending), Neutral)
     
