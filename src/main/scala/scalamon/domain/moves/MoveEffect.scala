@@ -1,6 +1,8 @@
 package scalamon.domain.moves
 
 import Accuracy.*
+import AlteredStatus.*
+import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
 import scalamon.domain.pokemon.statistics.StatADT.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.BattleStateImpl.*
@@ -18,28 +20,33 @@ import scalamon.logics.state.StateTransformerModuleImpl
  * - Forced recharge turns.
  */
 trait MoveEffect:
-  def executeEffect: StateTransformer
+  def executeEffect(using roll: ProbabilityRoll): StateTransformer
 
 /**
  * Applies a satus condition to the target with a given probability.
  * Example: paralysis, burn, poison, sleep, freeze, confusion.
  */
-case class AlteredState(status: AlteredStatus, probability: Accuracy) extends MoveEffect:
-  override def executeEffect: StateTransformer = battleState => battleState
+case class AlteredState(statusFactory: () => AlteredStatus, probability: Accuracy) extends MoveEffect:
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
+    if roll() <= probability.asInt then
+      val statusToApply = statusFactory()
+      battleState opponent (_ active (_ addStatus statusToApply))
+    else
+      battleState
 
 /**
  * Modifies one of the target's stats by a number of stages.
  * Positives values increase stats, negative values decrease them.
  */
 case class StatChange(stat: StatKind, stages: Int, probability: Accuracy) extends MoveEffect:
-  override def executeEffect: StateTransformer = battleState => battleState
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState => battleState
 
 /**
  * Increases the critical hit multiplier of the move.
  * Higher values increase critical hits.
  */
 case class CriticalMultiplier(multiplier: Int) extends MoveEffect:
-  override def executeEffect: StateTransformer = battleState => battleState
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState => battleState
 
 /**
  * Restores a percentage of the user's HP.
@@ -47,7 +54,7 @@ case class CriticalMultiplier(multiplier: Int) extends MoveEffect:
  * @param percentage amount of HP restored (0-100).
  */
 case class Heal(percentage: Int) extends MoveEffect:
-  override def executeEffect: StateTransformer = battleState =>
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
     val activePokemon = battleState.self.getActive
     val healAmount = (percentage * activePokemon.species.baseStats.hp.toInt) / 100
     battleState self (_ active (_ heal healAmount))
@@ -58,7 +65,7 @@ case class Heal(percentage: Int) extends MoveEffect:
  * @param percentage percentage of damage reflected back to the user (0-100).
  */
 case class Recoil(percentage: Int) extends MoveEffect:
-  override def executeEffect: StateTransformer = battleState =>
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
     val activePokemon = battleState.self.getActive
     val recoilAmount = (percentage * activePokemon.species.baseStats.hp.toInt) / 100
     battleState self (_ active (_ takeDamage recoilAmount))
@@ -70,7 +77,8 @@ case class Recoil(percentage: Int) extends MoveEffect:
  * @param recharges number of turns required to recharge.
  */
 case class Recharge(recharges: Int) extends MoveEffect:
-  override def executeEffect: StateTransformer = battleState => battleState
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
+    battleState self (_ active (_ addStatus Charging(recharges)))
 
 /**
  * Domain Specific Language (DSL) for constructing MoveEffect values.
@@ -96,7 +104,7 @@ object MoveEffectDSL:
    * Exposes keywords used to build move effects (readable verbs in DSL).
    */
   object Effect:
-    infix def applying(alteredStatus: AlteredStatus) = AlteredStatusEffectBuilder(alteredStatus)
+    infix def applying(status: => AlteredStatus) = AlteredStatusEffectBuilder(() => status)
     infix def changing(stat: StatKind) = StatChangeEffectBuilder(stat)
     infix def healing(percent: Int) = Heal(percent)
     infix def recoil(percent: Int) = Recoil(percent)
@@ -107,19 +115,19 @@ object MoveEffectDSL:
    * Builder for status-based effects.
    * Allows attaching a probability of applying a status condition.
    */
-  case class AlteredStatusEffectBuilder(status: AlteredStatus):
+  case class AlteredStatusEffectBuilder(statusFactory: () => AlteredStatus):
 
     /**
      * Defines probability using Int percentage (0 - 100)
      */
     infix def withProbability(probability: Int): MoveEffect =
-      AlteredState(status, accuracyFromPercent(probability))
+      AlteredState(statusFactory, accuracyFromPercent(probability))
 
     /**
      * Defines probability using Double percentage (0.0 - 100.0)
      */
     infix def withProbability(probability: Double): MoveEffect =
-      AlteredState(status, accuracyFromRatio(probability / 100.0))
+      AlteredState(statusFactory, accuracyFromRatio(probability / 100.0))
 
   /**
    * Builder for stat modification effects.

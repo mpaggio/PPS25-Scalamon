@@ -46,7 +46,10 @@ class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
     thunder.accuracy.asInt shouldBe 70
     thunder.moveType shouldBe Electric
     thunder.category shouldBe Special
-    thunder.effect shouldBe Some(AlteredState(Paralyzed, accuracyFromPercent(10)))
+    thunder.effect shouldBe defined
+    val effect = thunder.effect.get.asInstanceOf[AlteredState]
+    effect.probability shouldBe accuracyFromPercent(10)
+    effect.statusFactory() shouldBe Paralyzed
 
   test("DSL should create a StatusMove with a side effect with a fluent syntax"):
     val thunder: NonDamagingMove = move

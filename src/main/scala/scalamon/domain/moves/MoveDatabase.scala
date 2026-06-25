@@ -4,10 +4,11 @@ import scalamon.domain.types.Type
 import scalamon.domain.types.Type.*
 import DamageMoveCategory.*
 import StatusMoveCategory.*
-import MoveDSL.{move, *}
+import MoveDSL.*
 import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import AlteredStatus.*
+import AlteredStatusUtility.*
 import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
 
 /**
@@ -20,7 +21,6 @@ import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
  * It is intended as a static reference dataset.
  */
 object MoveDatabase:
-
   /**
    * Complete set of all defined moves in the game.
    *
@@ -106,7 +106,7 @@ object MoveDatabase:
       as Physical,
     move named "Sleep powder"
       withPP 24 withAccuracy 75 withType Grass
-      withEffect (Effect applying Sleeping withProbability 100)
+      withEffect (Effect applying Sleeping(getSleepTurns) withProbability 100)
       as Status,
 
     // ELECTRIC
@@ -134,11 +134,11 @@ object MoveDatabase:
       as Special,
     move named "Confusion"
       withPower 50 withPP 40 withAccuracy 100 withType Psychic
-      withEffect (Effect applying Confused withProbability 9.8)
+      withEffect (Effect applying Confused(getConfusionTurns) withProbability 9.8)
       as Special,
     move named "Psy beam"
       withPower 65 withPP 32 withAccuracy 100 withType Psychic
-      withEffect (Effect applying Confused withProbability 9.8)
+      withEffect (Effect applying Confused(getConfusionTurns) withProbability 9.8)
       as Special,
     move named "Freezing glare"
       withPower 90 withPP 10 withAccuracy 100 withType Psychic
@@ -146,7 +146,7 @@ object MoveDatabase:
       as Special,
     move named "Hypnosis"
       withPP 32 withAccuracy 60 withType Psychic
-      withEffect (Effect applying Sleeping withProbability 100)
+      withEffect (Effect applying Sleeping(getSleepTurns) withProbability 100)
       as Status,
 
     // POISON

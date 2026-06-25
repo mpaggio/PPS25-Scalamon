@@ -11,7 +11,7 @@ import scalamon.domain.types.Type.*
 
 class MoveTest extends org.scalatest.funsuite.AnyFunSuite:
   
-  val paralysisEffect = AlteredState(Paralyzed, accuracyFromPercent(100))
+  val paralysisEffect = AlteredState(() => Paralyzed, accuracyFromPercent(100))
 
   test("Moves should have two concrete implementations (damage and status)"):
     """import scalamon.domain.moves.*
