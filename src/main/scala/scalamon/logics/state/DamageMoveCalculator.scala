@@ -1,5 +1,9 @@
 package scalamon.logics.state
 
+import scalamon.domain.moves.DamageMove
+import scalamon.domain.pokemon.abilities.AbilityDamageModifier
+import scalamon.logics.weather.WeatherSystem
+
 /**
  * This trait defines the interface for calculating the move's damage on the battle.
  */
@@ -9,7 +13,7 @@ trait DamageMoveCalculator:
   type Damage
   type Move
 
-  def getDamage(state: BattleState, move: Move)(using DamagePolicy): Damage
+  def getDamage(state: BattleState, move: Move)(using DamagePolicy, WeatherSystem): Damage
 
 object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
@@ -28,7 +32,7 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
    * @param policy the difficulty level of the battle
    * @return the calculated damage as an integer
    */
-  def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy): Damage =
+  def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy, weather: WeatherSystem): Damage =
     val attacker = state.self.getActive
     val defender = state.opponent.getActive
 
@@ -46,6 +50,11 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
     val typeEffectiveness = move.moveType.multiplierAgainst(defender.species.pokemonType)
 
-    (baseFormula * stab * typeEffectiveness * policy.multiplier).toInt
+    val abilityAtkMulti = AbilityDamageModifier.attackerMultiplier(state, move)
+    val abilityDefMulti = AbilityDamageModifier.defenderMultiplier(state, move)
 
-    // MANCA IL WEATHER MULTIPLIER, MA NON E' ANCORA IMPLEMENTATO !!
+    val weatherMulti =
+      if state.flags.weatherSuppressed then 1.0
+      else weather.movePowerMultiplier(state.weather, move.moveType)
+
+    (baseFormula * stab * typeEffectiveness * policy.multiplier * abilityAtkMulti * abilityDefMulti * weatherMulti).toInt
