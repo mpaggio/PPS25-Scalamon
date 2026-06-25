@@ -3,8 +3,8 @@ package scalamon.domain.moves
 import org.scalatest.matchers.should.Matchers.*
 import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
-import MoveEffect.*
 import Accuracy.*
+import AlteredStatus.*
 import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
 
 class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
