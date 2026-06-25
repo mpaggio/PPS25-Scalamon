@@ -1,8 +1,15 @@
 package scalamon.logics.turns
 
+import scalamon.domain.pokemon.abilities
+import scalamon.domain.pokemon.abilities.Ability
+import scalamon.domain.pokemon.abilities.Ability.RainDish
+import scalamon.domain.weather.Weather.ClearSky
 import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
+import scalamon.logics.battle.{BattleContext, WeatherState}
+import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
+import scalamon.logics.weather.WeatherSystem.default
 
 /**
  * Determines the outcome of a turn based on the current state of the battle,
@@ -66,6 +73,21 @@ object TurnResolutionImpl extends TurnResolutionModule:
     if player.team.contains(newActive.value) then player switchActive newActive.value
     else player
 
-  override def endTurn(state: BattleState): BattleState = state
-  /*  For now, we don't have any end-of-turn effects to apply, so this is a no-op.
-      In the future, this is where we would handle things like status effects, weather damage,etc*/
+  // FUTURE TO DO
+  private def applyStatusDamage(state: BattleState) = state
+
+  // FUTURE TO DO
+  private def applyEndOfTurnAbilities(state: BattleState) = state
+
+  private def applyWeatherEffects(state: BattleState): BattleState =
+    val context = BattleContext(state, WeatherState(ClearSky))
+    val resolver = summon[WeatherEndTurnResolver]
+    resolver.apply(context).state
+
+  override def endTurn(state: BattleState): BattleState =
+    val pipeline: List[BattleState => BattleState] = List(
+      applyStatusDamage,
+      applyWeatherEffects,
+      applyEndOfTurnAbilities
+    )
+    pipeline.foldLeft(state)((s, f) => f(s))
