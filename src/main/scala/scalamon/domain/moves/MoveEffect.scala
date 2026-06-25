@@ -6,15 +6,6 @@ import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl
 
-trait AlteredStatus
-
-object Burned extends AlteredStatus
-object Paralyzed extends AlteredStatus
-object Poisoned extends AlteredStatus
-object Sleeping extends AlteredStatus
-object Frozen extends AlteredStatus
-object Confused extends AlteredStatus
-
 /**
  * Represents all the possible effects that a move can have.
  *

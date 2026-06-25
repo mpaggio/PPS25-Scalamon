@@ -8,6 +8,7 @@ import MoveDSL.*
 import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import Accuracy.*
+import AlteredStatus.*
 import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
 
 class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:

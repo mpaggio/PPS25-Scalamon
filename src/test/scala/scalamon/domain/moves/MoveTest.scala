@@ -4,6 +4,7 @@ import org.scalatest.matchers.should.Matchers.*
 import Power.*
 import PowerPoints.*
 import Accuracy.*
+import AlteredStatus.*
 import scalamon.domain.moves.StatusMoveCategory.*
 import scalamon.domain.moves.DamageMoveCategory.*
 import scalamon.domain.types.Type.*
