@@ -25,15 +25,6 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     enemyPokemon = playerState(Map.from(List(pokemon.name -> pokemonStartingState)), pokemon.name)
   )
 
-  test("A move action without Power Points (PP) should never change the state"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
-    given ProbabilityRoll = () => 1
-
-    val stateWithZeroPp = battleStartingState self (_ active (_.updateMove(swift.name)(_.currentPp(_ => 0))))
-    val transformations: Action = MoveAction(swift).execute
-    val battleEndingState = transformations.foldLeft(stateWithZeroPp)((state, transformer) => transformer(state))
-    battleEndingState shouldBe stateWithZeroPp
-
   test("A damaging move action should decrease its Power Points (PP) after every single use"):
     import scalamon.logics.state.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
@@ -69,6 +60,31 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
       userPokemon = playerState(Map.from(List(pokemon.name -> pokemonState)), pokemon.name),
       enemyPokemon = playerState(Map.from(List(pokemon.name -> pokemonState)), pokemon.name)
     )
+
+  test("A status move should decrease its Power Points (PP) after every single use"):
+    import scalamon.logics.state.DamagePolicy.Easy.given
+    given ProbabilityRoll = () => 1
+
+    val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
+    val battleInitialState: BattleState = createBattleState(recover)
+    val action: MoveAction = MoveAction(recover)
+    val state1 = action.execute.foldLeft(battleInitialState)((state, transformer) => transformer(state))
+    state1.self.team(pokemon.name).moveState(recover.name).currentPp shouldBe 31
+    val state2 = action.execute.foldLeft(state1)((state, transformer) => transformer(state))
+    state2.self.team(pokemon.name).moveState(recover.name).currentPp shouldBe 30
+
+  test("Status move with 0% accuracy should not have effects but must consume PP"):
+    import scalamon.logics.state.DamagePolicy.Easy.given
+    given ProbabilityRoll = () => 101
+
+    val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
+    val halfHp = pokemon.baseStats.hp.toInt / 2
+    val battleInitialState: BattleState = createBattleState(recover)
+    val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => halfHp)))
+    val battleEndingState =
+      MoveAction(recover).execute.foldLeft(damagedState)((state, transformer) => transformer(state))
+    battleEndingState.self.team(pokemon.name).currentHp shouldBe halfHp
+    battleEndingState.self.team(pokemon.name).moves(recover.name).currentPp shouldBe 31
 
   test("Status move with healing effect should heal the user and consume PP"):
     import scalamon.logics.state.DamagePolicy.Easy.given

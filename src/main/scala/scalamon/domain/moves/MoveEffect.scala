@@ -2,15 +2,9 @@ package scalamon.domain.moves
 
 import Accuracy.*
 import scalamon.domain.pokemon.statistics.StatADT.*
-
-trait AlteredStatus
-
-object Burned extends AlteredStatus
-object Paralyzed extends AlteredStatus
-object Poisoned extends AlteredStatus
-object Sleeping extends AlteredStatus
-object Frozen extends AlteredStatus
-object Confused extends AlteredStatus
+import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
+import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.StateTransformerModuleImpl
 
 /**
  * Represents all the possible effects that a move can have.
@@ -23,47 +17,60 @@ object Confused extends AlteredStatus
  * - Critical hit multipliers.
  * - Forced recharge turns.
  */
-enum MoveEffect:
+trait MoveEffect:
+  def executeEffect: StateTransformer
 
-  /**
-   * Applies a satus condition to the target with a given probability.
-   * Example: paralysis, burn, poison, sleep, freeze, confusion.
-   */
-  case AlteredState(status: AlteredStatus, probability: Accuracy)
+/**
+ * Applies a satus condition to the target with a given probability.
+ * Example: paralysis, burn, poison, sleep, freeze, confusion.
+ */
+case class AlteredState(status: AlteredStatus, probability: Accuracy) extends MoveEffect:
+  override def executeEffect: StateTransformer = battleState => battleState
 
-  /**
-   * Modifies one of the target's stats by a number of stages.
-   * Positives values increase stats, negative values decrease them.
-   */
-  case StatChange(stat: StatKind, stages: Int, probability: Accuracy)
+/**
+ * Modifies one of the target's stats by a number of stages.
+ * Positives values increase stats, negative values decrease them.
+ */
+case class StatChange(stat: StatKind, stages: Int, probability: Accuracy) extends MoveEffect:
+  override def executeEffect: StateTransformer = battleState => battleState
 
-  /**
-   * Increases the critical hit multiplier of the move.
-   * Higher values increase critical hits.
-   */
-  case CriticalMultiplier(multiplier: Int)
+/**
+ * Increases the critical hit multiplier of the move.
+ * Higher values increase critical hits.
+ */
+case class CriticalMultiplier(multiplier: Int) extends MoveEffect:
+  override def executeEffect: StateTransformer = battleState => battleState
 
-  /**
-   * Restores a percentage of the user's HP.
-   *
-   * @param percentage amount of HP restored (0-100).
-   */
-  case Heal(percentage: Int)
+/**
+ * Restores a percentage of the user's HP.
+ *
+ * @param percentage amount of HP restored (0-100).
+ */
+case class Heal(percentage: Int) extends MoveEffect:
+  override def executeEffect: StateTransformer = battleState =>
+    val activePokemon = battleState.self.getActive
+    val healAmount = (percentage * activePokemon.species.baseStats.hp.toInt) / 100
+    battleState self (_ active (_ heal healAmount))
 
-  /**
-   * Deals damage to the user as recoil after the move is executed.
-   *
-   * @param percentage percentage of damage reflected back to the user (0-100).
-   */
-  case Recoil(percentage: Int)
+/**
+ * Deals damage to the user as recoil after the move is executed.
+ *
+ * @param percentage percentage of damage reflected back to the user (0-100).
+ */
+case class Recoil(percentage: Int) extends MoveEffect:
+  override def executeEffect: StateTransformer = battleState =>
+    val activePokemon = battleState.self.getActive
+    val recoilAmount = (percentage * activePokemon.species.baseStats.hp.toInt) / 100
+    battleState self (_ active (_ takeDamage recoilAmount))
 
-  /**
-   * Forces the user to spend a number of turns recharging
-   * after using the move.
-   *
-   * @param recharges number of turns required to recharge.
-   */
-  case Recharge(recharges: Int)
+/**
+ * Forces the user to spend a number of turns recharging
+ * after using the move.
+ *
+ * @param recharges number of turns required to recharge.
+ */
+case class Recharge(recharges: Int) extends MoveEffect:
+  override def executeEffect: StateTransformer = battleState => battleState
 
 /**
  * Domain Specific Language (DSL) for constructing MoveEffect values.
@@ -82,7 +89,6 @@ enum MoveEffect:
  * }}}
  */
 object MoveEffectDSL:
-  import MoveEffect.*
 
   /**
    * Entry point for the MoveEffect DSL.

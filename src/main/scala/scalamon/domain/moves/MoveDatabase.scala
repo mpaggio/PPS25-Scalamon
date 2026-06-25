@@ -7,6 +7,7 @@ import StatusMoveCategory.*
 import MoveDSL.{move, *}
 import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
+import AlteredStatus.*
 import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
 
 /**

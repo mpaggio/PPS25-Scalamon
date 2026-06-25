@@ -35,7 +35,7 @@ object PokemonStateModuleImpl extends PokemonStateModule:
     species: PokemonSpecies)
   override type PokemonState = Ps
   override type PokemonSpecies = scalamon.domain.pokemon.Pokemon
-  override type AlteredStatus = StateTransformerModuleImpl.TransformerFlatMapper
+  override type AlteredStatus = scalamon.domain.moves.AlteredStatus
   override type StatsState = StatsStateModuleImpl.StatsState
   override type HP = StatsStateModuleImpl.Stat
   override type MoveState = scalamon.logics.state.MoveStateModuleImpl.MoveState
