@@ -40,7 +40,8 @@ object PokemonStateModuleImpl extends PokemonStateModule:
     Ps(species.baseStats.hp.toInt, statsInitialState(species.baseStats), moves, List(), species)
 
   extension (ps: PokemonState)
-    infix def currentHp(f: HP => HP): PokemonState = ps.copy(currentHp = f(ps.currentHp))
+    infix def currentHp(f: HP => HP): PokemonState =
+      ps.copy(currentHp = f(ps.currentHp).clamped(0, ps.species.baseStats.hp.toInt))
     infix def modifyStats(f: Modifier): PokemonState = ps.copy(modifiedStats = f(ps.modifiedStats))
     infix def addStatus(status: AlteredStatus): PokemonState = ps.copy(status = status :: ps.status)
     infix def updateMove(moveName: String)(f: MoveState => MoveState): PokemonState =
