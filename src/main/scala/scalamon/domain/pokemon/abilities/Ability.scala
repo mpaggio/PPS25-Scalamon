@@ -4,13 +4,13 @@ enum Ability:
   // Fire-Type
   case Blaze, SolarScales, SolarPower, Drought, FlashFire, DroughtAura, FlameBody, RunAway, Guts
   // Water-Type
-  case Torrent, EarlyBird, RainDish, WaterAbsorb, Hydration, Intimidate, Moxie
+  case Torrent, RainDish, WaterAbsorb, Hydration, Intimidate, Moxie
   // Grass-Type
-  case Overgrow, Chlorophyll, ThickFat, Gluttony, EffectSpore, Regenerator
+  case Overgrow, Chlorophyll, ThickFat, EffectSpore, Regenerator
   // Electric-Type
-  case Static, LightningRodLite, LightningRod, SurgeSurfer, Aftermath, VitalSpirit, VoltAbsorb, QuickFeet
+  case Static, LightningRodLite, LightningRod, SurgeSurfer, Aftermath, VoltAbsorb, QuickFeet
   // Psychic-Type
-  case Synchronize, MagicGuard, Insomnia, Forewarn, DrySkin, Pressure, Unnerve, CloudNine, SwiftSwim
+  case Synchronize, MagicGuard, Insomnia, Forewarn, DrySkin, Pressure, CloudNine, SwiftSwim
   // Poison-Type
-  case ShedSkin, StickyHold, PoisonTouch, Levitate, CursedBody, ShadowTag, LiquidOoze
+  case ShedSkin, PoisonTouch, Levitate, CursedBody, ShadowTag, LiquidOoze
   

@@ -20,7 +20,8 @@ object AbilityDamageModifier:
   
   private def abilityDefenseMultiplier(state: BattleState, move: DamageMove, ability: Ability): Double =
     ability match
-      case Ability.ThickFat if move.moveType == Fire => 0.5
+      case ThickFat if move.moveType == Fire => 0.5
+      case Levitate if move.moveType == Physical => 0.0
       case _ => 1.0
       
   private def abilityAttackMultiplier(state: BattleState, move: DamageMove, ability: Ability): Double = {
