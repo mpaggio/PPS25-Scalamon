@@ -48,3 +48,6 @@ object StatsStateModuleImpl extends StatsStateModule:
     infix def decrease(amount: Int): Stat = s - amount
     infix def increase(amount: Int): Stat = s + amount
     infix def multiply(factor: Double): Stat = (s * factor).toInt
+
+    infix def clamped(min: Int, max: Int): Stat = s.max(min).min(max)
+    infix def positive: Stat = s.max(0)

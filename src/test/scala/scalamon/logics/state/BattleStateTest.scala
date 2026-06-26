@@ -29,10 +29,9 @@ class BattleStateTest extends AnyWordSpec with Matchers with StateFixtures:
 
     "apply move conditionally to user team" in:
       type Move = BattleState => BattleState
-      val healAllMove: Move = _ self (_.allThat(ps => ps.currentHp.toInt < 40)(_ currentHp (_ increase 10)))
-      // Charmander is 39 so it gets healed, Bulbasaur is 45 so it is skipped.
-      val newState = healAllMove(battle)
-      newState.self.team("Charmander").currentHp shouldEqual 49
+      val executeMove: Move = _ self (_.allThat(ps => ps.currentHp.toInt < 40)(_ currentHp (_ decrease 40)))
+      val newState = executeMove(battle)
+      newState.self.team("Charmander").currentHp shouldEqual 0
       newState.self.team("Bulbasaur").currentHp shouldEqual 45
 
     "modify stats to enemy active pokemon" in:
@@ -55,6 +54,6 @@ class BattleStateTest extends AnyWordSpec with Matchers with StateFixtures:
       // healAll < 40: User active HP -> 49, User bench HP is 40 (so not <40) -> 40
       // weakness: Enemy active Atk -> 43
       newState.opponent.team("Squirtle").currentHp shouldEqual 34
-      newState.self.team("Charmander").currentHp shouldEqual 49
+      newState.self.team("Charmander").currentHp shouldEqual 39
       newState.self.team("Bulbasaur").currentHp shouldEqual 40
       newState.opponent.team("Squirtle").modifiedStats.attack shouldEqual 43
