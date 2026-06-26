@@ -8,7 +8,7 @@ import scalamon.domain.pokemon.abilities.AbilityTrigger.OnTurnEnd
 import scalamon.domain.weather.Weather.*
 import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
-import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
+import scalamon.logics.state.PokemonStateModuleImpl.{PokemonState, pokemonInitialState}
 import scalamon.logics.battle.{BattleContext, WeatherState}
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
 import scalamon.logics.weather.WeatherSystem.default
@@ -76,26 +76,20 @@ object TurnResolutionImpl extends TurnResolutionModule:
   override def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState =
     if player.team.contains(newActive.value) then player switchActive newActive.value
     else player
-
-  // FUTURE TO DO
+  
   private def applyStatusDamage(state: BattleState) =
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
       val oriented = if isSelf then s else s.switchUserEnemy
       val pokemon = oriented.self.getActive
-
-      val hasMagicGuard = MyAbilityBook.allSlots(pokemon.species.abilitySlot).contains(MagicGuard)
-
-      if hasMagicGuard then
-        if isSelf then oriented else oriented.switchUserEnemy
-      else
-        val damaged = pokemon.statusCondition match
+      val damaged =
+        if oriented.flags.selfMagicGuardActive then oriented
+        else pokemon.statusCondition match
           case Some(Burned) => oriented self(_ active (_ takeDamage(pokemon.maxHp / 16)))
           case Some(Poisoned) => oriented self(_ active (_ takeDamage(pokemon.maxHp / 8)))
           case _ => oriented
-        if isSelf then damaged else damaged.switchUserEnemy
+      if isSelf then damaged else damaged.switchUserEnemy
     applyForPlayer(applyForPlayer(state, true), false)
-
-  // FUTURE TO DO
+  
   private def applyEndOfTurnAbilities(state: BattleState) =
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
       val slot = if isSelf then s.self.getActive.species.abilitySlot

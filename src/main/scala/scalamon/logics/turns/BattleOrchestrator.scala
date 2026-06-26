@@ -40,7 +40,8 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
    */
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
-    val afterExecution = plan.orderedActions.foldLeft(state)(executeScheduled)
+    val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
+    val afterExecution = plan.orderedActions.foldLeft(resetState)(executeScheduled)
     val result = resolveTurn(afterExecution)
     val finalState = result match
       case TurnResult.Ongoing(s) => endTurn(s)

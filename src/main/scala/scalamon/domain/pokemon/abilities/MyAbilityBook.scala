@@ -228,9 +228,9 @@ object MyAbilityBook:
         case None => state
     },
 
-    OnTrigger(OnTurnEnd) define MagicGuard as { state =>
+    OnTrigger(OnTurnStart) define MagicGuard as { state =>
       println(s"[MagicGuard] ${state.self.getActive.species.name} is immune to indirect damage of the altered status!")
-      state
+      state.updateFlags(_.copy(selfMagicGuardActive = true))
     },
 
     OnTrigger(OnDamageTaken) define Insomnia as { state =>

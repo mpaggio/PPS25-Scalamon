@@ -22,11 +22,13 @@ object BattleStateImpl extends BattleStateModule:
    * @param opponentSwitchBlocked se true l'avversario non può cambiare Pokemon (es Abilità Shadow Tag)
    * @param weatherSuppressed se true la condizione meteo non ha effetto (es Abilità Air Lock)
    * @param selfFlashFireActive se true l'abilità Flash Fire del Pokemon attivo del giocatore è attiva (es Abilità Flash Fire)
+    * @param selfMagicGuardActive se true l'abilità Magic Guard del Pokemon attivo del giocatore è attiva (es Abilità Magic Guard)
    */
   case class BattleFlags(
    opponentSwitchBlocked: Boolean = false,
    weatherSuppressed: Boolean = false,
    selfFlashFireActive: Boolean = false,
+   selfMagicGuardActive: Boolean = false,
    lastOpponentMove: Option[DamageMove] = None
   )
   case class Bs(self: PlayerState, opponent: PlayerState, ambient: PassiveEffect, passiveEffects: List[PassiveEffect], weather: Weather = ClearSky, flags: BattleFlags = BattleFlags())
