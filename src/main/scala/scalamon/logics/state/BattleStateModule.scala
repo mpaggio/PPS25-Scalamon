@@ -1,5 +1,9 @@
 package scalamon.logics.state
 
+import scalamon.domain.moves.DamageMove
+import scalamon.domain.weather.Weather
+import scalamon.domain.weather.Weather.ClearSky
+
 trait BattleStateModule extends StateComponent:
   type BattleState
   type PlayerState
@@ -13,7 +17,21 @@ trait BattleStateModule extends StateComponent:
     def switchUserEnemy: BattleState
 
 object BattleStateImpl extends BattleStateModule:
-  case class Bs(self: PlayerState, opponent: PlayerState, ambient: PassiveEffect, passiveEffects: List[PassiveEffect])
+  /** CANCELLA PURE IL COMMENTO QUANDO TI E' CHIARO PASO
+   * Sono Flag persistenti a livello di battaglia
+   * @param opponentSwitchBlocked se true l'avversario non può cambiare Pokemon (es Abilità Shadow Tag)
+   * @param weatherSuppressed se true la condizione meteo non ha effetto (es Abilità Air Lock)
+   * @param selfFlashFireActive se true l'abilità Flash Fire del Pokemon attivo del giocatore è attiva (es Abilità Flash Fire)
+    * @param selfMagicGuardActive se true l'abilità Magic Guard del Pokemon attivo del giocatore è attiva (es Abilità Magic Guard)
+   */
+  case class BattleFlags(
+   opponentSwitchBlocked: Boolean = false,
+   weatherSuppressed: Boolean = false,
+   selfFlashFireActive: Boolean = false,
+   selfMagicGuardActive: Boolean = false,
+   lastOpponentMove: Option[DamageMove] = None
+  )
+  case class Bs(self: PlayerState, opponent: PlayerState, ambient: PassiveEffect, passiveEffects: List[PassiveEffect], weather: Weather = ClearSky, flags: BattleFlags = BattleFlags())
   override type BattleState = Bs
   override type PlayerState = PlayerStateModuleImpl.PlayerState
   def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState): BattleState =
@@ -26,3 +44,5 @@ object BattleStateImpl extends BattleStateModule:
     infix def setAmbient(effect: PassiveEffect): BattleState = bs.copy(ambient = effect)
     infix def addPassiveEffect(effect: PassiveEffect): BattleState = 
       bs.copy(passiveEffects = effect :: bs.passiveEffects)
+    infix def setWeather(w: Weather): BattleState = bs.copy(weather = w)
+    infix def updateFlags(f: BattleFlags => BattleFlags): BattleState = bs.copy(flags = f(bs.flags))

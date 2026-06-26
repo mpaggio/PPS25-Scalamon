@@ -10,8 +10,6 @@ import scalamon.logics.turns.PokemonRef
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.logics.turns.TurnResult.*
 
-import scala.language.postfixOps
-
 class TurnResolutionTest extends AnyFunSuite with StateFixtures:
 
   private val charmanderAlmostKO = player1 active (_ currentHp (_ decrease 38))

@@ -1,12 +1,19 @@
 package scalamon.logics.state
 
+import scalamon.domain.moves.DamageMove
+import scalamon.domain.pokemon.abilities.AbilityDamageModifier
+import scalamon.logics.weather.WeatherSystem
+
+/**
+ * This trait defines the interface for calculating the move's damage on the battle.
+ */
 trait DamageMoveCalculator:
   type BattleState
   type StatsState
   type Damage
   type Move
 
-  def getDamage(state: BattleState, move: Move)(using DamagePolicy): Damage
+  def getDamage(state: BattleState, move: Move)(using DamagePolicy, WeatherSystem): Damage
 
 object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
@@ -18,15 +25,22 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
   override type Damage = Int
   override type Move = scalamon.domain.moves.DamageMove
 
-  def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy): Damage =
+  /**
+   * Calculates the move's damage following the standard Pokémon damage formula.
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @param policy the difficulty level of the battle
+   * @return the calculated damage as an integer
+   */
+  def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy, weather: WeatherSystem): Damage =
     val attacker = state.self.getActive
     val defender = state.opponent.getActive
 
     // (((((2 * 50) / 5) + 2) * Power * (A / D)) / 50 + 2).floor * STAB * TypeEffectiveness * WhetherMultiplier
 
     val (atk, def_) = move.category.match
-      case Physical => (attacker.modifiedStats.attack.toInt, defender.modifiedStats.defense.toInt)
-      case Special => (attacker.modifiedStats.specialAttack.toInt, defender.modifiedStats.specialDefense.toInt)
+      case Physical => (attacker.modifiedStats.attack, defender.modifiedStats.defense)
+      case Special => (attacker.modifiedStats.specialAttack, defender.modifiedStats.specialDefense)
 
     val power = move.power.asInt
 
@@ -36,6 +50,11 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
     val typeEffectiveness = move.moveType.multiplierAgainst(defender.species.pokemonType)
 
-    (baseFormula * stab * typeEffectiveness * policy.multiplier).toInt
+    val abilityAtkMulti = AbilityDamageModifier.attackerMultiplier(state, move)
+    val abilityDefMulti = AbilityDamageModifier.defenderMultiplier(state, move)
 
-    // MANCA IL WEATHER MULTIPLIER, MA NON E' ANCORA IMPLEMENTATO !!
+    val weatherMulti =
+      if state.flags.weatherSuppressed then 1.0
+      else weather.movePowerMultiplier(state.weather, move.moveType)
+
+    (baseFormula * stab * typeEffectiveness * policy.multiplier * abilityAtkMulti * abilityDefMulti * weatherMulti).toInt

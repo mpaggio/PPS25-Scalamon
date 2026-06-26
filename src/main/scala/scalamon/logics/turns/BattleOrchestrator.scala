@@ -1,6 +1,6 @@
 package scalamon.logics.turns
 
-import scalamon.domain.moves.{Move, MoveDatabase}
+import scalamon.domain.moves.{DamageMove, Move, MoveDatabase}
 import scalamon.domain.moves.MoveActionModuleImpl.*
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.DamagePolicy
@@ -10,10 +10,38 @@ import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
 
+/**
+ * Coordinates the execution and resolution of a battle turn.
+ *
+ * A battle orchestrator schedules the selected actions, executes them in order,
+ * resolves the resulting turn outcome, and applies any end-of-turn updates when needed.
+ *
+ * @constructor
+ *   creates a battle orchestrator using the provided turn flow
+ * @param turnFlow
+ *   the component used to schedule and order turn actions
+ */
 final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, ProbabilityRoll):
+  /**
+   * Executes a full turn starting from the current state and the chosen actions.
+   *
+   * The turn is scheduled, all actions are executed in order, the resulting
+   * outcome is resolved, and end-of-turn effects are applied when the battle
+   * remains ongoing.
+   *
+   * @param state
+   * the current battle state
+   * @param choices
+   * the actions selected for the turn
+   * @param speedOf
+   * a function returning the speed of a Pokémon reference
+   * @return
+   * the updated battle state together with the resolved turn result
+   */
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
-    val afterExecution = plan.orderedActions.foldLeft(state)(executeScheduled)
+    val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
+    val afterExecution = plan.orderedActions.foldLeft(resetState)(executeScheduled)
     val result = resolveTurn(afterExecution)
     val finalState = result match
       case TurnResult.Ongoing(s) => endTurn(s)
@@ -32,7 +60,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
           .map(_.currentHp)
           .getOrElse(0)
         if attackerHp <= 0 then
-          println(s"  ${attacking.value} è KO e non può attaccare!")
+          println(s"  ${attacking.value} e' KO e non puo' attaccare!")
           state
         else
           val newState = executeMove(state, attacking, moveRef)
@@ -43,7 +71,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
             .orElse(newState.opponent.team.get(defenderRef))
             .map(_.currentHp)
             .getOrElse(0)
-          println(s"  ${attacking.value} usa ${moveRef.value} → $defenderRef HP: $defenderHp")
+          println(s"  ${attacking.value} usa ${moveRef.value} | $defenderRef HP: $defenderHp")
           newState
       case SwitchPokemon(_, from, to, _) =>
         if state.self.team.contains(from.value) then
@@ -55,14 +83,28 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
     val oriented =
       if state.self.team.contains(attacking.value) then state
       else state.switchUserEnemy
+    val activePokemon = oriented.self.team(oriented.self.activeId)
     resolveMove(moveRef) match
+      case Some(move: DamageMove) =>
+        val currentMoveState = activePokemon.moveState(move.name)
+        if currentMoveState.currentPp <= 0 then
+          println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
+          state
+        else
+          val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))
+          val afterMove = MoveAction(move).execute.foldLeft(orientedWithMove)((s, f) => f(s))
+          if state.self.team.contains(attacking.value) then afterMove
+          else afterMove.switchUserEnemy
       case Some(move) =>
-        val afterMove =
-          MoveAction(move).execute.foldLeft(oriented)((s, f) => f(s))
-        if state.self.team.contains(attacking.value) then afterMove
-        else afterMove.switchUserEnemy
+        val currentMoveState = activePokemon.moveState(move.name)
+        if currentMoveState.currentPp <= 0 then
+          println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
+          state
+        else
+          val afterMove = MoveAction(move).execute.foldLeft(oriented)((s, f) => f(s))
+          if state.self.team.contains(attacking.value) then afterMove
+          else afterMove.switchUserEnemy
       case None => state
-
 
   private def resolveMove(moveRef: MoveRef): Option[Move] =
     MoveDatabase.allMoves.findByName(moveRef.value)
