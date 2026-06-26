@@ -7,6 +7,7 @@ import scalamon.domain.pokemon.statistics.StatADT.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl
+import scalamon.logics.state.PokemonStateModuleImpl.Modifier
 
 /**
  * Represents all the possible effects that a move can have.
@@ -22,8 +23,11 @@ import scalamon.logics.state.StateTransformerModuleImpl
 trait MoveEffect:
   def executeEffect(using roll: ProbabilityRoll): StateTransformer
 
+case class ComposableEffect(transformer: StateTransformer) extends MoveEffect:
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = transformer
+
 /**
- * Applies a satus condition to the target with a given probability.
+ * Applies a status condition to the target with a given probability.
  * Example: paralysis, burn, poison, sleep, freeze, confusion.
  */
 case class AlteredState(statusFactory: () => AlteredStatus, probability: Accuracy) extends MoveEffect:
@@ -38,8 +42,11 @@ case class AlteredState(statusFactory: () => AlteredStatus, probability: Accurac
  * Modifies one of the target's stats by a number of stages.
  * Positives values increase stats, negative values decrease them.
  */
-case class StatChange(stat: StatKind, stages: Int, probability: Accuracy) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState => battleState
+case class StatChange(modifier: Modifier, probability: Accuracy) extends MoveEffect:
+  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
+    if roll() <= probability.asInt then
+      battleState opponent (_ active (_.modifyStats(modifier)))
+    battleState
 
 /**
  * Increases the critical hit multiplier of the move.
@@ -104,8 +111,9 @@ object MoveEffectDSL:
    * Exposes keywords used to build move effects (readable verbs in DSL).
    */
   object Effect:
+    infix def transformingBy(transformer: StateTransformer) = ComposableEffect(transformer)
     infix def applying(status: => AlteredStatus) = AlteredStatusEffectBuilder(() => status)
-    infix def changing(stat: StatKind) = StatChangeEffectBuilder(stat)
+    infix def changing(modifier: Modifier) = StatChangeEffectBuilder(modifier)
     infix def healing(percent: Int) = Heal(percent)
     infix def recoil(percent: Int) = Recoil(percent)
     infix def recharging(recharges: Int) = Recharge(recharges)
@@ -131,30 +139,18 @@ object MoveEffectDSL:
 
   /**
    * Builder for stat modification effects.
-   * Represents the first step in the creation: choose stat and then define stage.
-   */
-  case class StatChangeEffectBuilder(stat: StatKind):
-
-    /**
-     * Defines how many stages the stat will be modifed.
-     */
-    infix def by(stages: Int): StatChangeProbabilityBuilder =
-      StatChangeProbabilityBuilder(stat, stages)
-
-  /**
-   * Builder for stat modification effects.
    * Represents the second step in the creation: define probability.
    */
-  case class StatChangeProbabilityBuilder(stat: StatKind, stages: Int):
+  case class StatChangeEffectBuilder(modifier: Modifier):
 
     /**
      * Defines probability using Int percentage (0 - 100)
      */
     infix def withProbability(probability: Int): MoveEffect =
-      StatChange(stat, stages, accuracyFromPercent(probability))
+      StatChange(modifier, accuracyFromPercent(probability))
 
     /**
      * Defines probability using Double percentage (0.0 - 100.0)
      */
     infix def withProbability(probability: Double): MoveEffect =
-      StatChange(stat, stages, accuracyFromRatio(probability / 100.0))
+      StatChange(modifier, accuracyFromRatio(probability / 100.0))

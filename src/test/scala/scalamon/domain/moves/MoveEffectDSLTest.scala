@@ -5,7 +5,8 @@ import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import Accuracy.*
 import AlteredStatus.*
-import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
+import scalamon.logics.state.PokemonStateModuleImpl.Modifier
+import scalamon.logics.state.StatsStateModuleImpl.*
 
 class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
 
@@ -26,9 +27,10 @@ class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
       case _ => fail("Effect was not an AlteredState")
 
   test("DSL should create a StatChange effect"):
+    val modifier: Modifier = _ specialDefense (_ decrease 1)
     val effect: MoveEffect =
-      Effect changing SpecialDefense by (-1) withProbability 10
-    effect shouldBe StatChange(SpecialDefense, -1, accuracyFromPercent(10))
+      Effect changing modifier withProbability 10
+    effect shouldBe StatChange(modifier, accuracyFromPercent(10))
 
   test("DSL should create a Heal effect"):
     val effect: MoveEffect =
@@ -50,6 +52,13 @@ class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
       Effect multiplyingCriticalBy 8
     effect shouldBe CriticalMultiplier(8)
 
+  test("DSL should create a composable effect"):
+    """import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
+    val transformation1: StateTransformer = _ opponent (_ bench (_ currentHp (_ decrease 10)))
+    val transformation2: StateTransformer = _ opponent (_ active (_ modifyStats (_ speed (_ decrease 2))))
+    val composedEffect: StateTransformer = transformation1.andThen(transformation2)
+    val effect: MoveEffect = Effect transformingBy composedEffect""" should compile
+
   test("DSL should create effects using both Int and Double probabilities"):
     val effect1 = Effect applying Paralyzed withProbability 10
     effect1 match
@@ -57,11 +66,13 @@ class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
         probability shouldBe accuracyFromPercent(10)
         factory() shouldBe Paralyzed
       case _ => fail("Effect was not an AlteredState")
-    (Effect changing SpecialDefense by -1 withProbability 25.0) shouldBe 
-      StatChange(SpecialDefense, -1, accuracyFromPercent(25))
+    val modifier: Modifier = _ specialDefense (_ decrease 1)
+    (Effect changing modifier withProbability 25.0) shouldBe
+      StatChange(modifier, accuracyFromPercent(25))
 
   test("DSL should reject invalid probabilities"):
     assertThrows[IllegalArgumentException](
       Effect applying Burned withProbability 150)
+    val modifier: Modifier = _ attack (_ increase 1)
     assertThrows[IllegalArgumentException](
-      Effect changing Attack by 1 withProbability -10)
+      Effect changing modifier withProbability -10)

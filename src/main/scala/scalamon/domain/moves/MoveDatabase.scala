@@ -9,7 +9,7 @@ import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import AlteredStatus.*
 import AlteredStatusUtility.*
-import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
+import scalamon.logics.state.StatsStateModuleImpl.*
 
 /**
  * Repository of all available moves in the game.
@@ -85,7 +85,7 @@ object MoveDatabase:
       as Special,
     move named "Bubble beam"
       withPower 60 withPP 32 withAccuracy 100 withType Water
-      withEffect (Effect changing Speed by -1 withProbability 9.8)
+      withEffect (Effect changing (_ speed (_ decrease 1)) withProbability 9.8)
       as Special,
     move named "Crab hammer"
       withPower 90 withPP 16 withAccuracy 84 withType Water
@@ -130,7 +130,7 @@ object MoveDatabase:
     // PSYCHIC
     move named "Psychic"
       withPower 90 withPP 16 withAccuracy 100 withType Psychic
-      withEffect (Effect changing SpecialDefense by -1 withProbability 10)
+      withEffect (Effect changing (_ specialDefense (_ decrease 1)) withProbability 10)
       as Special,
     move named "Confusion"
       withPower 50 withPP 40 withAccuracy 100 withType Psychic
@@ -160,7 +160,7 @@ object MoveDatabase:
       as Physical,
     move named "Acid"
       withPower 40 withPP 48 withAccuracy 100 withType Poison
-      withEffect (Effect changing SpecialDefense by -1 withProbability 9.8)
+      withEffect (Effect changing (_ specialDefense (_ decrease 1)) withProbability 9.8)
       as Special,
     move named "Toxic"
       withPP 16 withAccuracy 90 withType Poison

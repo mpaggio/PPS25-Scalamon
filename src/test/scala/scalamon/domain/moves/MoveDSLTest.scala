@@ -9,7 +9,8 @@ import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import Accuracy.*
 import AlteredStatus.*
-import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
+import scalamon.logics.state.StatsStateModuleImpl.*
+import scalamon.logics.state.PokemonStateModuleImpl.Modifier
 
 class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
 
@@ -67,15 +68,16 @@ class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
     thunder.effect shouldBe Heal(50)
 
   test("DSL should correctly chain complex effect like StatChanges"):
+    val modifier: Modifier = _ specialDefense (_ decrease 1)
     val psychic = move
       .named("Psychic")
       .withPower(90)
       .withPP(16)
       .withAccuracy(100)
       .withType(Psychic)
-      .withEffect(Effect changing SpecialDefense by -1 withProbability 10)
+      .withEffect(Effect changing modifier withProbability 10)
       .as(Special)
-    psychic.effect shouldBe Some(StatChange(SpecialDefense, -1, accuracyFromPercent(10)))
+    psychic.effect shouldBe Some(StatChange(modifier, accuracyFromPercent(10)))
 
   test("DSL should fail if mandatory fields are missing"):
     shouldFail(

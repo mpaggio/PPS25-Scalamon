@@ -13,6 +13,8 @@ import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.MoveStateModuleImpl.*
 import scalamon.domain.pokemon.pokedex.MyPokedex.*
 import MoveActionModuleImpl.*
+import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
+import scalamon.logics.state.StatsStateModuleImpl.*
 
 class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
 
@@ -99,22 +101,6 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleFinalState.self.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
     battleFinalState.self.team(pokemon.name).moves(recover.name).currentPp shouldBe (recover.pp.asInt - 1)
 
-  /*
-    DECOMMENTARE QUANDO IL PASO HA SISTEMATO IL CLAMPING DEI DANNI
-
-    test("Heal effect should not exceed maximum HP (clamping)"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
-    given ProbabilityRoll = () => 1
-
-    val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
-    val battleInitialState: BattleState = createBattleState(recover)
-    val nearMaxHp = pokemon.baseStats.hp.toInt - 5
-    val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => nearMaxHp)))
-    val action: MoveAction = MoveAction(recover)
-    val battleFinalState: BattleState = action.execute.foldLeft(damagedState)((state, transformer) => transformer(state))
-    battleFinalState.self.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
-  */
-
   test("Damaging move with recoil effect should damage both target and user"):
     import scalamon.logics.state.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
@@ -128,16 +114,21 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val expectedRecoil = (25 * maxHp) / 100
     battleFinalState.self.team(pokemon.name).currentHp shouldBe (maxHp - expectedRecoil)
 
-  /*
-    DECOMMENTARE QUANDO IL PASO HA SISTEMATO IL CLAMPING DEI DANNI
-
-    test("Heal effect should not exceed maximum HP (clamping)"):
+  test("Status move with composable effect should lead to the correct effects on the state"):
     import scalamon.logics.state.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
-    val nearMaxHp = pokemon.baseStats.hp.toInt - 5
-    val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => nearMaxHp)))
-    val action: MoveAction = MoveAction(recover)
+    val transformation1: StateTransformer = _ opponent (_ bench (_ currentHp (_ decrease 10)))
+    val transformation2: StateTransformer = _ opponent (_ active (_ modifyStats (_ speed (_ decrease 2))))
+    val transformation3: StateTransformer = _ self (_ active (_ heal 50))
+    val composedEffect: StateTransformer = transformation1.andThen(transformation2).andThen(transformation3)
+    val effect: MoveEffect = Effect transformingBy composedEffect
+    val personalizedMove = move named "Composed move" withPP 32 withAccuracy 100 withType Normal withEffect effect as Status
+    val battleInitialState: BattleState = createBattleState(personalizedMove)
+    val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => 50)))
+    val action: MoveAction = MoveAction(personalizedMove)
     val battleFinalState: BattleState = action.execute.foldLeft(damagedState)((state, transformer) => transformer(state))
-    battleFinalState.self.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
-  */
+
+    battleFinalState.opponent.team.filterNot(_._1 == battleFinalState.opponent.activeId).values.foreach(pS => pS.currentHp shouldBe (100 - 10))
+    battleFinalState.opponent.getActive.modifiedStats.speed shouldBe (battleFinalState.opponent.getActive.species.baseStats.speed.toInt - 2)
+    battleFinalState.self.getActive.currentHp shouldBe math.min(100, battleFinalState.self.getActive.species.baseStats.hp.toInt)

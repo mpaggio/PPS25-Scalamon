@@ -11,6 +11,7 @@ import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
 import scalamon.logics.state.BattleStateImpl.BattleState
 import scalamon.logics.state.StatsStateModuleImpl.multiply
+import scalamon.domain.moves.AlteredStatusUtility.*
 
 import scala.language.postfixOps
 import scala.util.Random
@@ -73,7 +74,7 @@ object MyAbilityBook:
     OnTrigger(OnDamageTaken) define FlameBody as{ state =>
       if Random.nextDouble() < 0.30 then
         println(s"[FlameBody] ${state.opponent.getActive.species.name} is burned!")
-        state opponent (_ active (_ setStatus Burned))
+        state opponent (_ active (_ addStatus Burned))
       else state
     },
 
@@ -152,9 +153,9 @@ object MyAbilityBook:
         val status = Random.nextInt(3) match
           case 0 => Paralyzed
           case 1 => Poisoned
-          case _ => Sleeping
+          case _ => Sleeping(getSleepTurns)
         println(s"[EffectSpore]) ${state.opponent.getActive.species.name} is ${status.toString}!")
-        state opponent (_ active (_ setStatus status))
+        state opponent (_ active (_ addStatus status))
       else state
     },
 
@@ -169,7 +170,7 @@ object MyAbilityBook:
     OnTrigger(OnDamageDealt) define Static as { state =>
       if Random.nextDouble() < 0.30 then
         println(s"[Static] ${state.opponent.getActive.species.name} is paralyzed!")
-        state opponent (_ active (_ setStatus Paralyzed))
+        state opponent (_ active (_ addStatus Paralyzed))
       else state
     },
 
@@ -224,7 +225,7 @@ object MyAbilityBook:
     OnTrigger(OnDamageTaken) define Synchronize as { state =>
       println(s"[Synchronize] if ${state.self.getActive.species.name} obtains a Status condition, it applies it to the opponent too!")
       state.self.getActive.statusCondition match
-        case Some(s) => state opponent (_ active (_ setStatus s))
+        case Some(s) => state opponent (_ active (_ addStatus s))
         case None => state
     },
 
@@ -282,7 +283,7 @@ object MyAbilityBook:
     OnTrigger(OnDamageTaken) define PoisonTouch as { state =>
       if Random.nextDouble() < 0.30 then
         println(s"[PoisonTouch] ${state.opponent.getActive.species.name} is poisoned!")
-        state opponent (_ active (_ setStatus Poisoned))
+        state opponent (_ active (_ addStatus Poisoned))
       else state
     },
 
