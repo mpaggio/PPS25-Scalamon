@@ -1,5 +1,8 @@
 package scalamon.logics.state
 
+import scalamon.domain.moves.AlteredStatus.Sleeping
+import scalamon.domain.pokemon.abilities.Ability.Insomnia
+
 trait PokemonStateModule extends StateComponent:
   type PokemonState
   type PokemonSpecies
@@ -55,7 +58,19 @@ object PokemonStateModuleImpl extends PokemonStateModule:
     def maxHp: Int = ps.species.baseStats.hp.toInt
     def statusCondition: Option[AlteredStatus] = ps.status.headOption
     def clearStatusCondition: PokemonState = ps.copy(status = List.empty)
-    infix def setStatus(status: AlteredStatus): PokemonState =
-      if ps.status.isEmpty then ps.copy(status=List(status))
+    infix def setStatus(status: AlteredStatus): PokemonState = {
+      val allAbilities = List(
+        Some(ps.species.abilitySlot.primary),
+        ps.species.abilitySlot.secondary,
+        ps.species.abilitySlot.hidden
+      ).flatten
+
+      val sleepImmune = allAbilities.contains(Insomnia)
+      val blocked = status == Sleeping && sleepImmune
+      if blocked then
+        println(s"[Sleep Immunity] ${ps.species.name} is immune to sleep due to its ability!")
+        ps
+      else if ps.status.isEmpty then ps.copy(status=List(status))
       else ps
+    }
 

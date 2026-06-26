@@ -51,9 +51,13 @@ object BattleSimulation extends App:
       .getOrElse(throw RuntimeException(s"${ps.getActive.species.name} HA ESAURITO TUTTI I PP!"))
 
   private def speedOf(ref: PokemonRef): Speed =
-    val inSelf = state.self.team.get(ref.value).map(_.modifiedStats.speed)
-    val inOpponent = state.opponent.team.get(ref.value).map(_.modifiedStats.speed)
-    Speed((inSelf orElse inOpponent).getOrElse(0))
+    val inSelf = state.self.team.get(ref.value)
+    val inOpponent = state.opponent.team.get(ref.value)
+    val pokemon = (inSelf orElse inOpponent).getOrElse(
+      throw RuntimeException(s"Pokemon ${ref.value} non trovato in nessuna squadra!")
+    )
+    val baseSpeed = pokemon.modifiedStats.speed
+    Speed(baseSpeed)
 
   private def printState(bs: BattleState, turn: Int): Unit =
     val s = bs.self.getActive

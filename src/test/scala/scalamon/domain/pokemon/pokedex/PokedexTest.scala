@@ -42,7 +42,7 @@ class PokedexTest extends AnyFunSuite:
     squirtle.pokemonType shouldBe Water
     squirtle.abilitySlot.primary shouldBe Torrent
     squirtle.abilitySlot.secondary shouldBe None
-    squirtle.abilitySlot.hidden shouldBe Some(EarlyBird)
+    squirtle.abilitySlot.hidden shouldBe Some(Hydration)
   }
 
   test("The DSL should prevent assigning both a secondary and a hidden ability to the same Pokemon") {

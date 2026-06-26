@@ -35,14 +35,16 @@ object WeatherEndTurnResolver:
   given default(using weatherSystem: WeatherSystem): WeatherEndTurnResolver with
 
     override def apply(context: BattleContext): BattleContext =
-      val weather = context.currentWeather
-      val updatedSelf = applyToActive(context.state.self, weather)
-      val updateOpponent = applyToActive(context.state.opponent, weather)
-      context.copy(
-        state = context.state.copy(
-          self = updatedSelf,
-          opponent = updateOpponent)
-      )
+      if context.state.flags.weatherSuppressed then context
+      else
+        val weather = context.currentWeather
+        val updatedSelf = applyToActive(context.state.self, weather)
+        val updateOpponent = applyToActive(context.state.opponent, weather)
+        context.copy(
+          state = context.state.copy(
+            self = updatedSelf,
+            opponent = updateOpponent)
+        )
 
     /**
      * Applies weather end-of-turn effects to the active Pokémon of a player.

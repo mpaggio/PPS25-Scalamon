@@ -1,6 +1,6 @@
 package scalamon.logics.turns
 
-import scalamon.domain.moves.{Move, MoveDatabase}
+import scalamon.domain.moves.{DamageMove, Move, MoveDatabase}
 import scalamon.domain.moves.MoveActionModuleImpl.*
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.DamagePolicy
@@ -40,7 +40,8 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
    */
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
-    val afterExecution = plan.orderedActions.foldLeft(state)(executeScheduled)
+    val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
+    val afterExecution = plan.orderedActions.foldLeft(resetState)(executeScheduled)
     val result = resolveTurn(afterExecution)
     val finalState = result match
       case TurnResult.Ongoing(s) => endTurn(s)
@@ -84,6 +85,16 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, Probabili
       else state.switchUserEnemy
     val activePokemon = oriented.self.team(oriented.self.activeId)
     resolveMove(moveRef) match
+      case Some(move: DamageMove) =>
+        val currentMoveState = activePokemon.moveState(move.name)
+        if currentMoveState.currentPp <= 0 then
+          println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
+          state
+        else
+          val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))
+          val afterMove = MoveAction(move).execute.foldLeft(orientedWithMove)((s, f) => f(s))
+          if state.self.team.contains(attacking.value) then afterMove
+          else afterMove.switchUserEnemy
       case Some(move) =>
         val currentMoveState = activePokemon.moveState(move.name)
         if currentMoveState.currentPp <= 0 then
