@@ -1,7 +1,7 @@
 package scalamon.logics.state
 
 import scalamon.domain.moves.AlteredStatus.Sleeping
-import scalamon.domain.pokemon.abilities.Ability.{Insomnia, VitalSpirit}
+import scalamon.domain.pokemon.abilities.Ability.Insomnia
 
 trait PokemonStateModule extends StateComponent:
   type PokemonState
@@ -65,7 +65,7 @@ object PokemonStateModuleImpl extends PokemonStateModule:
         ps.species.abilitySlot.hidden
       ).flatten
 
-      val sleepImmune = allAbilities.exists(a => a == VitalSpirit || a == Insomnia)
+      val sleepImmune = allAbilities.contains(Insomnia)
       val blocked = status == Sleeping && sleepImmune
       if blocked then
         println(s"[Sleep Immunity] ${ps.species.name} is immune to sleep due to its ability!")

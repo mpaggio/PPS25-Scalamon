@@ -19,13 +19,11 @@ trait BattleStateModule extends StateComponent:
 object BattleStateImpl extends BattleStateModule:
   /** CANCELLA PURE IL COMMENTO QUANDO TI E' CHIARO PASO
    * Sono Flag persistenti a livello di battaglia
-   * @param opponentItemSuppressed se true l'held item dell avversario è soppresso/non si può attivare (es Abilità Unnerve)
    * @param opponentSwitchBlocked se true l'avversario non può cambiare Pokemon (es Abilità Shadow Tag)
    * @param weatherSuppressed se true la condizione meteo non ha effetto (es Abilità Air Lock)
    * @param selfFlashFireActive se true l'abilità Flash Fire del Pokemon attivo del giocatore è attiva (es Abilità Flash Fire)
    */
   case class BattleFlags(
-   opponentItemSuppressed: Boolean = false,
    opponentSwitchBlocked: Boolean = false,
    weatherSuppressed: Boolean = false,
    selfFlashFireActive: Boolean = false,
