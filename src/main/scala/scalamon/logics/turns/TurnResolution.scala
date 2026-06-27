@@ -2,18 +2,14 @@ package scalamon.logics.turns
 
 import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.pokemon.abilities
-import scalamon.domain.pokemon.abilities.{Ability, MyAbilityBook}
-import scalamon.domain.pokemon.abilities.Ability.*
+import scalamon.domain.pokemon.abilities.MyAbilityBook
 import scalamon.domain.pokemon.abilities.AbilityTrigger.OnTurnEnd
-import scalamon.domain.weather.Weather.*
 import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
-import scalamon.logics.state.PokemonStateModuleImpl.{PokemonState, pokemonInitialState}
+import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 import scalamon.logics.battle.{BattleContext, WeatherState}
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
 import scalamon.logics.weather.WeatherSystem.default
-
-import scala.util.Random
 
 /**
  * Determines the outcome of a turn based on the current state of the battle,

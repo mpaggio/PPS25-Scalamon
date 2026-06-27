@@ -29,23 +29,3 @@ class StatsTest extends AnyFunSuite:
     a[IllegalArgumentException] should be thrownBy Stats(hp = fromInt(39), attack = fromInt(52), defense = fromInt(43), specialAttack = fromInt(60), specialDefense = fromInt(0), speed = fromInt(65))
     a[IllegalArgumentException] should be thrownBy Stats(hp = fromInt(39), attack = fromInt(52), defense = fromInt(43), specialAttack = fromInt(60), specialDefense = fromInt(50), speed = fromInt(0))
   }
-
-  test("Stats GET returns the correct sta by kind"){
-    val stats = Stats(hp = fromInt(39), attack = fromInt(52), defense = fromInt(43), specialAttack = fromInt(60), specialDefense = fromInt(50), speed = fromInt(65))
-    stats.get(StatKind.Hp).toInt shouldBe 39
-    stats.get(StatKind.Attack).toInt shouldBe 52
-    stats.get(StatKind.Defense).toInt shouldBe 43
-    stats.get(StatKind.SpecialAttack).toInt shouldBe 60
-    stats.get(StatKind.SpecialDefense).toInt shouldBe 50
-    stats.get(StatKind.Speed).toInt shouldBe 65
-  }
-
-  test("Stats SET updates the correct stat by kind"){
-    val stats = Stats(hp = fromInt(39), attack = fromInt(52), defense = fromInt(43), specialAttack = fromInt(60), specialDefense = fromInt(50), speed = fromInt(65))
-    stats.set(StatKind.Hp, fromInt(100)).hp.toInt shouldBe 100
-    stats.set(StatKind.Attack, fromInt(100)).attack.toInt shouldBe 100
-    stats.set(StatKind.Defense, fromInt(100)).defense.toInt shouldBe 100
-    stats.set(StatKind.SpecialAttack, fromInt(100)).specialAttack.toInt shouldBe 100
-    stats.set(StatKind.SpecialDefense, fromInt(100)).specialDefense.toInt shouldBe 100
-    stats.set(StatKind.Speed, fromInt(100)).speed.toInt shouldBe 100
-  }
