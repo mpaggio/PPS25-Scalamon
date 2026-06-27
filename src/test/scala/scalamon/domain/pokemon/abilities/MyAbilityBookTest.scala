@@ -109,3 +109,51 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     physMove.foreach: move =>
       val s = withSelfAbility(Guts)
       AbilityDamageModifier.attackerMultiplier(s, move) shouldEqual 1.0
+
+  // WATER
+
+  test("Torrent gives 1.5x multiplier to Water type moves when self HP <= 1/3"):
+    val lowHpState = withSelfAbility(Torrent) self (_ active (_ takeDamage 30))
+    waterMoveOpt.foreach: waterMove =>
+      AbilityDamageModifier.attackerMultiplier(lowHpState, waterMove) shouldEqual 1.5
+
+  test("RainDish heals self by maxHp/16 when weather is Rain"):
+    val s = withWeatherAndDamage(Rain)
+    selfHp(run(RainDish, OnTurnEnd)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 16
+
+  test("RainDish does not heal when weather is not Rain"):
+    run(RainDish, OnTurnEnd)(battle).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
+
+  test("WaterAbsorb heals self by maxHp/4 when hit by Water type move"):
+    waterMoveOpt.foreach: waterMove =>
+      val damaged = battle self (_ active (_ takeDamage 20)) // prima togli HP
+      val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(waterMove)))
+      val result = run(WaterAbsorb, OnDamageTaken)(s)
+      result.self.getActive.currentHp shouldEqual s.self.getActive.currentHp + s.self.getActive.maxHp / 4
+
+  test("WaterAbsorb does not heal when hit by non-Water move"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
+      run(WaterAbsorb, OnDamageTaken)(s).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
+
+  test("Hydration clears status condition when weather is Rain"):
+    val s = (battle self (_ active (_ addStatus Burned))).setWeather(Rain)
+    s.self.getActive.statusCondition shouldBe defined
+    run(Hydration, OnTurnStart)(s).self.getActive.statusCondition shouldBe empty
+
+  test("Hydration does not clear status condition when weather is not Rain"):
+    val s = (battle self (_ active (_ addStatus Burned)))
+    run(Hydration, OnTurnStart)(s).self.getActive.statusCondition shouldBe defined
+
+  test("Intimidate reduces opponent's active attack by 10%"):
+    val before = battle.opponent.getActive.modifiedStats.attack
+    val after = run(Intimidate, OnSwitchIn)(battle).opponent.getActive.modifiedStats.attack
+    // testa il valore esatto prodotto da multiply, non una stima
+    after shouldEqual (before * 0.9).toInt
+
+  test("Moxie boosts self active attack by 10% after KO"):
+    val before = battle.self.getActive.modifiedStats.attack
+    val after = run(Moxie, OnKODealt)(battle).self.getActive.modifiedStats.attack
+    after shouldEqual (before * 1.1).toInt
+  // GRASS
+

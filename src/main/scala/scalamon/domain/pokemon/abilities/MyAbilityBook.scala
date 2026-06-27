@@ -45,18 +45,24 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnEnd) define SolarScales as { state =>
-      println(s"[SolarScales] ${state.self.getActive.species.name} with Heavy Sunlight heals 1/16 of its max HP and its special moves boosts + 30%!")
-      if state.weather == Weather.HeavySunlight then healSelf(16)(state) else state
+      if state.weather == Weather.HeavySunlight then
+        println(s"[SolarScales] ${state.self.getActive.species.name} with Heavy Sunlight heals 1/16 of its max HP and its special moves boosts + 30%!")
+        healSelf(16)(state)
+      else state
     },
 
     OnTrigger(OnTurnEnd) define SolarPower as { state =>
-      println(s"[SolarPower] ${state.self.getActive.species.name} with Heavy Sunlight takes 1/16 of its max HP as damage!")
-      if state.weather == Weather.HeavySunlight then damageSelf(16)(state) else state
+      if state.weather == Weather.HeavySunlight then
+        println(s"[SolarPower] ${state.self.getActive.species.name} with Heavy Sunlight takes 1/16 of its max HP as damage!")
+        damageSelf(16)(state)
+      else state
     },
 
     OnTrigger(OnSwitchIn) define Drought as { state =>
-      println(s"[Drought] ${state.self.getActive.species.name} sets Heavy Sunlight!")
-      if state.weather == Weather.ClearSky then state.setWeather(Weather.HeavySunlight) else state
+      if state.weather == Weather.ClearSky then
+        println(s"[Drought] ${state.self.getActive.species.name} sets Heavy Sunlight!")
+        state.setWeather(Weather.HeavySunlight)
+      else state
     },
 
     OnTrigger(OnDamageTaken) define FlashFire as { state =>
@@ -101,8 +107,10 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnEnd) define RainDish as { state =>
-      println(s"[RainDish] ${state.self.getActive.species.name} with Rain heals 1/16 of its max HP!")
-      if state.weather == Weather.Rain then healSelf(16)(state) else state
+      if state.weather == Weather.Rain then
+        println(s"[RainDish] ${state.self.getActive.species.name} with Rain heals 1/16 of its max HP!")
+        healSelf(16)(state)
+      else state
     },
 
     OnTrigger(OnDamageTaken) define WaterAbsorb as { state =>
@@ -115,12 +123,14 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnStart) define Hydration as { state =>
-      println(s"[Hydration] ${state.self.getActive.species.name} with Rain clears status conditions!")
-      if state.weather == Weather.Rain then state self (_ active (_ clearStatusCondition)) else state 
+      if state.weather == Weather.Rain then
+        println(s"[Hydration] ${state.self.getActive.species.name} with Rain clears status conditions!")
+        state self (_ active (_ clearStatusCondition))
+      else state
     },
 
     OnTrigger(OnSwitchIn) define Intimidate as { state =>
-      println(s"{Intimidate] ${state.self.getActive.species.name} intimidates the opponent! -10% Attack")
+      println(s"[Intimidate] ${state.self.getActive.species.name} intimidates the opponent! -10% Attack")
       reduceOpponentAttack(state, 0.1)
     },
 
@@ -244,10 +254,13 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnEnd) define DrySkin as { state =>
-      println(s"[DrySkin] ${state.self.getActive.species.name}'s stats are affected by the current weather!")
       state.weather match
-        case Weather.Rain => healSelf(16)(state)
-        case Weather.ClearSky => damageSelf(16)(state)
+        case Weather.Rain =>
+          println(s"[DrySkin] ${state.self.getActive.species.name}'s stats are affected by the current weather!")
+          healSelf(16)(state)
+        case Weather.ClearSky =>
+          println(s"[DrySkin] ${state.self.getActive.species.name}'s stats are affected by the current weather!")
+          damageSelf(16)(state)
         case _ => state
     },
 
@@ -265,8 +278,8 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnStart) define SwiftSwim as { state =>
-      println(s"[SwiftSwim] ${state.self.getActive.species.name} doubles its Speed in Rain!")
       if !state.flags.weatherSuppressed && state.weather == Weather.Rain then
+        println(s"[SwiftSwim] ${state.self.getActive.species.name} doubles its Speed in Rain!")
         state self (_ active (_ modifyStats(_ speed (_ multiply 2.0))))
       else state
     },
@@ -334,7 +347,7 @@ object MyAbilityBook:
    * @param slot the ability slot to look up
    * @return a list of abilities in the slot
    */
-  def allSlots(slot: AbilitySlot): List[Ability] =
+  private def allSlots(slot: AbilitySlot): List[Ability] =
     List(Some(slot.primary), slot.secondary, slot.hidden).flatten
 
   /**
