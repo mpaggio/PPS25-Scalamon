@@ -33,6 +33,3 @@ object AbilityDSL:
   case class AbilityBuilderStep(ability: Ability, trigger: AbilityTrigger):
     infix def as(effect: BattleState => BattleState): AbilityDefinition =
       AbilityDefinition(ability, trigger, AbilityEffect(effect))
-
-    def asNoop: AbilityDefinition =
-      AbilityDefinition(ability, trigger, AbilityEffect.noop)

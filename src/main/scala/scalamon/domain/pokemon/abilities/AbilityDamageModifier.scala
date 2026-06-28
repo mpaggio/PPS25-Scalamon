@@ -23,7 +23,7 @@ object AbilityDamageModifier:
       case ThickFat if move.moveType == Fire =>
         println(s"[ThickFat] ${state.self.getActive.species.name} takes 50% less damage from Fire moves!")
         0.5
-      case Levitate if move.moveType == Physical =>
+      case Levitate if move.category == Physical =>
         println(s"[Levitate] ${state.self.getActive.species.name} is immune to Physical moves!")
         0.0
       case _ => 1.0
@@ -44,9 +44,13 @@ object AbilityDamageModifier:
         1.5
       case SolarPower
         if state.weather == HeavySunlight
-          && move.category == DamageMoveCategory.Special => 1.3
+          && move.category == DamageMoveCategory.Special =>
+       println(s"[SolarPower] ${state.self.getActive.species.name} 's special moves are boosted in Heavy Sunlight!")
+        1.3
       case Ability.FlashFire
-        if state.flags.selfFlashFireActive && move.moveType == Fire => 1.3
+        if state.flags.selfFlashFireActive && move.moveType == Fire =>
+          println(s"[FlashFire] ${state.self.getActive.species.name} 's Fire moves are boosted due to Flash Fire!")
+          1.3
       case DroughtAura if move.moveType == Fire =>
         println(s"[DroughtAura] ${state.self.getActive.species.name} boosts Fire moves by 10%!")
         1.1

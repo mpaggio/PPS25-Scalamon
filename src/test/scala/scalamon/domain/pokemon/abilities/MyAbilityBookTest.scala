@@ -3,16 +3,18 @@ package scalamon.domain.pokemon.abilities
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.moves.AlteredStatus.*
-import scalamon.domain.moves.DamageMove
+import scalamon.domain.moves.{DamageMove, DamageMoveCategory, Move}
 import scalamon.domain.moves.DamageMoveCategory.Physical
-import scalamon.domain.moves.MoveDatabase.{allMoves, ofType}
+import scalamon.domain.moves.MoveDatabase.allMoves
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.BattleStateImpl.{BattleState, battleState}
+import scalamon.logics.state.BattleStateImpl.BattleState
+import scalamon.logics.state.MoveStateModuleImpl.moveInitialState
 import scalamon.logics.state.StateFixtures
+import scalamon.logics.state.StatsStateModuleImpl.multiply
 
 class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // HELPERS
@@ -29,9 +31,9 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   private def withWeatherAndDamage(w: Weather, dmg: Int = 10): BattleState =
     withDamagedSelf(dmg).setWeather(w)
 
-  private def selfHp(s: BattleState): Int = s.self.getActive.currentHp.toInt
+  private def selfHp(s: BattleState): Int = s.self.getActive.currentHp
 
-  private def enemyHp(s: BattleState): Int = s.opponent.getActive.currentHp.toInt
+  private def enemyHp(s: BattleState): Int = s.opponent.getActive.currentHp
 
   private def maxSelfHp(s: BattleState): Int = s.self.getActive.maxHp
 
@@ -47,10 +49,16 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
       abilitySlot = AbilitySlot(primary = ability)
     ))))
 
+  private def withOpponentMove(move: Move): BattleState =
+    battle opponent (_ active (p => p.copy(
+      moves = p.moves + (move.name -> moveInitialState(move))
+    )))
+
   private val fireMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Fire => m }
   private val waterMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Water => m }
   private val grassMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Grass => m }
   private val electricMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Electric => m }
+  private val physMoveOpt = allMoves.collectFirst { case m: DamageMove if m.category == Physical => m }
 
   // FIRE
 
@@ -74,6 +82,12 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     val s = withWeather(HeavySunlight)
     selfHp(run(SolarPower, OnTurnEnd)(s)) shouldEqual( selfHp(s) - maxSelfHp(s)/ 16)
 
+  test("SolarPower gives 1.3x multiplier to Special moves in HeavySunlight"):
+    val specialMoveOpt = allMoves.collectFirst { case m: DamageMove if m.category == DamageMoveCategory.Special => m }
+    specialMoveOpt.foreach: specialMove =>
+      val s = withSelfAbility(SolarPower).setWeather(HeavySunlight)
+      AbilityDamageModifier.attackerMultiplier(s, specialMove) shouldEqual 1.3
+
   test("SolarPower does not damage when weather is not HeavySunlight"):
     run(SolarPower, OnTurnEnd)(battle).self.getActive.currentHp shouldEqual
       battle.self.getActive.currentHp
@@ -86,6 +100,16 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     val s = withWeather(Rain)
     run(Drought, OnSwitchIn)(s).weather shouldEqual Rain
 
+  test("DroughtAura gives 1.1x multiplier to Fire type moves"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = withSelfAbility(DroughtAura)
+      AbilityDamageModifier.attackerMultiplier(s, fireMove) shouldEqual 1.1
+
+  test("DroughtAura gives no multiplier to non-Fire type moves"):
+    waterMoveOpt.foreach: waterMove =>
+      val s = withSelfAbility(DroughtAura)
+      AbilityDamageModifier.attackerMultiplier(s, waterMove) shouldEqual 1.0
+
   test("FlashFire activates flag when last opponent move is Fire Type"):
     fireMoveOpt.foreach: fireMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = fireMoveOpt))
@@ -96,8 +120,14 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
       val s = battle.updateFlags(_.copy(lastOpponentMove = waterMoveOpt))
       run(FlashFire, OnDamageTaken)(s).flags.selfFlashFireActive shouldBe false
 
-  test("FlashFire does not activate flag when ther is no last opponent move"):
+  test("FlashFire does not activate flag when there is no last opponent move"):
     run(FlashFire, OnDamageTaken)(battle).flags.selfFlashFireActive shouldBe false
+
+  test("FlashFire gives 1.3x multiplier to Fire type moves when flag is active"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = withSelfAbility(FlashFire)
+        .updateFlags(_.copy(selfFlashFireActive = true))
+      AbilityDamageModifier.attackerMultiplier(s, fireMove) shouldEqual 1.3
 
   test("FlameBody may burn opponent when hit (10 probabilistic trials"):
     val results = (1 to 10).map ( _ => run(FlameBody, OnDamageTaken)(battle))
@@ -115,6 +145,15 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     physMove.foreach: move =>
       val s = withSelfAbility(Guts)
       AbilityDamageModifier.attackerMultiplier(s, move) shouldEqual 1.0
+
+  test("RunAway restores speed to base when modified speed is lower than base"):
+    val s = battle self (_ active (_ modifyStats (_ speed (_ multiply 0.5)))) // dimezza la speed
+    val before = s.self.getActive.species.baseStats.speed.toInt
+    run(RunAway, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual before
+
+  test("RunAway does not modify speed when modified speed is not lower than base"):
+    val before = battle.self.getActive.modifiedStats.speed
+    run(RunAway, OnTurnStart)(battle).self.getActive.modifiedStats.speed shouldEqual before
 
   // WATER
 
@@ -148,7 +187,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     run(Hydration, OnTurnStart)(s).self.getActive.statusCondition shouldBe empty
 
   test("Hydration does not clear status condition when weather is not Rain"):
-    val s = (battle self (_ active (_ addStatus Burned)))
+    val s = battle self (_ active (_ addStatus Burned))
     run(Hydration, OnTurnStart)(s).self.getActive.statusCondition shouldBe defined
 
   test("Intimidate reduces opponent's active attack by 10%"):
@@ -172,7 +211,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   test("Chlorophyll doubles self speed when weather is HeavySunlight and not suppressed"):
     val s = withWeather(HeavySunlight)
     val before = s.self.getActive.modifiedStats.speed
-    run(Chlorophyll, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 2).toInt
+    run(Chlorophyll, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 2)
 
   test("Chlorophyll does not doubles self speed when weather is suppressed"):
     val s = withWeather(HeavySunlight).updateFlags(_.copy(weatherSuppressed = true))
@@ -229,7 +268,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   test("SurgeSurfer doubles self speed when Thunderstorm weather is active and not suppressed"):
     val s = withWeather(Thunderstorm)
     val before = s.self.getActive.modifiedStats.speed
-    run(SurgeSurfer, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 2).toInt
+    run(SurgeSurfer, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 2)
 
   test("SurgeSurfer does not boost speed when weather is suppressed"):
     val s = withWeather(Thunderstorm).updateFlags(_.copy(weatherSuppressed = true))
@@ -255,7 +294,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
       run(VoltAbsorb, OnDamageTaken)(s).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
 
   test("QuickFeet boosts self speed by 1.5x when self has a status condition"):
-    val s = (battle self (_ active (_ addStatus Paralyzed)))
+    val s = battle self (_ active (_ addStatus Paralyzed))
     val before = s.self.getActive.modifiedStats.speed
     run(QuickFeet, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 1.5).toInt
 
@@ -276,7 +315,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     run(MagicGuard, OnTurnStart)(battle).flags.selfMagicGuardActive shouldBe true
 
   test("MagicGuard prevents self from taking indirect damage (e.g., weather, status)"):
-    val s = withWeatherAndDamage(Rain, 10)
+    val s = withWeatherAndDamage(Rain, 20)
     val result = run(MagicGuard, OnTurnStart)(s)
     result.self.getActive.currentHp shouldEqual s.self.getActive.currentHp
 
@@ -294,4 +333,76 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   test("Forewarn does not modify battle state on switch in"):
     run(Forewarn, OnSwitchIn)(battle) shouldEqual battle
 
-  
+  test("DrySkin heals self by maxHp/16 when weather is Rain"):
+    val damaged = (battle self (_ active (_ takeDamage 20))).setWeather(Rain)
+    selfHp(run(DrySkin, OnTurnEnd)(damaged)) shouldEqual selfHp(damaged) + maxSelfHp(damaged) / 16
+
+  test("DrySkin damages self by maxHp/16 when weather is HeavySunlight"):
+    val s = withWeather(HeavySunlight)
+    selfHp(run(DrySkin, OnTurnEnd)(s)) shouldEqual selfHp(s) - maxSelfHp(s) / 16
+
+  test("DrySkin does not modify HP in other weather conditions"):
+    val s = withWeather(ClearSky)
+    selfHp(run(DrySkin, OnTurnEnd)(s)) shouldEqual selfHp(s)
+
+  test("Pressure decreases last opponent's move PP by 1"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = withOpponentMove(fireMove)
+        .updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
+      val before = s.opponent.getActive.moves(fireMove.name).currentPp
+      run(Pressure, OnDamageTaken)(s).opponent.getActive.moves(fireMove.name).currentPp shouldEqual before - 1
+
+  test("CloudNine suppresses weather on switch in"):
+    val s = withSelfAbility(CloudNine)
+    run(CloudNine, OnSwitchIn)(s).flags.weatherSuppressed shouldEqual true
+
+  test("CloudNine on switch-in suppresses weather, so Chlorophyll does not boost speed"):
+    val s = withWeather(HeavySunlight)
+    val suppressed = run(CloudNine, OnSwitchIn)(s)
+    val before = suppressed.self.getActive.modifiedStats.speed
+    run(Chlorophyll, OnTurnStart)(suppressed).self.getActive.modifiedStats.speed shouldEqual before
+
+  test("SwiftSwim double self speed when weather is Rain and not suppressed"):
+    val s = withWeather(Rain)
+    val before = s.self.getActive.modifiedStats.speed
+    run(SwiftSwim, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 2)
+
+  test("SwiftSwim does not double self speed when weather is suppressed"):
+    val s = withWeather(Rain).updateFlags(_.copy(weatherSuppressed = true))
+    val before = s.self.getActive.modifiedStats.speed
+    run(SwiftSwim, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual before
+
+  // POISON
+
+  test("ShedSkin may clear self status condition (10 probabilistic trials)"):
+    val s = battle self (_ active (_ addStatus Poisoned))
+    val results = (1 to 10).map(_ => run(ShedSkin, OnTurnStart)(s))
+    results.exists(_.self.getActive.statusCondition.isEmpty) shouldBe true
+    results.exists(_.self.getActive.statusCondition.isDefined) shouldBe true
+
+  test("PoisonTouch may poison opponent when hit (10 probabilistic trials)"):
+    val results = (1 to 10).map(_ => run(PoisonTouch, OnDamageDealt)(battle))
+    results.exists(_.opponent.getActive.statusCondition.contains(Poisoned)) shouldBe true
+    results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
+
+  test("ShadowTag sets opponentSwitchBlocked flag to true on switch in"):
+    val s = withSelfAbility(ShadowTag)
+    run(ShadowTag, OnSwitchIn)(s).flags.opponentSwitchBlocked shouldEqual true
+
+  test("LiquidOoze may damage opponent (10 probabilistic trials)"):
+    val results = (1 to 10).map(_ => run(LiquidOoze, OnDamageTaken)(battle))
+    results.exists(_.opponent.getActive.currentHp < battle.opponent.getActive.currentHp) shouldBe true
+    results.exists(_.opponent.getActive.currentHp == battle.opponent.getActive.currentHp) shouldBe true
+
+  test("CursedBody may set opponent move PP to 0 (10 probabilistic trials)"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = withOpponentMove(fireMove)
+        .updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
+      val results = (1 to 10).map(_ => run(CursedBody, OnDamageTaken)(s))
+      results.exists(_.opponent.getActive.moves(fireMove.name).currentPp == 0) shouldBe true
+      results.exists(_.opponent.getActive.moves(fireMove.name).currentPp > 0) shouldBe true
+
+  test("Levitate gives 0.0x multiplier to Physical type moves"):
+    physMoveOpt.foreach: physMove =>
+      val s = withOpponentAbility(Levitate)
+      AbilityDamageModifier.defenderMultiplier(s, physMove) shouldEqual 0.0

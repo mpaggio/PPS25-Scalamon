@@ -73,7 +73,7 @@ object PokemonStateModuleImpl extends PokemonStateModule:
         case _ => false
 
       if blocked then
-        println(s"[Sleep Immunity] ${ps.species.name} is immune to sleep due to its ability!")
+        println(s"[Insomnia] ${ps.species.name} is immune to sleep due to its ability!")
         ps
       else if ps.status.isEmpty then ps.copy(status=List(status))
       else ps

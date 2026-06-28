@@ -12,8 +12,6 @@ opaque type AbilityEffect = BattleState => BattleState
 object AbilityEffect:
   def apply(f: BattleState => BattleState): AbilityEffect = f
 
-  def noop: AbilityEffect = identity
-
   extension (e: AbilityEffect)
     def run(state: BattleState): BattleState = e(state)
 

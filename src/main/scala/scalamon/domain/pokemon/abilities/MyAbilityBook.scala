@@ -239,7 +239,6 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken) define Insomnia as { state =>
-      println(s"[VitalSpirit] ${state.self.getActive.species.name} is immune to Sleep!")
       state
     },
 
@@ -252,7 +251,7 @@ object MyAbilityBook:
         case Weather.Rain =>
           println(s"[DrySkin] ${state.self.getActive.species.name}'s stats are affected by the current weather!")
           healSelf(16)(state)
-        case Weather.ClearSky =>
+        case Weather.HeavySunlight =>
           println(s"[DrySkin] ${state.self.getActive.species.name}'s stats are affected by the current weather!")
           damageSelf(16)(state)
         case _ => state
@@ -287,7 +286,7 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnDamageTaken) define PoisonTouch as { state =>
+    OnTrigger(OnDamageDealt) define PoisonTouch as { state =>
       if Random.nextDouble() < 0.30 then
         println(s"[PoisonTouch] ${state.opponent.getActive.species.name} is poisoned!")
         state opponent (_ active (_ addStatus Poisoned))
@@ -295,11 +294,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken) define Levitate as { state =>
-      state.flags.lastOpponentMove match
-        case Some(move) if move.moveType == Physical =>
-          println(s"[Levitate] ${state.self.getActive.species.name} is immune to Physical moves!")
-          state
-        case _ => state
+      state
     },
 
     OnTrigger(OnDamageTaken) define CursedBody as { state =>
