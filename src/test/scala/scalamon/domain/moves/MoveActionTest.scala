@@ -15,6 +15,7 @@ import scalamon.domain.pokemon.pokedex.MyPokedex.*
 import MoveActionModuleImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.StatsStateModuleImpl.*
+import Accuracy.*
 
 class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
 

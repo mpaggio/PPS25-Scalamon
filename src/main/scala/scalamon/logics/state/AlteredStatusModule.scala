@@ -3,20 +3,21 @@ package scalamon.logics.state
 import scalamon.domain.moves.AlteredStatus
 import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.moves.AlteredStatusUtility.*
-import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
+import scalamon.domain.moves.Accuracy.*
+import scalamon.domain.moves.Accuracy.given
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 
 object AlteredStatusModule:
 
   extension (status: AlteredStatus)
-    def canMove(using roll: ProbabilityRoll): Boolean = status match
+    def canMove: Boolean = status match
       case Sleeping(_) => false
-      case Frozen => roll() <= freezeThawingChance
-      case Paralyzed => roll() > paralysisFailureChance
+      case Frozen => accuracyFromPercent(freezeThawingChance).test
+      case Paralyzed => !accuracyFromPercent(paralysisFailureChance).test
       case _ => true
 
-    def isSelfHitting(using roll: ProbabilityRoll): Boolean = status match
-      case Confused(_) => roll() <= confusionSelfHitChance
+    def isSelfHitting: Boolean = status match
+      case Confused(_) => accuracyFromPercent(confusionSelfHitChance).test
       case _ => false
 
     def applyCondition: StateTransformer = battleState => status match

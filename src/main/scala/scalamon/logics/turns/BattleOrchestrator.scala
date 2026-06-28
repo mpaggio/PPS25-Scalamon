@@ -6,9 +6,9 @@ import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.DamagePolicy
 import scalamon.logics.turns.BattleAction.*
 import scalamon.logics.turns.TurnResolutionImpl.*
-import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
+import scalamon.domain.moves.Accuracy.given
 
 /**
  * Coordinates the execution and resolution of a battle turn.
@@ -21,7 +21,7 @@ import scalamon.logics.turns.TurnResult.BothForcedSwitch
  * @param turnFlow
  *   the component used to schedule and order turn actions
  */
-final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy, ProbabilityRoll):
+final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
   /**
    * Executes a full turn starting from the current state and the chosen actions.
    *

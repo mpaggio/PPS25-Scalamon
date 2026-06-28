@@ -1,5 +1,7 @@
 package scalamon.domain.moves
 
+import scala.util.Random
+
 /**
  * Represents the accuracy of a move as a value between 0% and 100%.
  *
@@ -10,6 +12,8 @@ package scalamon.domain.moves
  */
 object Accuracy:
   opaque type Accuracy = Int
+  type ProbabilityRoll = () => Int
+  given defaultRoll: ProbabilityRoll = () => Random.nextInt(100) + 1
 
   /**
    * Create an `Accuracy` from a percentage value.
@@ -50,3 +54,8 @@ object Accuracy:
      * @return accuracy as Double percentage value (0.0 - 100.0).
      */
     def asDouble: Double = accuracy.toDouble
+
+    /**
+     * @return true if the accuracy test has passed (roll result <= of accuracy Int value)
+     */
+    def test(using roll: ProbabilityRoll): Boolean = roll() <= accuracy.asInt

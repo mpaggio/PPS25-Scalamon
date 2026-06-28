@@ -5,6 +5,7 @@ import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import Accuracy.*
 import AlteredStatus.*
+import scalamon.domain.moves.EffectTarget.*
 import scalamon.logics.state.PokemonStateModuleImpl.Modifier
 import scalamon.logics.state.StatsStateModuleImpl.*
 
@@ -29,8 +30,8 @@ class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
   test("DSL should create a StatChange effect"):
     val modifier: Modifier = _ specialDefense (_ decrease 1)
     val effect: MoveEffect =
-      Effect changing modifier withProbability 10
-    effect shouldBe StatChange(modifier, accuracyFromPercent(10))
+      Effect changing modifier ofTarget Opponent withProbability 10
+    effect shouldBe StatChange(modifier, Opponent, accuracyFromPercent(10))
 
   test("DSL should create a Heal effect"):
     val effect: MoveEffect =
@@ -67,8 +68,8 @@ class MoveEffectDSLTest extends org.scalatest.funsuite.AnyFunSuite:
         factory() shouldBe Paralyzed
       case _ => fail("Effect was not an AlteredState")
     val modifier: Modifier = _ specialDefense (_ decrease 1)
-    (Effect changing modifier withProbability 25.0) shouldBe
-      StatChange(modifier, accuracyFromPercent(25))
+    (Effect changing modifier ofTarget Opponent withProbability 25.0) shouldBe
+      StatChange(modifier, Opponent, accuracyFromPercent(25))
 
   test("DSL should reject invalid probabilities"):
     assertThrows[IllegalArgumentException](

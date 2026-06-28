@@ -1,6 +1,7 @@
 package scalamon.domain.moves
 
 import Accuracy.*
+import Accuracy.ProbabilityRoll
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.*
@@ -9,19 +10,15 @@ import scalamon.logics.state.MoveStateModuleImpl.*
 import scalamon.logics.state.DamageMoveCalculatorImpl.{Damage, getDamage}
 import scalamon.logics.state.DamagePolicy
 
-import scala.util.Random
-
 trait MoveActionModule:
   type Action
 
 object MoveActionModuleImpl extends MoveActionModule:
-  type ProbabilityRoll = () => Int
-  given defaultRoll: ProbabilityRoll = () => Random.nextInt(100) + 1
   override type Action = List[StateTransformer]
 
-  case class MoveAction(move: Move)(using policy: DamagePolicy, roll: ProbabilityRoll):
-    def execute: Action =
-      val isHit = checkAccuracy(move.accuracy)(using roll)
+  case class MoveAction(move: Move)(using policy: DamagePolicy):
+    def execute(using roll: ProbabilityRoll): Action =
+      val isHit = move.accuracy.test
       
       val ppStep: StateTransformer = battleState =>
         battleState self (_ active (_ .updateMove(move.name)(_.decreasePpBy(1))))
@@ -44,6 +41,3 @@ object MoveActionModuleImpl extends MoveActionModule:
         else battleState
         
       List(ppStep, damageStep, effectStep)
-
-    private def checkAccuracy(accuracy: Accuracy)(using roll: ProbabilityRoll): Boolean =
-      roll() <= accuracy.asInt

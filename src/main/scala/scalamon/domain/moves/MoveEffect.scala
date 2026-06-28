@@ -1,13 +1,19 @@
 package scalamon.domain.moves
 
 import Accuracy.*
+import Accuracy.given
 import AlteredStatus.*
-import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
 import scalamon.domain.pokemon.statistics.StatADT.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl
 import scalamon.logics.state.PokemonStateModuleImpl.Modifier
+
+/**
+ * Represents the possible targets of an effect
+ */
+enum EffectTarget:
+  case Self, Opponent
 
 /**
  * Represents all the possible effects that a move can have.
@@ -21,18 +27,18 @@ import scalamon.logics.state.PokemonStateModuleImpl.Modifier
  * - Forced recharge turns.
  */
 trait MoveEffect:
-  def executeEffect(using roll: ProbabilityRoll): StateTransformer
+  def executeEffect: StateTransformer
 
 case class ComposableEffect(transformer: StateTransformer) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = transformer
+  override def executeEffect: StateTransformer = transformer
 
 /**
  * Applies a status condition to the target with a given probability.
  * Example: paralysis, burn, poison, sleep, freeze, confusion.
  */
 case class AlteredState(statusFactory: () => AlteredStatus, probability: Accuracy) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
-    if roll() <= probability.asInt then
+  override def executeEffect: StateTransformer = battleState =>
+    if probability.test then
       val statusToApply = statusFactory()
       battleState opponent (_ active (_ addStatus statusToApply))
     else
@@ -42,18 +48,20 @@ case class AlteredState(statusFactory: () => AlteredStatus, probability: Accurac
  * Modifies one of the target's stats by a number of stages.
  * Positives values increase stats, negative values decrease them.
  */
-case class StatChange(modifier: Modifier, probability: Accuracy) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
-    if roll() <= probability.asInt then
-      battleState opponent (_ active (_.modifyStats(modifier)))
-    battleState
+case class StatChange(modifier: Modifier, effectTarget: EffectTarget, probability: Accuracy) extends MoveEffect:
+  override def executeEffect: StateTransformer = battleState =>
+    if probability.test then effectTarget match
+      case EffectTarget.Self => battleState self (_ active (_.modifyStats(modifier)))
+      case EffectTarget.Opponent => battleState opponent (_ active (_.modifyStats(modifier)))
+    else
+      battleState
 
 /**
  * Increases the critical hit multiplier of the move.
  * Higher values increase critical hits.
  */
 case class CriticalMultiplier(multiplier: Int) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState => battleState
+  override def executeEffect: StateTransformer = battleState => battleState
 
 /**
  * Restores a percentage of the user's HP.
@@ -61,7 +69,7 @@ case class CriticalMultiplier(multiplier: Int) extends MoveEffect:
  * @param percentage amount of HP restored (0-100).
  */
 case class Heal(percentage: Int) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
+  override def executeEffect: StateTransformer = battleState =>
     val activePokemon = battleState.self.getActive
     val healAmount = (percentage * activePokemon.species.baseStats.hp.toInt) / 100
     battleState self (_ active (_ heal healAmount))
@@ -72,7 +80,7 @@ case class Heal(percentage: Int) extends MoveEffect:
  * @param percentage percentage of damage reflected back to the user (0-100).
  */
 case class Recoil(percentage: Int) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
+  override def executeEffect: StateTransformer = battleState =>
     val activePokemon = battleState.self.getActive
     val recoilAmount = (percentage * activePokemon.species.baseStats.hp.toInt) / 100
     battleState self (_ active (_ takeDamage recoilAmount))
@@ -84,7 +92,7 @@ case class Recoil(percentage: Int) extends MoveEffect:
  * @param recharges number of turns required to recharge.
  */
 case class Recharge(recharges: Int) extends MoveEffect:
-  override def executeEffect(using roll: ProbabilityRoll): StateTransformer = battleState =>
+  override def executeEffect: StateTransformer = battleState =>
     battleState self (_ active (_ addStatus Charging(recharges)))
 
 /**
@@ -141,16 +149,21 @@ object MoveEffectDSL:
    * Builder for stat modification effects.
    * Represents the second step in the creation: define probability.
    */
-  case class StatChangeEffectBuilder(modifier: Modifier):
+  case class StatChangeEffectBuilder(modifier: Modifier, target: EffectTarget = EffectTarget.Opponent):
+
+    /**
+     * Defines the target of the stat change effect
+     */
+    infix def ofTarget(effectTarget: EffectTarget): StatChangeEffectBuilder = copy(target = effectTarget)
 
     /**
      * Defines probability using Int percentage (0 - 100)
      */
     infix def withProbability(probability: Int): MoveEffect =
-      StatChange(modifier, accuracyFromPercent(probability))
+      StatChange(modifier, target, accuracyFromPercent(probability))
 
     /**
      * Defines probability using Double percentage (0.0 - 100.0)
      */
     infix def withProbability(probability: Double): MoveEffect =
-      StatChange(modifier, accuracyFromRatio(probability / 100.0))
+      StatChange(modifier, target, accuracyFromRatio(probability / 100.0))

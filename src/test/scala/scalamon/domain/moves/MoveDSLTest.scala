@@ -11,6 +11,7 @@ import Accuracy.*
 import AlteredStatus.*
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.Modifier
+import EffectTarget.*
 
 class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
 
@@ -75,9 +76,9 @@ class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
       .withPP(16)
       .withAccuracy(100)
       .withType(Psychic)
-      .withEffect(Effect changing modifier withProbability 10)
+      .withEffect(Effect changing modifier ofTarget Opponent withProbability 10)
       .as(Special)
-    psychic.effect shouldBe Some(StatChange(modifier, accuracyFromPercent(10)))
+    psychic.effect shouldBe Some(StatChange(modifier, Opponent, accuracyFromPercent(10)))
 
   test("DSL should fail if mandatory fields are missing"):
     shouldFail(

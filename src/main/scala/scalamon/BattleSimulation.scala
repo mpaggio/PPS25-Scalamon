@@ -1,6 +1,5 @@
 package scalamon
 
-import scalamon.domain.moves.MoveActionModuleImpl.ProbabilityRoll
 import scalamon.domain.moves.MoveDatabase
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.domain.pokemon.pokedex.MyPokedex
@@ -18,7 +17,6 @@ object BattleSimulation extends App:
   // SETUP INIZIALE
 
   given DamagePolicy = DamagePolicy.Medium.given_DamagePolicy
-  given ProbabilityRoll = () => 50
 
   val pokedex = MyPokedex.allPokemons
   private def findPokemon(name: String) = pokedex.find(_.name == name).get
