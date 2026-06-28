@@ -67,7 +67,11 @@ object PokemonStateModuleImpl extends PokemonStateModule:
       ).flatten
 
       val sleepImmune = allAbilities.contains(Insomnia)
-      val blocked = status == Sleeping && sleepImmune
+
+      val blocked = status match
+        case _:  Sleeping => sleepImmune
+        case _ => false
+
       if blocked then
         println(s"[Sleep Immunity] ${ps.species.name} is immune to sleep due to its ability!")
         ps

@@ -195,3 +195,103 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     val results = (1 to 10).map(_ => run(EffectSpore, OnDamageTaken)(battle))
     results.exists(_.opponent.getActive.statusCondition.isDefined) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
+
+  // ELECTRIC
+
+  test("Static may paralyze opponent when hit (10 probabilistic trials)"):
+    val results = (1 to 10).map(_ => run(Static, OnDamageDealt)(battle))
+    results.exists(_.opponent.getActive.statusCondition.contains(Paralyzed)) shouldBe true
+    results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
+
+  test("LightningRodLite heals self by maxHp/8 when last opponent move is Electric type"):
+    electricMoveOpt.foreach: electricMove =>
+      val damaged = battle self (_ active (_ takeDamage 20))
+      val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
+      selfHp(run(LightningRodLite, OnDamageTaken)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 8
+
+  test("LightningRodLite does not heal when last opponent move is not Electric type"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
+      run(LightningRodLite, OnDamageTaken)(s).self.getActive.currentHp shouldEqual s.self.getActive.currentHp
+
+  test("LightningRod boosts self special attack by 1.5x when last opponent move is Electric type"):
+    electricMoveOpt.foreach: electricMove =>
+      val s = battle.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
+      val before = s.self.getActive.modifiedStats.specialAttack
+      run(LightningRod, OnDamageTaken)(s).self.getActive.modifiedStats.specialAttack shouldEqual (before * 1.5).toInt
+
+  test("LightningRod does not boost self special attack when last opponent move is not Electric type"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
+      val before = s.self.getActive.modifiedStats.specialAttack
+      run(LightningRod, OnDamageTaken)(s).self.getActive.modifiedStats.specialAttack shouldEqual before
+
+  test("SurgeSurfer doubles self speed when Thunderstorm weather is active and not suppressed"):
+    val s = withWeather(Thunderstorm)
+    val before = s.self.getActive.modifiedStats.speed
+    run(SurgeSurfer, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 2).toInt
+
+  test("SurgeSurfer does not boost speed when weather is suppressed"):
+    val s = withWeather(Thunderstorm).updateFlags(_.copy(weatherSuppressed = true))
+    val before = s.self.getActive.modifiedStats.speed
+    run(SurgeSurfer, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual before
+
+  test("SurgeSurfer does not boost speed when weather is not Thunderstorm"):
+    val before = battle.self.getActive.modifiedStats.speed
+    run(SurgeSurfer, OnTurnStart)(battle).self.getActive.modifiedStats.speed shouldEqual before
+
+  test("Aftermath damages opponent by maxHp/8 after KO"):
+    enemyHp(run(Aftermath, OnKODealt)(battle)) shouldEqual enemyHp(battle) - maxEnemyHp(battle) / 8
+
+  test("VoltAbsorb heals self by maxHp/4 when hit by Electric type move"):
+    electricMoveOpt.foreach: electricMove =>
+      val damaged = battle self (_ active (_ takeDamage 20))
+      val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
+      selfHp(run(VoltAbsorb, OnDamageTaken)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 4
+
+  test("VoltAbsorb does not heal when hit by non-Electric move"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
+      run(VoltAbsorb, OnDamageTaken)(s).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
+
+  test("QuickFeet boosts self speed by 1.5x when self has a status condition"):
+    val s = (battle self (_ active (_ addStatus Paralyzed)))
+    val before = s.self.getActive.modifiedStats.speed
+    run(QuickFeet, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 1.5).toInt
+
+  test("QuickFeet does not boost self speed when self has no status condition"):
+    val before = battle.self.getActive.modifiedStats.speed
+    run(QuickFeet, OnTurnStart)(battle).self.getActive.modifiedStats.speed shouldEqual before
+
+  // PSYCHIC
+
+  test("Synchronize copies self status condition to opponent when self has a status condition"):
+    val s = battle self (_ active (_ addStatus Paralyzed))
+    run(Synchronize, OnDamageTaken)(s).opponent.getActive.statusCondition shouldEqual Some(Paralyzed)
+
+  test("Synchronize does not copy status condition when self has no status condition"):
+    run(Synchronize, OnDamageTaken)(battle).opponent.getActive.statusCondition shouldEqual None
+
+  test("MagicGuard sets selfMagicGuardActive flag to true"):
+    run(MagicGuard, OnTurnStart)(battle).flags.selfMagicGuardActive shouldBe true
+
+  test("MagicGuard prevents self from taking indirect damage (e.g., weather, status)"):
+    val s = withWeatherAndDamage(Rain, 10)
+    val result = run(MagicGuard, OnTurnStart)(s)
+    result.self.getActive.currentHp shouldEqual s.self.getActive.currentHp
+
+  test("Insomnia prevents self from falling asleep"):
+    val s = withSelfAbility(Insomnia)
+    val afterSleep = s self (_ active (_ setStatus Sleeping(3)))
+    afterSleep.self.getActive.statusCondition shouldBe empty
+
+  test("Insomnia does not block non-sleep status conditions"):
+    val s = withSelfAbility(Insomnia)
+    val afterBurn = s self (_ active (_ setStatus Burned))
+    afterBurn.self.getActive.statusCondition shouldEqual Some(Burned)
+
+  // ONLY LOG ABILITY
+  test("Forewarn does not modify battle state on switch in"):
+    run(Forewarn, OnSwitchIn)(battle) shouldEqual battle
+
+  
