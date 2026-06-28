@@ -40,7 +40,6 @@ object MyAbilityBook:
     // FIRE
 
     OnTrigger(OnDamageDealt) define Blaze as { state =>
-      println(s"[Blaze] ${state.self.getActive.species.name} is using Blaze! Fire moves are boosted!")
       state
     },
 
@@ -73,7 +72,6 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageDealt) define DroughtAura as { state =>
-      println(s"[DroughtAura] ${state.self.getActive.species.name} boosts Fire moves by 10%!")
       state
     },
 
@@ -95,14 +93,12 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageDealt) define Guts as { state =>
-      println(s"[Guts] ${state.self.getActive.species.name} boosts its Physical Attack by 30% when it has a status condition!")
       state
     },
 
     // WATER
 
     OnTrigger(OnDamageDealt) define Torrent as { state =>
-      println(s"[Torrent] ${state.self.getActive.species.name} is using Torrent! Water moves are boosted!")
       state
     },
 
@@ -142,7 +138,6 @@ object MyAbilityBook:
     // GRASS
 
     OnTrigger(OnDamageDealt) define Overgrow as { state =>
-      println(s"[Overgrow] ${state.self.getActive.species.name} is using Overgrow! Grass moves are boosted!")
       state
     },
 
@@ -154,7 +149,6 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken) define ThickFat as { state =>
-      println(s"[ThickFat] ${state.self.getActive.species.name} takes 50% less damage from Fire moves!")
       state
     },
 

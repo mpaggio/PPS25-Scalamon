@@ -42,8 +42,14 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
       abilitySlot = AbilitySlot(primary = ability)
     ))))
 
+  private def withOpponentAbility(ability: Ability): BattleState =
+    battle opponent (_ active (p => p.copy(species = p.species.copy(
+      abilitySlot = AbilitySlot(primary = ability)
+    ))))
+
   private val fireMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Fire => m }
   private val waterMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Water => m }
+  private val grassMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Grass => m }
   private val electricMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Electric => m }
 
   // FIRE
@@ -155,5 +161,37 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     val before = battle.self.getActive.modifiedStats.attack
     val after = run(Moxie, OnKODealt)(battle).self.getActive.modifiedStats.attack
     after shouldEqual (before * 1.1).toInt
+
   // GRASS
 
+  test("Overgrow gives 1.5x multiplier to Grass type moves when self HP <= 1/3"):
+    val lowHpState = withSelfAbility(Overgrow) self (_ active (_ takeDamage 30))
+    grassMoveOpt.foreach: grassMove =>
+      AbilityDamageModifier.attackerMultiplier(lowHpState, grassMove) shouldEqual 1.5
+
+  test("Chlorophyll doubles self speed when weather is HeavySunlight and not suppressed"):
+    val s = withWeather(HeavySunlight)
+    val before = s.self.getActive.modifiedStats.speed
+    run(Chlorophyll, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 2).toInt
+
+  test("Chlorophyll does not doubles self speed when weather is suppressed"):
+    val s = withWeather(HeavySunlight).updateFlags(_.copy(weatherSuppressed = true))
+    run(Chlorophyll, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual s.self.getActive.modifiedStats.speed
+
+  test("Chlorophyll does not doubles self speed when weather is not HeavySunlight"):
+    val before = battle.self.getActive.modifiedStats.speed
+    run(Chlorophyll, OnTurnStart)(battle).self.getActive.modifiedStats.speed shouldEqual before
+
+  test("ThickFat gives 0.5x multiplier to Fire type moves"):
+    fireMoveOpt.foreach: fireMove =>
+      val s = withOpponentAbility(ThickFat)
+      AbilityDamageModifier.defenderMultiplier(s, fireMove) shouldEqual 0.5
+
+  test("Regenerator heals self by maxHp/3 when switching out"):
+    val s = withDamagedSelf(30)
+    selfHp(run(Regenerator, OnSwitchOut)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 3
+
+  test("EffectSpore may apply a random status condition to opponent when hit (10 probabilistic trials)"):
+    val results = (1 to 10).map(_ => run(EffectSpore, OnDamageTaken)(battle))
+    results.exists(_.opponent.getActive.statusCondition.isDefined) shouldBe true
+    results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true

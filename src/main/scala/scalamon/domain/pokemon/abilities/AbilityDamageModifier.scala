@@ -20,8 +20,12 @@ object AbilityDamageModifier:
   
   private def abilityDefenseMultiplier(state: BattleState, move: DamageMove, ability: Ability): Double =
     ability match
-      case ThickFat if move.moveType == Fire => 0.5
-      case Levitate if move.moveType == Physical => 0.0
+      case ThickFat if move.moveType == Fire =>
+        println(s"[ThickFat] ${state.self.getActive.species.name} takes 50% less damage from Fire moves!")
+        0.5
+      case Levitate if move.moveType == Physical =>
+        println(s"[Levitate] ${state.self.getActive.species.name} is immune to Physical moves!")
+        0.0
       case _ => 1.0
       
   private def abilityAttackMultiplier(state: BattleState, move: DamageMove, ability: Ability): Double = {
@@ -29,17 +33,26 @@ object AbilityDamageModifier:
     val lowHp = attacker.currentHp <= attacker.maxHp / 3
 
     ability match
-      case Blaze if lowHp && move.moveType == Fire => 1.5
-      case Torrent if lowHp && move.moveType == Water => 1.5
-      case Overgrow if lowHp && move.moveType == Grass => 1.5
+      case Blaze if lowHp && move.moveType == Fire =>
+        println(s"[Blaze] ${state.self.getActive.species.name} is using Blaze! Fire moves are boosted!")
+        1.5
+      case Torrent if lowHp && move.moveType == Water =>
+        println(s"[Torrent] ${state.self.getActive.species.name} is using Torrent! Water moves are boosted!")
+        1.5
+      case Overgrow if lowHp && move.moveType == Grass =>
+        println(s"[Overgrow] ${state.self.getActive.species.name} is using Overgrow! Grass moves are boosted!")
+        1.5
       case SolarPower
         if state.weather == HeavySunlight
           && move.category == DamageMoveCategory.Special => 1.3
       case Ability.FlashFire
         if state.flags.selfFlashFireActive && move.moveType == Fire => 1.3
-      case DroughtAura if move.moveType == Fire => 1.1
+      case DroughtAura if move.moveType == Fire =>
+        println(s"[DroughtAura] ${state.self.getActive.species.name} boosts Fire moves by 10%!")
+        1.1
       case Guts if attacker.statusCondition.isDefined
           && move.category == Physical =>
+        println(s"[Guts] ${state.self.getActive.species.name} boosts its Physical Attack by 30% when it has a status condition!")
         val burnCompensation = if attacker.statusCondition.contains(Burned) then 2.0 else 1.0
         1.3 * burnCompensation
       case _ => 1.0
