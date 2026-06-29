@@ -12,6 +12,7 @@ import scalamon.logics.state.AlteredStatusModule.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.domain.moves.Accuracy.given
 import scalamon.domain.moves.EffectTarget.Self
+import scalamon.logics.battle.WeatherState
 
 /**
  * Coordinates the execution and resolution of a battle turn.
@@ -41,13 +42,13 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @return
    * the updated battle state together with the resolved turn result
    */
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
+  def runTurn(state: BattleState, choices: TurnChoices, weatherState: WeatherState, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
     val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
     val afterExecution = plan.orderedActions.foldLeft(resetState)(executeScheduled)
     val result = resolveTurn(afterExecution)
     val finalState = result match
-      case TurnResult.Ongoing(s) => endTurn(s)
+      case TurnResult.Ongoing(s) => endTurn(s, weatherState)
       case TurnResult.ForcedSwitch(s, _) => s
       case TurnResult.OpponentForcedSwitch(s, _) => s
       case TurnResult.BothForcedSwitch(s, _, _) => s
@@ -98,7 +99,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           restoreOrientation(state, attacking, oriented)
         else if isSelfHitting(activePokemon) then
           println(s" ${attacking.value} si colpisce da solo usando ${moveRef.value}!")
-          val selfTargeted = MoveAction(move).execute(Self).foldLeft(state)((s, f) => f(s))
+          val selfTargeted = MoveAction(move).execute(Self).foldLeft(oriented)((s, f) => f(s))
           restoreOrientation(state, attacking, selfTargeted)
         else
           val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))

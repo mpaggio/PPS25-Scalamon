@@ -13,7 +13,7 @@ import scalamon.logics.turns.{ActionOrderResolver, BattleOrchestrator, MoveRef, 
 import scalamon.logics.turns.TurnResult.*
 
 object BattleSimulation extends App:
-
+/*
   // SETUP INIZIALE
 
   given DamagePolicy = DamagePolicy.Medium.given_DamagePolicy
@@ -136,3 +136,5 @@ object BattleSimulation extends App:
         running = false
 
     turn += 1
+    
+ */
