@@ -1,10 +1,10 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.moves.DamageMove
+import scalamon.domain.moves.Accuracy.{ProbabilityRoll, defaultRoll}
+import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
 import scalamon.domain.moves.DamageMoveCategory.*
 import scalamon.domain.moves.MoveDSL.move
-import scalamon.domain.moves.MoveDatabase.*
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
@@ -17,6 +17,7 @@ import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.state.DamagePolicy.Medium.given
 import scalamon.logics.state.MoveStateModuleImpl.*
+import scalamon.logics.weather.WeatherSystem
 
 class DamageMoveCalculatorTest extends AnyFunSuite:
   val baseStats = Stats(
@@ -195,4 +196,35 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
         s"Expected damage in Medium Mode ($mediumDamage) to be less than damage in Hard Mode ($hardDamage)," +
           s" but got $mediumDamage >= $hardDamage")
     }
+  }
+
+  test("getDamage with critical hit should deal 1.5x more damage") {
+    val damageCritical = locally: // To separate the scope of the given instance
+      given ProbabilityRoll = () => 1 // Force a critical hit
+      getDamage(state, physicalMove)
+    val damageNormal = locally:
+      given ProbabilityRoll = () => 100 // Force no critical hit
+      getDamage(state, physicalMove)
+    assert(damageCritical == (damageNormal * 1.5).toInt || damageCritical == (damageNormal * 1.5).toInt + 1,
+      s"Expected critical ($damageCritical) to be circa = normal * 1.5 (${(damageNormal * 1.5).toInt})")
+  }
+
+  test("getDamage with CriticalMultiplier effect should have higher critical chance") {
+    val highCriticalMove = DamageMove(
+      name = "HighCrit",
+      power = physicalMove.power,
+      pp = physicalMove.pp,
+      accuracy = physicalMove.accuracy,
+      moveType = Normal,
+      category = Physical,
+      effect = Some(CriticalMultiplier(2)) // Double the critical hit chance
+    )
+    val damageBoosted = locally:
+      given ProbabilityRoll = () => 10 // Force a critical hit with boosted chance
+      getDamage(state, highCriticalMove)
+    val damageNormal = locally:
+      given ProbabilityRoll = () => 10 // Force a critical hit with normal chance
+      getDamage(state, physicalMove)
+    assert(damageBoosted > damageNormal,
+      s"Expected high critical move ($damageBoosted) > normal move ($damageNormal) at roll = 10")
   }
