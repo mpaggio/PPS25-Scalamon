@@ -8,7 +8,11 @@ import scalamon.logics.turns.BattleAction.*
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
+import scalamon.logics.state.AlteredStatusModule.*
+import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.domain.moves.Accuracy.given
+import scalamon.domain.moves.EffectTarget.Self
+import scalamon.logics.battle.WeatherState
 
 /**
  * Coordinates the execution and resolution of a battle turn.
@@ -38,13 +42,13 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @return
    * the updated battle state together with the resolved turn result
    */
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
+  def runTurn(state: BattleState, choices: TurnChoices, weatherState: WeatherState, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
     val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
     val afterExecution = plan.orderedActions.foldLeft(resetState)(executeScheduled)
     val result = resolveTurn(afterExecution)
     val finalState = result match
-      case TurnResult.Ongoing(s) => endTurn(s)
+      case TurnResult.Ongoing(s) => endTurn(s, weatherState)
       case TurnResult.ForcedSwitch(s, _) => s
       case TurnResult.OpponentForcedSwitch(s, _) => s
       case TurnResult.BothForcedSwitch(s, _, _) => s
@@ -90,24 +94,40 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
         if currentMoveState.currentPp <= 0 then
           println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
           state
+        else if !canMove(activePokemon) then
+          println(s" ${attacking.value} non puo' muoversi a causa del suo stato!")
+          restoreOrientation(state, attacking, oriented)
+        else if isSelfHitting(activePokemon) then
+          println(s" ${attacking.value} si colpisce da solo usando ${moveRef.value}!")
+          val selfTargeted = MoveAction(move).execute(Self).foldLeft(oriented)((s, f) => f(s))
+          restoreOrientation(state, attacking, selfTargeted)
         else
           val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))
-          val afterMove = MoveAction(move).execute.foldLeft(orientedWithMove)((s, f) => f(s))
-          if state.self.team.contains(attacking.value) then afterMove
-          else afterMove.switchUserEnemy
+          val afterMove = MoveAction(move).execute().foldLeft(orientedWithMove)((s, f) => f(s))
+          restoreOrientation(state, attacking, afterMove)
       case Some(move) =>
         val currentMoveState = activePokemon.moveState(move.name)
         if currentMoveState.currentPp <= 0 then
           println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
           state
         else
-          val afterMove = MoveAction(move).execute.foldLeft(oriented)((s, f) => f(s))
+          val afterMove = MoveAction(move).execute().foldLeft(oriented)((s, f) => f(s))
           if state.self.team.contains(attacking.value) then afterMove
           else afterMove.switchUserEnemy
       case None => state
 
   private def resolveMove(moveRef: MoveRef): Option[Move] =
     MoveDatabase.allMoves.findByName(moveRef.value)
+
+  private def canMove(pokemon: PokemonState): Boolean =
+    pokemon.statusCondition.forall(_.canMove)
+
+  private def isSelfHitting(pokemon: PokemonState): Boolean =
+    pokemon.statusCondition.exists(_.isSelfHitting)
+
+  private def restoreOrientation(original: BattleState, attacking: PokemonRef, oriented: BattleState): BattleState =
+    if original.self.team.contains(attacking.value) then oriented
+    else oriented.switchUserEnemy
 
   def applyForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
     val newSelf = TurnResolutionImpl.applyForcedSwitch(state.self, newActive)

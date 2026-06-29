@@ -5,6 +5,7 @@ import scalamon.domain.moves.Accuracy.{ProbabilityRoll, defaultRoll}
 import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
 import scalamon.domain.moves.DamageMoveCategory.*
 import scalamon.domain.moves.MoveDSL.move
+import scalamon.domain.moves.MoveDatabase.{allMoves, ofType}
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
