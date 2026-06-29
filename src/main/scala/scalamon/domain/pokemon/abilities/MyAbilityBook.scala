@@ -2,7 +2,6 @@ package scalamon.domain.pokemon.abilities
 
 import scalamon.domain.moves.*
 import scalamon.domain.moves.AlteredStatus.*
-import scalamon.domain.moves.DamageMoveCategory.Physical
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.abilities.AbilityDSL.{AbilityBook, OnTrigger}
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*

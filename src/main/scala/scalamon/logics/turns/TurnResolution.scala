@@ -8,8 +8,11 @@ import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 import scalamon.logics.battle.{BattleContext, WeatherState}
+import scalamon.logics.state.AlteredStatusModule.applyCondition
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
 import scalamon.logics.weather.WeatherSystem.default
+
+import scala.language.postfixOps
 
 /**
  * Determines the outcome of a turn based on the current state of the battle,
@@ -34,7 +37,7 @@ trait TurnResolutionModule:
   def needsForcedSwitch(player: PlayerState): Boolean
   def resolveTurn(state: BattleState): TurnResult
   def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState
-  def endTurn(state: BattleState): BattleState
+  def endTurn(state: BattleState, weatherState: WeatherState): BattleState
 
 object TurnResolutionImpl extends TurnResolutionModule:
 
@@ -77,13 +80,8 @@ object TurnResolutionImpl extends TurnResolutionModule:
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
       val oriented = if isSelf then s else s.switchUserEnemy
       val pokemon = oriented.self.getActive
-      val damaged =
-        if oriented.flags.selfMagicGuardActive then oriented
-        else pokemon.statusCondition match
-          case Some(Burned) => oriented self(_ active (_ takeDamage(pokemon.maxHp / 16)))
-          case Some(Poisoned) => oriented self(_ active (_ takeDamage(pokemon.maxHp / 8)))
-          case _ => oriented
-      if isSelf then damaged else damaged.switchUserEnemy
+      val updated = pokemon.status.foldLeft(oriented)((state, status) => status.applyCondition(state))
+      if isSelf then updated else updated.switchUserEnemy
     applyForPlayer(applyForPlayer(state, true), false)
   
   private def applyEndOfTurnAbilities(state: BattleState) =
@@ -93,18 +91,16 @@ object TurnResolutionImpl extends TurnResolutionModule:
       val oriented = if isSelf then s else s.switchUserEnemy
       val result = MyAbilityBook.runTrigger(OnTurnEnd, slot)(oriented)
       if isSelf then result else result.switchUserEnemy
-
     applyForPlayer(applyForPlayer(state, true), false)
 
-  private def applyWeatherEffects(state: BattleState): BattleState =
-    val context = BattleContext(state, WeatherState(state.weather))
-    val resolver = summon[WeatherEndTurnResolver]
-    resolver.apply(context).state
+  private def applyWeatherEffects(state: BattleState, weatherState: WeatherState): BattleState =
+    val context = BattleContext(state, weatherState)
+    summon[WeatherEndTurnResolver].apply(context).state
 
-  override def endTurn(state: BattleState): BattleState =
+  override def endTurn(state: BattleState, weatherState: WeatherState): BattleState =
     val pipeline: List[BattleState => BattleState] = List(
       applyStatusDamage,
-      applyWeatherEffects,
+      s => applyWeatherEffects(s, weatherState),
       applyEndOfTurnAbilities
     )
     pipeline.foldLeft(state)((s, f) => f(s))
