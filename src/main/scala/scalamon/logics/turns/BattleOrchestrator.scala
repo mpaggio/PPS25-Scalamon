@@ -8,6 +8,8 @@ import scalamon.logics.turns.BattleAction.*
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
+import scalamon.logics.state.AlteredStatusModule.*
+import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.domain.moves.Accuracy.given
 
 /**
@@ -90,11 +92,17 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
         if currentMoveState.currentPp <= 0 then
           println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
           state
+        else if !canMove(activePokemon) then
+          println(s" ${attacking.value} non puo' muoversi a causa del suo stato!")
+          restoreOrientation(state, attacking, oriented)
+        else if isSelfHitting(activePokemon) then
+          println(s" ${attacking.value} si colpisce da solo usando ${moveRef.value}!")
+          val selfTargeted = executeSelfHitMove(oriented, move)
+          restoreOrientation(state, attacking, selfTargeted)
         else
           val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))
           val afterMove = MoveAction(move).execute.foldLeft(orientedWithMove)((s, f) => f(s))
-          if state.self.team.contains(attacking.value) then afterMove
-          else afterMove.switchUserEnemy
+          restoreOrientation(state, attacking, afterMove)
       case Some(move) =>
         val currentMoveState = activePokemon.moveState(move.name)
         if currentMoveState.currentPp <= 0 then
@@ -108,6 +116,16 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
 
   private def resolveMove(moveRef: MoveRef): Option[Move] =
     MoveDatabase.allMoves.findByName(moveRef.value)
+
+  private def canMove(pokemon: PokemonState): Boolean =
+    pokemon.statusCondition.forall(_.canMove)
+
+  private def isSelfHitting(pokemon: PokemonState): Boolean =
+    pokemon.statusCondition.exists(_.isSelfHitting)
+
+  private def restoreOrientation(original: BattleState, attacking: PokemonRef, oriented: BattleState): BattleState =
+    if original.self.team.contains(attacking.value) then oriented
+    else oriented.switchUserEnemy
 
   def applyForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
     val newSelf = TurnResolutionImpl.applyForcedSwitch(state.self, newActive)
