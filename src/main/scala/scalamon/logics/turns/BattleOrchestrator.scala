@@ -11,6 +11,7 @@ import scalamon.logics.turns.TurnResult.BothForcedSwitch
 import scalamon.logics.state.AlteredStatusModule.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.domain.moves.Accuracy.given
+import scalamon.domain.moves.EffectTarget.Self
 
 /**
  * Coordinates the execution and resolution of a battle turn.
@@ -97,11 +98,11 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           restoreOrientation(state, attacking, oriented)
         else if isSelfHitting(activePokemon) then
           println(s" ${attacking.value} si colpisce da solo usando ${moveRef.value}!")
-          val selfTargeted = executeSelfHitMove(oriented, move)
+          val selfTargeted = MoveAction(move).execute(Self).foldLeft(state)((s, f) => f(s))
           restoreOrientation(state, attacking, selfTargeted)
         else
           val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))
-          val afterMove = MoveAction(move).execute.foldLeft(orientedWithMove)((s, f) => f(s))
+          val afterMove = MoveAction(move).execute().foldLeft(orientedWithMove)((s, f) => f(s))
           restoreOrientation(state, attacking, afterMove)
       case Some(move) =>
         val currentMoveState = activePokemon.moveState(move.name)
@@ -109,7 +110,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
           state
         else
-          val afterMove = MoveAction(move).execute.foldLeft(oriented)((s, f) => f(s))
+          val afterMove = MoveAction(move).execute().foldLeft(oriented)((s, f) => f(s))
           if state.self.team.contains(attacking.value) then afterMove
           else afterMove.switchUserEnemy
       case None => state
