@@ -2,6 +2,8 @@ package scalamon.logics.turns
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{a, be, shouldBe, shouldEqual, shouldNot}
+import scalamon.domain.weather.Weather.ClearSky
+import scalamon.logics.battle.WeatherState
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.StateFixtures
@@ -161,7 +163,7 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   }
 
   test("endTurn does not mutate the original BattleState"){
-    endTurn(battle)
+    endTurn(battle, WeatherState(ClearSky))
     battle.self.activeId shouldBe "Charmander"
     battle.self.getActive.currentHp shouldBe 39
     battle.opponent.activeId shouldBe "Squirtle"

@@ -1,7 +1,7 @@
 package scalamon.logics.state
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.moves.Accuracy.{ProbabilityRoll, defaultRoll}
+import scalamon.domain.moves.Accuracy.ProbabilityRoll
 import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
 import scalamon.domain.moves.DamageMoveCategory.*
 import scalamon.domain.moves.MoveDSL.move
@@ -60,11 +60,13 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   val noEffectMove: DamageMove = move named "Thunder Wave" withPower 1 withPP 20 withAccuracy 90 withType Electric as Special
 
   test("getDamage should return a positive value with valid inputs"){
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val damage = getDamage(state, physicalMove)
     assert(damage > 0, s"Expected damage to be positive, but got $damage")
   }
 
   test("getDamage should increase if attacker's attack stat increases (Physical)"){
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val boostedPlayerAtk = playerState(
       team = Map("Charmander" -> (attackerPokemonState modifyStats (ss => StatsStateModuleImpl.attack(ss)(_ increase 50)))),
       active = "Charmander"
@@ -80,6 +82,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should decrease if defender's defense stat increases (Physical)") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val tankPlayerDef = playerState(
       team = Map("Bulbasaur" -> (defenderPokemonState modifyStats (ss => StatsStateModuleImpl.defense(ss)(_ increase 50)))),
       active = "Bulbasaur"
@@ -95,6 +98,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should increase if attacker's specialAttack stat increases (Special)") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val boostedPlayerAtk = playerState(
       team = Map("Charmander" -> (attackerPokemonState modifyStats (ss => StatsStateModuleImpl.specialAttack(ss)(_ increase 50)))),
       active = "Charmander"
@@ -110,6 +114,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should decrease if defender's specialDefense stat increases (Special)") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val tankPlayerDef = playerState(
       team = Map("Bulbasaur" -> (defenderPokemonState modifyStats (ss => StatsStateModuleImpl.specialDefense(ss)(_ increase 50)))),
       active = "Bulbasaur"
@@ -125,6 +130,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should use different stats for Physical and Special move categories") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val damagePhysical = getDamage(state, physicalMove)
     val damageSpecial = getDamage(state, specialMove)
 
@@ -133,6 +139,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should produce higher damage for higher move power") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val lowPowerMove = move named "Low" withPower 20 withPP 35 withAccuracy 100 withType Normal as Physical
     val highPowerMove = move named "High" withPower 80 withPP 35 withAccuracy 100 withType Normal as Physical
     val damageLow = getDamage(state, lowPowerMove)
@@ -142,6 +149,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage with STAB should be greater than without STAB, all else equal") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val noSTABMove = move named "Tackle" withPower 40 withPP 35 withAccuracy 100 withType Normal as Special
     val stabMove = move named "Ember" withPower 40 withPP 25 withAccuracy 100 withType Fire as Special
     val damageNoSTAB = getDamage(state, noSTABMove)
@@ -151,6 +159,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should apply X2 multiplier when move is SuperEffective"){
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val damageNeutral = getDamage(state, physicalMove)
     val damageSuperEffective = getDamage(state, specialMove)
     assert(damageSuperEffective > damageNeutral,
@@ -159,6 +168,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should apply 0.5 multiplier when move is NotVeryEffective"){
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val damageNeutral = getDamage(state, physicalMove)
     val damageNotVeryEffective = getDamage(state, notVeryEffectiveMove)
     assert(damageNotVeryEffective < damageNeutral,
@@ -167,6 +177,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage with STAB & SuperEffective should produce higher damage than without STAB and Neutral effectiveness") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     val NoSTABAndNeutralDamage = getDamage(state, physicalMove)
     val STABAndSuperEffectiveDamage = getDamage(state, stabMove)
 
@@ -176,6 +187,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should be lower in Easy Mode than in Medium Mode") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     import scalamon.logics.state.DamagePolicy.Easy.given
     val easyDamage = getDamage(state, physicalMove)
     {
@@ -188,6 +200,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   }
 
   test("getDamage should be lower in Medium Mode than in Hard Mode") {
+    given ProbabilityRoll = () => 100 // Force no critical hit
     import scalamon.logics.state.DamagePolicy.Medium.given
     val mediumDamage = getDamage(state, physicalMove)
     {

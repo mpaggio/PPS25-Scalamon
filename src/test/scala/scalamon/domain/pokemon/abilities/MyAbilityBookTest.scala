@@ -145,7 +145,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("FlameBody may burn opponent when hit (10 probabilistic trials") {
-    val results = (1 to 10).map(_ => run(FlameBody, OnDamageTaken)(battle))
+    val results = (1 to 50).map(_ => run(FlameBody, OnDamageTaken)(battle))
     results.exists(_.opponent.getActive.statusCondition.contains(Burned)) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
@@ -265,7 +265,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("EffectSpore may apply a random status condition to opponent when hit (10 probabilistic trials)") {
-    val results = (1 to 10).map(_ => run(EffectSpore, OnDamageTaken)(battle))
+    val results = (1 to 50).map(_ => run(EffectSpore, OnDamageTaken)(battle))
     results.exists(_.opponent.getActive.statusCondition.isDefined) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
@@ -273,7 +273,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // ELECTRIC
 
   test("Static may paralyze opponent when hit (10 probabilistic trials)") {
-    val results = (1 to 10).map(_ => run(Static, OnDamageDealt)(battle))
+    val results = (1 to 50).map(_ => run(Static, OnDamageDealt)(battle))
     results.exists(_.opponent.getActive.statusCondition.contains(Paralyzed)) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
@@ -439,13 +439,13 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("ShedSkin may clear self status condition (10 probabilistic trials)") {
     val s = battle self (_ active (_ addStatus Poisoned))
-    val results = (1 to 10).map(_ => run(ShedSkin, OnTurnStart)(s))
+    val results = (1 to 50).map(_ => run(ShedSkin, OnTurnStart)(s))
     results.exists(_.self.getActive.statusCondition.isEmpty) shouldBe true
     results.exists(_.self.getActive.statusCondition.isDefined) shouldBe true
   }
 
   test("PoisonTouch may poison opponent when hit (10 probabilistic trials)") {
-    val results = (1 to 10).map(_ => run(PoisonTouch, OnDamageDealt)(battle))
+    val results = (1 to 50).map(_ => run(PoisonTouch, OnDamageDealt)(battle))
     results.exists(_.opponent.getActive.statusCondition.contains(Poisoned)) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
@@ -456,7 +456,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("LiquidOoze may damage opponent (10 probabilistic trials)") {
-    val results = (1 to 10).map(_ => run(LiquidOoze, OnDamageTaken)(battle))
+    val results = (1 to 50).map(_ => run(LiquidOoze, OnDamageTaken)(battle))
     results.exists(_.opponent.getActive.currentHp < battle.opponent.getActive.currentHp) shouldBe true
     results.exists(_.opponent.getActive.currentHp == battle.opponent.getActive.currentHp) shouldBe true
   }
@@ -465,7 +465,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     fireMoveOpt.foreach: fireMove =>
       val s = withOpponentMove(fireMove)
         .updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
-      val results = (1 to 10).map(_ => run(CursedBody, OnDamageTaken)(s))
+      val results = (1 to 50).map(_ => run(CursedBody, OnDamageTaken)(s))
       results.exists(_.opponent.getActive.moves(fireMove.name).currentPp == 0) shouldBe true
       results.exists(_.opponent.getActive.moves(fireMove.name).currentPp > 0) shouldBe true
   }
