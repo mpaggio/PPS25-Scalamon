@@ -33,9 +33,9 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     given ProbabilityRoll = () => 1
 
     val action: MoveAction = MoveAction(swift)
-    val state1 = action.execute.foldLeft(battleStartingState)((state, transformer) => transformer(state))
+    val state1 = action.execute().foldLeft(battleStartingState)((state, transformer) => transformer(state))
     state1.self.team(pokemon.name).moveState(swift.name).currentPp shouldBe 31
-    val state2 = action.execute.foldLeft(state1)((state, transformer) => transformer(state))
+    val state2 = action.execute().foldLeft(state1)((state, transformer) => transformer(state))
     state2.self.team(pokemon.name).moveState(swift.name).currentPp shouldBe 30
 
   test("Damaging move action with 100% accuracy should always decrease enemy HP and consume PP"):
@@ -43,7 +43,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     given ProbabilityRoll = () => 1
 
     val battleEndingState =
-      MoveAction(swift).execute.foldLeft(battleStartingState)((state, transformer) => transformer(state))
+      MoveAction(swift).execute().foldLeft(battleStartingState)((state, transformer) => transformer(state))
     battleEndingState.opponent.team(pokemon.name).currentHp should be < pokemon.baseStats.hp.toInt
     battleEndingState.self.team(pokemon.name).moveState(swift.name).currentPp shouldBe 31
 
@@ -52,7 +52,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     given ProbabilityRoll = () => 101
 
     val battleEndingState =
-      MoveAction(swift).execute.foldLeft(battleStartingState)((state, transformer) => transformer(state))
+      MoveAction(swift).execute().foldLeft(battleStartingState)((state, transformer) => transformer(state))
     battleEndingState.opponent.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
     battleEndingState.self.team(pokemon.name).moves(swift.name).currentPp shouldBe 31
 
@@ -71,9 +71,9 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
     val battleInitialState: BattleState = createBattleState(recover)
     val action: MoveAction = MoveAction(recover)
-    val state1 = action.execute.foldLeft(battleInitialState)((state, transformer) => transformer(state))
+    val state1 = action.execute().foldLeft(battleInitialState)((state, transformer) => transformer(state))
     state1.self.team(pokemon.name).moveState(recover.name).currentPp shouldBe 31
-    val state2 = action.execute.foldLeft(state1)((state, transformer) => transformer(state))
+    val state2 = action.execute().foldLeft(state1)((state, transformer) => transformer(state))
     state2.self.team(pokemon.name).moveState(recover.name).currentPp shouldBe 30
 
   test("Status move with 0% accuracy should not have effects but must consume PP"):
@@ -85,7 +85,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val battleInitialState: BattleState = createBattleState(recover)
     val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => halfHp)))
     val battleEndingState =
-      MoveAction(recover).execute.foldLeft(damagedState)((state, transformer) => transformer(state))
+      MoveAction(recover).execute().foldLeft(damagedState)((state, transformer) => transformer(state))
     battleEndingState.self.team(pokemon.name).currentHp shouldBe halfHp
     battleEndingState.self.team(pokemon.name).moves(recover.name).currentPp shouldBe 31
 
@@ -98,7 +98,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val halfHp = pokemon.baseStats.hp.toInt / 2
     val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => halfHp)))
     val action: MoveAction = MoveAction(recover)
-    val battleFinalState: BattleState = action.execute.foldLeft(damagedState)((state, transformer) => transformer(state))
+    val battleFinalState: BattleState = action.execute().foldLeft(damagedState)((state, transformer) => transformer(state))
     battleFinalState.self.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
     battleFinalState.self.team(pokemon.name).moves(recover.name).currentPp shouldBe (recover.pp.asInt - 1)
 
@@ -109,7 +109,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val doubleEdge = move named "Double edge" withPower 100 withPP 24 withAccuracy 100 withType Normal withEffect (Effect recoil 25) as Physical
     val battleInitialState: BattleState = createBattleState(doubleEdge)
     val action: MoveAction = MoveAction(doubleEdge)
-    val battleFinalState: BattleState = action.execute.foldLeft(battleInitialState)((state, transformer) => transformer(state))
+    val battleFinalState: BattleState = action.execute().foldLeft(battleInitialState)((state, transformer) => transformer(state))
     battleFinalState.opponent.team(pokemon.name).currentHp should be < pokemon.baseStats.hp.toInt
     val maxHp = pokemon.baseStats.hp.toInt
     val expectedRecoil = (25 * maxHp) / 100
@@ -128,7 +128,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val battleInitialState: BattleState = createBattleState(personalizedMove)
     val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => 50)))
     val action: MoveAction = MoveAction(personalizedMove)
-    val battleFinalState: BattleState = action.execute.foldLeft(damagedState)((state, transformer) => transformer(state))
+    val battleFinalState: BattleState = action.execute().foldLeft(damagedState)((state, transformer) => transformer(state))
 
     battleFinalState.opponent.team.filterNot(_._1 == battleFinalState.opponent.activeId).values.foreach(pS => pS.currentHp shouldBe (100 - 10))
     battleFinalState.opponent.getActive.modifiedStats.speed shouldBe (battleFinalState.opponent.getActive.species.baseStats.speed.toInt - 2)
