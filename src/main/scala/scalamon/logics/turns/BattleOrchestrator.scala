@@ -215,7 +215,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
     afterOpponent.switchUserEnemy
 
   /**
-   * Applies a forced switch to the `self` side of the provided battle state.
+   * Applies a forced switch to the self side of the provided battle state.
    *
    * @param state     the battle state to update
    * @param newActive the Pokémon that should become active
@@ -223,7 +223,9 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    */
   def applyForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
     val newSelf = TurnResolutionImpl.applyForcedSwitch(state.self, newActive)
-    state.copy(self = newSelf)
+    val switched = state.copy(self = newSelf)
+    val slotIn = switched.self.getActive.species.abilitySlot
+    MyAbilityBook.runTrigger(OnSwitchIn, slotIn)(switched)
 
   /**
    * Applies a forced switch to the opponent side of the provided battle state.
@@ -233,4 +235,8 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @return the updated battle state with the requested opponent active Pokémon
    */
   def applyOpponentForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
-    state opponent (_ switchActive newActive.value)
+    val switched = state opponent (_ switchActive newActive.value)
+    val oriented = switched.switchUserEnemy
+    val slotIn = oriented.self.getActive.species.abilitySlot
+    val afterIn = MyAbilityBook.runTrigger(OnSwitchIn, slotIn)(oriented)
+    afterIn.switchUserEnemy
