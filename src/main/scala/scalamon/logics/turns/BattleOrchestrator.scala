@@ -12,7 +12,7 @@ import scalamon.logics.state.AlteredStatusModule.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.domain.moves.Accuracy.given
 import scalamon.domain.moves.EffectTarget.Self
-import scalamon.domain.pokemon.abilities.AbilityTrigger.{OnDamageDealt, OnKODealt, OnSwitchIn, OnSwitchOut, OnTurnStart}
+import scalamon.domain.pokemon.abilities.AbilityTrigger.{OnDamageDealt, OnDamageTaken, OnKODealt, OnSwitchIn, OnSwitchOut, OnTurnStart}
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
 import scalamon.logics.battle.WeatherState
 
@@ -140,11 +140,14 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           val attackerSlot = afterMove.self.getActive.species.abilitySlot
           val afterDamageDealt = MyAbilityBook.runTrigger(OnDamageDealt, attackerSlot)(afterMove)
           val defenderIsKnockedOut = isKnockedOut(afterDamageDealt.opponent.getActive)
-          val afterKOTrigger = if defenderIsKnockedOut then
-            MyAbilityBook.runTrigger(OnKODealt, attackerSlot)(afterDamageDealt)
-          else
-            afterDamageDealt
-          restoreOrientation(state, attacking, afterKOTrigger)
+          if defenderIsKnockedOut then {
+            val afterAttackerKO = MyAbilityBook.runTrigger(OnKODealt, attackerSlot)(afterDamageDealt)
+            val flipped = afterAttackerKO.switchUserEnemy
+            val defenderSlot = flipped.self.getActive.species.abilitySlot
+            val afterDefenderKO = MyAbilityBook.runTrigger(OnKODealt, defenderSlot)(flipped)
+            afterDefenderKO.switchUserEnemy
+          } else
+          restoreOrientation(state, attacking, afterDamageDealt)
       case Some(move) =>
         val currentMoveState = activePokemon.moveState(move.name)
         if currentMoveState.currentPp <= 0 then
@@ -152,7 +155,11 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           state
         else
           val afterMove = MoveAction(move).execute().foldLeft(oriented)((s, f) => f(s))
-          restoreOrientation(state, attacking, afterMove)
+          val flipped = afterMove.switchUserEnemy
+          println(s"DEBUG: ${flipped.self.getActive.species.name} status = ${flipped.self.getActive.statusCondition}")
+          val defenderSlot = flipped.self.getActive.species.abilitySlot
+          val afterTrigger = MyAbilityBook.runTrigger(OnDamageTaken, defenderSlot)(flipped).switchUserEnemy
+          restoreOrientation(state, attacking, afterTrigger)
       case None => state
 
   /**

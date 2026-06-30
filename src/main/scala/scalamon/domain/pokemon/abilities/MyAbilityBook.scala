@@ -104,7 +104,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken) define FlameBody as{ state =>
-      if Random.nextDouble() < 0.30 then
+      if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[FlameBody] ${state.opponent.getActive.species.name} is burned!")
         state opponent (_ active (_ addStatus Burned))
       else state
@@ -181,7 +181,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken) define EffectSpore as { state =>
-      if Random.nextDouble() < 0.30 then
+      if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         val status = Random.nextInt(3) match
           case 0 => Paralyzed
           case 1 => Poisoned
@@ -200,7 +200,7 @@ object MyAbilityBook:
     // ELECTRIC
 
     OnTrigger(OnDamageDealt) define Static as { state =>
-      if Random.nextDouble() < 0.30 then
+      if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[Static] ${state.opponent.getActive.species.name} is paralyzed!")
         state opponent (_ active (_ addStatus Paralyzed))
       else state
@@ -315,7 +315,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageDealt) define PoisonTouch as { state =>
-      if Random.nextDouble() < 0.30 then
+      if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[PoisonTouch] ${state.opponent.getActive.species.name} is poisoned!")
         state opponent (_ active (_ addStatus Poisoned))
       else state
