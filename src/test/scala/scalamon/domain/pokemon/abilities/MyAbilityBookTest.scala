@@ -19,15 +19,38 @@ import scalamon.logics.state.StatsStateModuleImpl.multiply
 class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // HELPERS
 
+  /**
+   * Runs the given ability trigger on the provided battle state.
+   * @param ability The ability to be triggered.
+   * @param trigger the specific trigger event for the ability.
+   * @param s the current battle state before the ability is triggered.
+   * @return the new battle state after the ability has been triggered.
+   */
   private def run(ability: Ability, trigger: AbilityTrigger)(s: BattleState): BattleState =
     MyAbilityBook.runTrigger(trigger, AbilitySlot(primary = ability))(s)
 
+  /**
+   * Damages the self active Pokémon in the battle state by a specified amount.
+   * @param dmg the damage applied
+   * @return the new battle state after the self active Pokémon has taken damage.
+   */
   private def withDamagedSelf(dmg: Int = 10): BattleState =
     battle self (_ active (_ takeDamage dmg))
 
+  /**
+   * Applies the specified weather condition to the battle state.
+   * @param w the weather condition to be set
+   * @return the new battle state after the weather has been set.
+   */
   private def withWeather(w: Weather): BattleState =
     battle.setWeather(w)
 
+  /**
+   * Applies the specified weather condition and damages the self active Pokémon in the battle state by a specified amount.
+   * @param w the weather condition to be set
+   * @param dmg the damage applied to the self active Pokémon
+   * @return the new battle state after the weather has been set and the self active Pokémon has taken damage.
+   */
   private def withWeatherAndDamage(w: Weather, dmg: Int = 10): BattleState =
     withDamagedSelf(dmg).setWeather(w)
 
@@ -39,16 +62,31 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   private def maxEnemyHp(s: BattleState): Int = s.opponent.getActive.maxHp
 
+  /**
+   * Applies the specified ability to the self active Pokémon in the battle state.
+   * @param ability the ability to be set
+   * @return the new battle state after the self active Pokémon's ability has been set.
+   */
   private def withSelfAbility(ability: Ability): BattleState =
     battle self (_ active (p => p.copy(species = p.species.copy(
       abilitySlot = AbilitySlot(primary = ability)
     ))))
 
+  /**
+   * Applies the specified ability to the opponent active Pokémon in the battle state.
+   * @param ability the ability to be set
+   * @return the new battle state after the opponent active Pokémon's ability has been set.
+   */
   private def withOpponentAbility(ability: Ability): BattleState =
     battle opponent (_ active (p => p.copy(species = p.species.copy(
       abilitySlot = AbilitySlot(primary = ability)
     ))))
 
+  /**
+   * Adds the specified move to the opponent active Pokémon's moves in the battle state.
+   * @param move the move to be added
+   * @return the new battle state after the opponent active Pokémon's moves have been updated.
+   */
   private def withOpponentMove(move: Move): BattleState =
     battle opponent (_ active (p => p.copy(
       moves = p.moves + (move.name -> moveInitialState(move))

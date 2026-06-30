@@ -133,6 +133,29 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
       case _ => fail("Expected ForcedSwitch result")
   }
 
+
+  test("resolveTurn returns OpponentForcedSwitch when opponent's active Pokemon is KO but bench is alive") {
+    val opponentWithBench = playerState(
+      Map("Squirtle" -> enemyPokemon, "Bulbasaur" -> enemyPokemon),
+      "Squirtle"
+    )
+    val battleWithBench = battleState(player1, opponentWithBench)
+    val opponentActiveKO = battleWithBench opponent (_ active (_ currentHp (_ decrease 999)))
+    resolveTurn(opponentActiveKO) shouldBe a [OpponentForcedSwitch]
+  }
+
+  test("resolveTurn returns BothForcedSwitch when both active Pokemon are KO but both sides have alive bench Pokemon") {
+    val opponentWithBench = playerState(
+      Map("Squirtle" -> enemyPokemon, "Bulbasaur" -> enemyPokemon),
+      "Squirtle"
+    )
+    val battleWithBench = battleState(player1, opponentWithBench)
+    val bothActiveKO = battleWithBench
+      .self(_ active (_ currentHp (_ decrease 999)))
+      .opponent(_ active (_ currentHp (_ decrease 999)))
+    resolveTurn(bothActiveKO) shouldBe a [BothForcedSwitch]
+  }
+
   test("applyForcedSwitch changes the active Pokemon with the requested one"){
     val switched = applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
     switched.activeId shouldBe "Bulbasaur"
@@ -167,4 +190,14 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
     battle.self.activeId shouldBe "Charmander"
     battle.self.getActive.currentHp shouldBe 39
     battle.opponent.activeId shouldBe "Squirtle"
+  }
+
+  test("endTurn applies burn damage to the active burned Pokemon") {
+    import scalamon.logics.state.AlteredStatusModule.applyCondition
+    import scalamon.domain.moves.AlteredStatus.Burned
+    val burned = battle self (_ active (_ setStatus scalamon.domain.moves.AlteredStatus.Burned))
+    val hpBefore = burned.self.getActive.currentHp
+    val afterBurn = Burned.applyCondition(burned)
+    val expectedDamage = burned.self.getActive.maxHp / 8
+    afterBurn.self.getActive.currentHp shouldBe (hpBefore - expectedDamage)
   }

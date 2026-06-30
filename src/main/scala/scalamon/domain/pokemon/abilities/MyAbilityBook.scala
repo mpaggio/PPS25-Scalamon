@@ -15,25 +15,54 @@ import scalamon.domain.moves.AlteredStatusUtility.*
 import scala.language.postfixOps
 import scala.util.Random
 
+/**
+ * Contains the definitions of all abilities and their effects in the battle system.
+ * Each ability is associated with specific triggers and effects that modify the battle state.
+ */
 object MyAbilityBook:
 
+  /**
+   * Function to heal the active Pokémon by a fraction of its maximum HP.
+   * @param fraction fraction of max HP to heal (e.g., 16 means heal 1/16 of max HP)
+   * @param state the current battle state
+   * @return the new battle state after healing
+   */
   private def healSelf(fraction: Int)(state: BattleState): BattleState =
     val maxHp = state.self.getActive.maxHp
     state self (_ active (_ heal (maxHp/fraction)))
 
+  /**
+   * Function to damage the active Pokémon by a fraction of its maximum HP.
+   * @param fraction fraction of max HP to take as damage
+   * @param state the current battle state
+   * @return the new battle state after taking damage
+   */
   private def damageSelf(fraction: Int)(state: BattleState): BattleState =
     val maxHp = state.self.getActive.maxHp
     state self (_ active (_ takeDamage (maxHp / fraction)))
 
+  /**
+   * Function to reduce the opponent's active Pokémon's attack stat by a given fraction.
+   * @param state the current battle state
+   * @param fraction the fraction by which to reduce the opponent's attack stat
+   * @return the new battle state after reducing the opponent's attack stat
+   */
   private def reduceOpponentAttack(state: BattleState, fraction: Double): BattleState =
     state opponent (_ active (_ modifyStats (_ attack (_ multiply (1 - fraction)))))
 
+  /**
+   * Function to log the opponent's moves when the Forewarn ability is triggered.
+   * @param state the current battle state
+   * @return the same battle state, unchanged
+   */
   private def foreWarnLog(state: BattleState): BattleState =
     val opponentMoves = state.opponent.getActive.moves.keys
     println(s"[Forewarn] The opponent has the following moves: ${opponentMoves.mkString(", ")}")
     state
 
-
+  /**
+   * Map of abilities to their corresponding definitions and effects, organized by ability type.
+   */
   private val book: Map[Ability, List[AbilityDefinition]] = AbilityBook(
 
     // FIRE

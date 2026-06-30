@@ -10,14 +10,21 @@ import scalamon.logics.state.BattleStateImpl.BattleState
 
 /**
  * Multipliers of damage derived from the passive abilities.
- * Dos not transform the battle state but contributes to the damage calculation
+ * Does not transform the battle state but contributes to the damage calculation
  * before the damage is applied to the state.
  */
 object AbilityDamageModifier:
   
   private def allAbilities(slot: AbilitySlot):
     List[Ability] = List(Some(slot.primary), slot.secondary, slot.hidden).flatten
-  
+
+  /**
+   * Calculates the damage multiplier based on the defender's ability.
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @param ability the ability of the defending Pokémon
+   * @return the damage multiplier as a Double
+   */
   private def abilityDefenseMultiplier(state: BattleState, move: DamageMove, ability: Ability): Double =
     ability match
       case ThickFat if move.moveType == Fire =>
@@ -27,7 +34,14 @@ object AbilityDamageModifier:
         println(s"[Levitate] ${state.self.getActive.species.name} is immune to Physical moves!")
         0.0
       case _ => 1.0
-      
+
+  /**
+   * Calculates the damage multiplier based on the attacker's ability.
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @param ability the ability of the attacking Pokémon
+   * @return the damage multiplier as a Double
+   */
   private def abilityAttackMultiplier(state: BattleState, move: DamageMove, ability: Ability): Double = {
     val attacker = state.self.getActive
     val lowHp = attacker.currentHp <= attacker.maxHp / 3

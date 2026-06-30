@@ -75,7 +75,12 @@ object TurnResolutionImpl extends TurnResolutionModule:
   override def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState =
     if player.team.contains(newActive.value) then player switchActive newActive.value
     else player
-  
+
+  /**
+   * Applies status damage to both players' active Pokémon at the end of the turn (if necessary).
+   * @param state The current state of the battle.
+   * @return The updated state of the battle after applying status damage to both players' active Pokémon.
+   */
   private def applyStatusDamage(state: BattleState) =
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
       val oriented = if isSelf then s else s.switchUserEnemy
@@ -83,7 +88,12 @@ object TurnResolutionImpl extends TurnResolutionModule:
       val updated = pokemon.status.foldLeft(oriented)((state, status) => status.applyCondition(state))
       if isSelf then updated else updated.switchUserEnemy
     applyForPlayer(applyForPlayer(state, true), false)
-  
+
+  /**
+   * Applies end-of-turn abilities for both players' active Pokémon (if necessary).
+   * @param state The current state of the battle.
+   * @return The updated state of the battle after applying end-of-turn abilities for both players' active Pokémon.
+   */
   private def applyEndOfTurnAbilities(state: BattleState) =
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
       val slot = if isSelf then s.self.getActive.species.abilitySlot
@@ -93,10 +103,22 @@ object TurnResolutionImpl extends TurnResolutionModule:
       if isSelf then result else result.switchUserEnemy
     applyForPlayer(applyForPlayer(state, true), false)
 
+  /**
+   * Applies weather effects to the battle state at the end of the turn.
+   * @param state The current state of the battle.
+   * @param weatherState The current state of the weather in the battle.
+   * @return the updated state of the battle after applying weather effects.
+   */
   private def applyWeatherEffects(state: BattleState, weatherState: WeatherState): BattleState =
     val context = BattleContext(state, weatherState)
     summon[WeatherEndTurnResolver].apply(context).state
 
+  /**
+   * Resolves the end-of-turn effects for the battle, including status damage, weather effects, and end-of-turn abilities.
+   * @param state the current state of the battle after all actions have been executed.
+   * @param weatherState the current state of the weather in the battle.
+   * @return the updated state of the battle after applying all end-of-turn effects.
+   */
   override def endTurn(state: BattleState, weatherState: WeatherState): BattleState =
     val pipeline: List[BattleState => BattleState] = List(
       applyStatusDamage,

@@ -31,6 +31,8 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
    * @param state the current battle state
    * @param move the move being used by the attacking Pokémon
    * @param policy the difficulty level of the battle
+   * @param weather the current weather conditions in the battle
+   * @param probabilityRoll a random number generator for determining critical hits
    * @return the calculated damage as an integer
    */
   def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy, weather: WeatherSystem, probabilityRoll: ProbabilityRoll): Damage =
@@ -50,7 +52,7 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
     val isCritical = accuracyFromPercent((baseCritChance * criticalChanceMultiplier).toInt).test
 
     val criticalDamageMultiplier = if isCritical then 1.5 else 1.0
-
+    
     val (atk, def_) = move.category match
       case Physical =>
         val a = if isCritical then attacker.modifiedStats.attack.max(attacker.species.baseStats.attack.toInt)
