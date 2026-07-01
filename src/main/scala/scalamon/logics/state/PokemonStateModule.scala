@@ -26,7 +26,6 @@ trait PokemonStateModule extends StateComponent:
   extension (ps: PokemonState)
     def moveState(moveName: String): MoveState
     def clearStatusCondition: PokemonState
-    def setStatus(status: AlteredStatus): PokemonState
     def statusCondition: Option[AlteredStatus]
     def maxHp: Int
 
@@ -37,7 +36,7 @@ object PokemonStateModuleImpl extends PokemonStateModule:
     currentHp: HP,
     modifiedStats: StatsState,
     moves: Map[String, MoveState],
-    status: List[AlteredStatus] = List(),
+    status: Set[AlteredStatus] = Set(),
     species: PokemonSpecies)
   override type PokemonState = Pks
   override type PokemonSpecies = scalamon.domain.pokemon.Pokemon
@@ -47,12 +46,12 @@ object PokemonStateModuleImpl extends PokemonStateModule:
   override type MoveState = scalamon.logics.state.MoveStateModuleImpl.MoveState
 
   def pokemonInitialState(species: PokemonSpecies, moves: Map[String, MoveState]): PokemonState =
-    Pks(species.baseStats.hp.toInt, statsInitialState(species.baseStats), moves, List(), species)
+    Pks(species.baseStats.hp.toInt, statsInitialState(species.baseStats), moves, Set(), species)
 
-  def currentHp(f: Stat => Stat): Op = ps =>
-    ps.copy(currentHp = f(ps.currentHp).clamped(0, ps.species.baseStats.hp.toInt))
+  def currentHp(f: Stat => Stat): Op = ps => ps.copy(currentHp = f(ps.currentHp).clamped(0, ps.maxHp))
   def modifyStats(f: InnerOp): Op = ps => ps.copy(modifiedStats = f(ps.modifiedStats))
-  def addStatus(status: AlteredStatus): Op = ps => ps.copy(status = status :: ps.status)
+  def addStatus(status: AlteredStatus): Op = ps => ps.copy(status = ps.status + status)
+  def removeStatus(status: AlteredStatus): Op = ps => ps.copy(status = ps.status - status)
   def updateMove(moveName: String)(f: MoveState => MoveState): Op = ps =>
     ps.copy(moves = ps.moves.updated(moveName, f(ps.moves(moveName))))
 
@@ -63,11 +62,9 @@ object PokemonStateModuleImpl extends PokemonStateModule:
     def moveState(moveName: String): MoveState = pks.moves(moveName)
     def maxHp: Int = pks.species.baseStats.hp.toInt
     def statusCondition: Option[AlteredStatus] = pks.status.headOption
-    def clearStatusCondition: PokemonState = pks.copy(status = List.empty)
+    def clearStatusCondition: PokemonState = pks.copy(status = Set.empty)
 
-
-
-    def setStatus(status: AlteredStatus): PokemonState = {
+    def setStatus(status: AlteredStatus): PokemonState =
       val allAbilities = List(
         Some(pks.species.abilitySlot.primary),
         pks.species.abilitySlot.secondary,
@@ -83,7 +80,10 @@ object PokemonStateModuleImpl extends PokemonStateModule:
       if blocked then
         println(s"[Insomnia] ${pks.species.name} is immune to sleep due to its ability!")
         pks
-      else if pks.status.isEmpty then pks.copy(status=List(status))
-      else pks
-    }
+      else
+        addStatus(status)(pks)
+
+
+
+
 

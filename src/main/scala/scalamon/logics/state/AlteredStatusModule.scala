@@ -32,14 +32,14 @@ object AlteredStatusModule:
           self(active(takeDamage(damageAmount)))(battleState)
       case Sleeping(turns) =>
         if turns > 1 then
-          self(active(pokemonState => pokemonState.copy(status = List(Sleeping(turns - 1)))))(battleState)
+          self(active(addStatus(Sleeping(turns - 1))))(battleState)
         else self(active(_.clearStatusCondition))(battleState)
       case Confused(turns) =>
         if turns > 1 then
-          self(active(pokemonState => pokemonState.copy(status = List(Confused(turns - 1)))))(battleState)
+          self(active(addStatus(Confused(turns - 1))))(battleState)
         else self(active(_.clearStatusCondition))(battleState)
       case Charging(turns) =>
         if turns > 1 then
-          self(active(pokemonState => pokemonState.copy(status = List(Charging(turns - 1)))))(battleState)
+          self(active(addStatus(Charging(turns - 1))))(battleState)
         else self(active(_.clearStatusCondition))(battleState)
       case _ => battleState
