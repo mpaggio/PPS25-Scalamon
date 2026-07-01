@@ -17,7 +17,7 @@ object MoveActionModuleImpl extends MoveActionModule:
     def execute(target: EffectTarget = Opponent)(using roll: ProbabilityRoll): Action =
       val isHit = move.accuracy.test
       
-      val ppStep: StateTransformer = self(active(updateMove(move.name)(_.decreasePpBy(1))))
+      val ppStep: StateTransformer = self(active(updateMove(move.name)(decreasePpBy(1))))
           
       val damageStep: StateTransformer = battleState =>
         if isHit then move match

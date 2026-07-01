@@ -1,16 +1,18 @@
 package scalamon.logics.state
 
-trait MoveStateModule:
+trait MoveStateModule extends StateComponent:
   type MoveState
   type Move
   type PP
+  override protected type State = MoveState
 
   def moveInitialState(move: Move): MoveState
 
+  def currentPp(f: PP => PP): Op
+  def decreasePpBy(value: PP): Op
+  def increasePpBy(value: PP): Op
+  
   extension (moveState: MoveState)
-    def currentPp(f: PP => PP): MoveState
-    def decreasePpBy(value: PP): MoveState
-    def increasePpBy(value: PP): MoveState
     def maxPp: PP
     def move: Move
 
@@ -24,13 +26,13 @@ object MoveStateModuleImpl extends MoveStateModule:
   override def moveInitialState(move: Move): MoveState =
     Ms(move, move.pp.asInt)
 
+  def currentPp(f: PP => PP): Op = ms => ms.copy(currentPp = f(ms.currentPp).clamped(0, ms.maxPp))
+  def decreasePpBy(value: PP): Op = currentPp(_ - value)
+  def increasePpBy(value: PP): Op = currentPp(_ + value)
+  
   extension (moveState: MoveState)
-    infix def currentPp(f: PP => PP): MoveState =
-      val nextPp = f(moveState.currentPp)
-      moveState.copy(currentPp = math.max(0, math.min(maxPp, nextPp)))
-    infix def decreasePpBy(value: PP): MoveState =
-      moveState.copy(currentPp = math.max(0, moveState.currentPp - value))
-    infix def increasePpBy(value: PP): MoveState =
-      moveState.copy(currentPp = math.min(maxPp, moveState.currentPp + value))
     def maxPp: PP = moveState.move.pp.asInt
     def move: Move = moveState.move
+
+  extension (pp: PP)
+    private def clamped(min: Int, max: Int): PP = pp.max(min).min(max)

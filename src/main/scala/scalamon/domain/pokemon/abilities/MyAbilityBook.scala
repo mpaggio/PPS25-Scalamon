@@ -8,11 +8,8 @@ import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.BattleStateImpl.*
-import scalamon.logics.state.StatsStateModuleImpl.*
+import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.domain.moves.AlteredStatusUtility.*
-import scalamon.logics.state.PlayerStateModuleImpl.*
-import scalamon.logics.state.PokemonStateModuleImpl.*
 
 import scala.language.postfixOps
 import scala.util.Random
@@ -291,7 +288,7 @@ object MyAbilityBook:
       state.flags.lastOpponentMove match
         case Some(move) =>
           println(s"[Pressure] ${state.opponent.getActive.species.name}'s ${move.name} loses 1 additional PP due to Pressure!")
-          opponent(active(updateMove(move.name)(ms => ms.decreasePpBy(1))))(state)
+          opponent(active(updateMove(move.name)(decreasePpBy(1))))(state)
         case None => state
     },
 
