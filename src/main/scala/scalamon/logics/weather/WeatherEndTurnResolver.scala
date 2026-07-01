@@ -3,9 +3,11 @@ package scalamon.logics.weather
 import scalamon.domain.weather.Weather
 import scalamon.logics.battle.BattleContext
 import scalamon.logics.state.BattleStateImpl.PlayerState
+import scalamon.logics.state.PlayerStateModuleImpl.active
 import scalamon.logics.weather.WeatherEndTurnResolver
 import scalamon.logics.weather.BattleContextOps.*
 import scalamon.logics.weather.WeatherSystem
+import scalamon.logics.state.PokemonStateModuleImpl.*
 
 /**
  * Resolves weather-based end-of-turn effects on the current battle context.
@@ -57,12 +59,12 @@ object WeatherEndTurnResolver:
      * the updated player state
      */
     private def applyToActive(player: PlayerState, weather: Weather): PlayerState =
-      val active = player.getActive
-      val pokemonType = active.species.pokemonType
+      val act = player.getActive
+      val pokemonType = act.species.pokemonType
       val damageFraction = weatherSystem.endTurnDamageFraction(weather, pokemonType)
       val healFraction = weatherSystem.endTurnHealFraction(weather, pokemonType)
-      val maxHp = active.species.baseStats.hp.toInt
+      val maxHp = act.species.baseStats.hp.toInt
       val damage = (maxHp * damageFraction).toInt
-      val heal = (maxHp * healFraction).toInt
-      val updateActive = active.takeDamage(damage).heal(heal)
-      player.active(_ => updateActive)
+      val healAmount = (maxHp * healFraction).toInt
+      val updateActive = heal(healAmount)(takeDamage(damage)(act))
+      active(_ => updateActive)(player)

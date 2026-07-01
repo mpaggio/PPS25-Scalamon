@@ -8,9 +8,11 @@ import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.BattleStateImpl.BattleState
-import scalamon.logics.state.StatsStateModuleImpl.multiply
+import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.domain.moves.AlteredStatusUtility.*
+import scalamon.logics.state.PlayerStateModuleImpl.*
+import scalamon.logics.state.PokemonStateModuleImpl.*
 
 import scala.language.postfixOps
 import scala.util.Random
@@ -29,7 +31,7 @@ object MyAbilityBook:
    */
   private def healSelf(fraction: Int)(state: BattleState): BattleState =
     val maxHp = state.self.getActive.maxHp
-    state self (_ active (_ heal (maxHp/fraction)))
+    self(active(heal(maxHp/fraction)))(state)
 
   /**
    * Function to damage the active Pokémon by a fraction of its maximum HP.
@@ -39,7 +41,7 @@ object MyAbilityBook:
    */
   private def damageSelf(fraction: Int)(state: BattleState): BattleState =
     val maxHp = state.self.getActive.maxHp
-    state self (_ active (_ takeDamage (maxHp / fraction)))
+    self(active(takeDamage(maxHp / fraction)))(state)
 
   /**
    * Function to reduce the opponent's active Pokémon's attack stat by a given fraction.
@@ -48,7 +50,7 @@ object MyAbilityBook:
    * @return the new battle state after reducing the opponent's attack stat
    */
   private def reduceOpponentAttack(state: BattleState, fraction: Double): BattleState =
-    state opponent (_ active (_ modifyStats (_ attack (_ multiply (1 - fraction)))))
+    opponent(active(modifyStats(attack(multiply(1 - fraction)))))(state)
 
   /**
    * Function to log the opponent's moves when the Forewarn ability is triggered.
@@ -88,7 +90,7 @@ object MyAbilityBook:
     OnTrigger(OnSwitchIn) define Drought as { state =>
       if state.weather == Weather.ClearSky then
         println(s"[Drought] ${state.self.getActive.species.name} sets Heavy Sunlight!")
-        state.setWeather(Weather.HeavySunlight)
+        setWeather(Weather.HeavySunlight)(state)
       else state
     },
 
@@ -106,17 +108,17 @@ object MyAbilityBook:
     OnTrigger(OnDamageTaken) define FlameBody as{ state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[FlameBody] ${state.opponent.getActive.species.name} is burned!")
-        state opponent (_ active (_ addStatus Burned))
+        opponent(active(addStatus(Burned)))(state)
       else state
     },
 
     OnTrigger(OnTurnStart) define RunAway as { state =>
-      val self = state.self.getActive
-      val baseSpeed = self.species.baseStats.speed.toInt
-      val modifiedSpeed = self.modifiedStats.speed
+      val selfActive = state.self.getActive
+      val baseSpeed = selfActive.species.baseStats.speed.toInt
+      val modifiedSpeed = selfActive.modifiedStats.speed
       if modifiedSpeed < baseSpeed then
-        println(s"[RunAway] ${self.species.name}'s Speed cannot be reduced!")
-        state self (_ active (_ modifyStats (_ speed (_ => baseSpeed))))
+        println(s"[RunAway] ${selfActive.species.name}'s Speed cannot be reduced!")
+        self(active(modifyStats(speed(_ => baseSpeed))))(state)
       else state
     },
 
@@ -142,14 +144,14 @@ object MyAbilityBook:
         case Some(move) if move.moveType == Water =>
           val maxHp = state.self.getActive.maxHp
           println(s"[WaterAbsorb] ${state.self.getActive.species.name} absorbs Water moves and heals 1/4 of its max HP!")
-          state self (_ active (_ heal (maxHp / 4)))
+          self(active(heal(maxHp / 4)))(state)
         case _ => state
     },
 
     OnTrigger(OnTurnStart) define Hydration as { state =>
       if state.weather == Weather.Rain then
         println(s"[Hydration] ${state.self.getActive.species.name} with Rain clears status conditions!")
-        state self (_ active (_ clearStatusCondition))
+        self(active(clearStatusCondition))(state)
       else state
     },
 
@@ -160,7 +162,7 @@ object MyAbilityBook:
 
     OnTrigger(OnKODealt) define Moxie as { state =>
       println(s"[Moxie] ${state.self.getActive.species.name} gains +10% Attack after KO!")
-      state self (_ active (_ modifyStats (_ attack (_ multiply 1.1))))
+      self(active(modifyStats(attack(multiply(1.1)))))(state)
     },
 
     // GRASS
@@ -172,7 +174,7 @@ object MyAbilityBook:
     OnTrigger(OnTurnStart) define Chlorophyll as { state =>
       if !state.flags.weatherSuppressed && state.weather == HeavySunlight then
         println(s"[Chlorophyll] ${state.self.getActive.species.name} doubles its Speed in Heavy Sunlight!")
-        state self (_ active (_ modifyStats (_ speed (_ multiply 2.0))))
+        self(active(modifyStats(speed(multiply(2.0)))))(state)
       else state
     },
 
@@ -187,14 +189,14 @@ object MyAbilityBook:
           case 1 => Poisoned
           case _ => Sleeping(getSleepTurns)
         println(s"[EffectSpore]) ${state.opponent.getActive.species.name} is ${status.toString}!")
-        state opponent (_ active (_ addStatus status))
+        opponent(active(addStatus(status)))(state)
       else state
     },
 
     OnTrigger(OnSwitchOut) define Regenerator as { state =>
       val maxHp = state.self.getActive.maxHp
       println(s"[Regenerator] ${state.self.getActive.species.name} regenerates 1/3 of its max HP while leaving!")
-      state self (_ active (_ heal (maxHp / 3)))
+      self(active(heal(maxHp / 3)))(state)
     },
 
     // ELECTRIC
@@ -202,7 +204,7 @@ object MyAbilityBook:
     OnTrigger(OnDamageDealt) define Static as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[Static] ${state.opponent.getActive.species.name} is paralyzed!")
-        state opponent (_ active (_ addStatus Paralyzed))
+        opponent(active(addStatus(Paralyzed)))(state)
       else state
     },
 
@@ -211,7 +213,7 @@ object MyAbilityBook:
         case Some(move) if move.moveType == Electric =>
           println(s"[LightningRodLite] ${state.self.getActive.species.name} is protected from Electric Moves!")
           val maxHp = state.self.getActive.maxHp
-          state self (_ active (_ heal (maxHp / 8)))
+          self(active(heal(maxHp / 8)))(state)
         case _ => state
     },
 
@@ -219,20 +221,20 @@ object MyAbilityBook:
       state.flags.lastOpponentMove match
         case Some(move) if move.moveType == Electric =>
           println(s"[LightningRod] ${state.self.getActive.species.name} draws Electric moves and boosts Special Attack!")
-          state self (_ active (_ modifyStats(_ specialAttack (_ multiply 1.5))))
+          self(active(modifyStats(specialAttack(multiply(1.5)))))(state)
         case _ => state
     },
 
     OnTrigger(OnTurnStart) define Ability.SurgeSurfer as { state =>
       if !state.flags.weatherSuppressed && state.weather == Weather.Thunderstorm then
         println(s"[SurgeSurfer] ${state.self.getActive.species.name} doubles its Speed in Thunderstorm!")
-        state self (_ active (_ modifyStats(_ speed (_ multiply 2.0))))
+        self(active(modifyStats(speed(multiply(2.0)))))(state)
       else state
     },
 
     OnTrigger(OnKODealt) define Aftermath as { state =>
       println(s"[Aftermath] ${state.opponent.getActive.species.name} takes damage after KO!")
-      state opponent (_ active (_ takeDamage (state.opponent.getActive.maxHp / 8)))
+      opponent(active(takeDamage(state.opponent.getActive.maxHp / 8)))(state)
     },
 
     OnTrigger(OnDamageTaken) define VoltAbsorb as { state =>
@@ -240,15 +242,15 @@ object MyAbilityBook:
         case Some(move) if move.moveType == Electric =>
           val maxHp = state.self.getActive.maxHp
           println(s"[VoltAbsorb] ${state.self.getActive.species.name} absorbs Electric moves and heals 1/4 of its max HP!")
-          state self (_ active (_ heal (maxHp / 4)))
+          self(active(heal(maxHp / 4)))(state)
         case _ => state
     },
 
     OnTrigger(OnTurnStart) define QuickFeet as { state =>
-      val self = state.self.getActive
-      if self.statusCondition.isDefined then
-        println(s"[QuickFeet] ${self.species.name} boosts its Speed by 50% while having a status condition!")
-        state self (_ active (_ modifyStats(_ speed (_ multiply 1.5))))
+      val selfActive = state.self.getActive
+      if selfActive.statusCondition.isDefined then
+        println(s"[QuickFeet] ${selfActive.species.name} boosts its Speed by 50% while having a status condition!")
+        self(active(modifyStats(speed(multiply(1.5)))))(state)
       else state
     },
 
@@ -257,7 +259,7 @@ object MyAbilityBook:
     OnTrigger(OnDamageTaken) define Synchronize as { state =>
       println(s"[Synchronize] if ${state.self.getActive.species.name} obtains a Status condition, it applies it to the opponent too!")
       state.self.getActive.statusCondition match
-        case Some(s) => state opponent (_ active (_ addStatus s))
+        case Some(s) => opponent(active(addStatus(s)))(state)
         case None => state
     },
 
@@ -289,7 +291,7 @@ object MyAbilityBook:
       state.flags.lastOpponentMove match
         case Some(move) =>
           println(s"[Pressure] ${state.opponent.getActive.species.name}'s ${move.name} loses 1 additional PP due to Pressure!")
-          state opponent (_ active (active => active.updateMove(move.name)(ms => ms.decreasePpBy(1))))
+          opponent(active(updateMove(move.name)(ms => ms.decreasePpBy(1))))(state)
         case None => state
     },
 
@@ -301,7 +303,7 @@ object MyAbilityBook:
     OnTrigger(OnTurnStart) define SwiftSwim as { state =>
       if !state.flags.weatherSuppressed && state.weather == Weather.Rain then
         println(s"[SwiftSwim] ${state.self.getActive.species.name} doubles its Speed in Rain!")
-        state self (_ active (_ modifyStats(_ speed (_ multiply 2.0))))
+        self(active(modifyStats(speed(multiply(2.0)))))(state)
       else state
     },
 
@@ -310,14 +312,14 @@ object MyAbilityBook:
     OnTrigger(OnTurnStart) define ShedSkin as { state =>
       if Random.nextDouble() < 0.30 then
         println(s"[ShedSkin] ${state.self.getActive.species.name} recovers from status conditions!")
-        state self (_ active (_ clearStatusCondition))
+        self(active(clearStatusCondition))(state)
       else state
     },
 
     OnTrigger(OnDamageDealt) define PoisonTouch as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[PoisonTouch] ${state.opponent.getActive.species.name} is poisoned!")
-        state opponent (_ active (_ addStatus Poisoned))
+        opponent(active(addStatus(Poisoned)))(state)
       else state
     },
 
@@ -329,7 +331,7 @@ object MyAbilityBook:
       if Random.nextDouble() < 0.30 && state.flags.lastOpponentMove.isDefined then
         val moveName = state.flags.lastOpponentMove.get.name
         println(s"[CursedBody] ${state.opponent.getActive.species.name}'s $moveName is disabled!")
-        state opponent (_ active (active => active.updateMove(moveName)(ms => ms.copy(currentPp = 0))))
+        opponent(active(updateMove(moveName)(ms => ms.copy(currentPp = 0))))(state)
       else state
     },
 
@@ -343,7 +345,7 @@ object MyAbilityBook:
         val attacker = state.opponent.getActive
         val maxHp = attacker.maxHp
         println(s"[LiquidOoze] ${attacker.species.name} takes damage from the Ooze!")
-        state opponent (_ active (_ takeDamage (maxHp / 8)))
+        opponent(active(takeDamage(maxHp / 8)))(state)
       else state
     },
   )

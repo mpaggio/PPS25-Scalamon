@@ -10,7 +10,7 @@ import MoveEffectDSL.Effect.*
 import Accuracy.*
 import AlteredStatus.*
 import scalamon.logics.state.StatsStateModuleImpl.*
-import scalamon.logics.state.PokemonStateModuleImpl.Modifier
+import scalamon.logics.state.PokemonStateModuleImpl.InnerOp
 import EffectTarget.*
 
 class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
@@ -69,7 +69,7 @@ class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
     thunder.effect shouldBe Heal(50)
 
   test("DSL should correctly chain complex effect like StatChanges"):
-    val modifier: Modifier = _ specialDefense (_ decrease 1)
+    val modifier: StatsState => StatsState = specialDefense( decrease(1))
     val psychic = move
       .named("Psychic")
       .withPower(90)

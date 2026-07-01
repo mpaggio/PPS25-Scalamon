@@ -1,5 +1,7 @@
 package scalamon.logics.state
 
 trait StateComponent:
-  type SubComponent
-  type Modifier = SubComponent => SubComponent
+  protected type State
+  protected type Op = State => State
+  protected type InnerState
+  protected type InnerOp = InnerState => InnerState

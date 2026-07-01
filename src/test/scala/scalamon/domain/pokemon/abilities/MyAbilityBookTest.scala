@@ -11,10 +11,8 @@ import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.BattleStateImpl.BattleState
-import scalamon.logics.state.MoveStateModuleImpl.moveInitialState
+import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.StateFixtures
-import scalamon.logics.state.StatsStateModuleImpl.multiply
 
 class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // HELPERS
@@ -35,7 +33,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
    * @return the new battle state after the self active Pokémon has taken damage.
    */
   private def withDamagedSelf(dmg: Int = 10): BattleState =
-    battle self (_ active (_ takeDamage dmg))
+    self(active(takeDamage(dmg)))(battle)
 
   /**
    * Applies the specified weather condition to the battle state.
@@ -43,7 +41,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
    * @return the new battle state after the weather has been set.
    */
   private def withWeather(w: Weather): BattleState =
-    battle.setWeather(w)
+    setWeather(w)(battle)
 
   /**
    * Applies the specified weather condition and damages the self active Pokémon in the battle state by a specified amount.
@@ -52,7 +50,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
    * @return the new battle state after the weather has been set and the self active Pokémon has taken damage.
    */
   private def withWeatherAndDamage(w: Weather, dmg: Int = 10): BattleState =
-    withDamagedSelf(dmg).setWeather(w)
+    setWeather(w)(withDamagedSelf(dmg))
 
   private def selfHp(s: BattleState): Int = s.self.getActive.currentHp
 
@@ -68,9 +66,9 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
    * @return the new battle state after the self active Pokémon's ability has been set.
    */
   private def withSelfAbility(ability: Ability): BattleState =
-    battle self (_ active (p => p.copy(species = p.species.copy(
+    self(active(p => p.copy(species = p.species.copy(
       abilitySlot = AbilitySlot(primary = ability)
-    ))))
+    ))))(battle)
 
   /**
    * Applies the specified ability to the opponent active Pokémon in the battle state.
@@ -78,9 +76,9 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
    * @return the new battle state after the opponent active Pokémon's ability has been set.
    */
   private def withOpponentAbility(ability: Ability): BattleState =
-    battle opponent (_ active (p => p.copy(species = p.species.copy(
+    opponent(active(p => p.copy(species = p.species.copy(
       abilitySlot = AbilitySlot(primary = ability)
-    ))))
+    ))))(battle)
 
   /**
    * Adds the specified move to the opponent active Pokémon's moves in the battle state.
@@ -88,9 +86,9 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
    * @return the new battle state after the opponent active Pokémon's moves have been updated.
    */
   private def withOpponentMove(move: Move): BattleState =
-    battle opponent (_ active (p => p.copy(
+    opponent(active(p => p.copy(
       moves = p.moves + (move.name -> moveInitialState(move))
-    )))
+    )))(battle)
 
   private val fireMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Fire => m }
   private val waterMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Water => m }
@@ -101,7 +99,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // FIRE
 
   test("Blaze gives 1.5x multiplier to Fire type moves when self HP <= 1/3") {
-    val lowHpState = battle self (_ active (_ takeDamage 30))
+    val lowHpState = self(active(takeDamage(30)))(battle)
     fireMoveOpt.foreach: fireMove =>
       AbilityDamageModifier.attackerMultiplier(lowHpState, fireMove) shouldEqual 1.5
   }
@@ -128,7 +126,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   test("SolarPower gives 1.3x multiplier to Special moves in HeavySunlight") {
     val specialMoveOpt = allMoves.collectFirst { case m: DamageMove if m.category == DamageMoveCategory.Special => m }
     specialMoveOpt.foreach: specialMove =>
-      val s = withSelfAbility(SolarPower).setWeather(HeavySunlight)
+      val s = setWeather(HeavySunlight)(withSelfAbility(SolarPower))
       AbilityDamageModifier.attackerMultiplier(s, specialMove) shouldEqual 1.3
   }
 
@@ -191,7 +189,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   test("Guts gives 1.3x on Physical when self has a status") {
     val physMove = allMoves.collectFirst { case m: DamageMove if m.category == Physical => m }
     physMove.foreach: move =>
-      val s = withSelfAbility(Guts) self (_ active (_ addStatus Paralyzed))
+      val s = self(active(addStatus(Paralyzed)))(withSelfAbility(Guts))
       AbilityDamageModifier.attackerMultiplier(s, move) shouldEqual 1.3
   }
 
@@ -203,7 +201,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("RunAway restores speed to base when modified speed is lower than base") {
-    val s = battle self (_ active (_ modifyStats (_ speed (_ multiply 0.5)))) // halves the speed
+    val s = self(active(modifyStats(speed(multiply(0.5)))))(battle) // halves the speed
     val before = s.self.getActive.species.baseStats.speed.toInt
     run(RunAway, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual before
   }
@@ -216,7 +214,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // WATER
 
   test("Torrent gives 1.5x multiplier to Water type moves when self HP <= 1/3") {
-    val lowHpState = withSelfAbility(Torrent) self (_ active (_ takeDamage 30))
+    val lowHpState = self(active(takeDamage(30)))(withSelfAbility(Torrent))
     waterMoveOpt.foreach: waterMove =>
       AbilityDamageModifier.attackerMultiplier(lowHpState, waterMove) shouldEqual 1.5
   }
@@ -232,7 +230,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("WaterAbsorb heals self by maxHp/4 when hit by Water type move") {
     waterMoveOpt.foreach: waterMove =>
-      val damaged = battle self (_ active (_ takeDamage 20))
+      val damaged = self(active(takeDamage(20)))(battle)
       val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(waterMove)))
       val result = run(WaterAbsorb, OnDamageTaken)(s)
       result.self.getActive.currentHp shouldEqual s.self.getActive.currentHp + s.self.getActive.maxHp / 4
@@ -245,13 +243,13 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("Hydration clears status condition when weather is Rain") {
-    val s = (battle self (_ active (_ addStatus Burned))).setWeather(Rain)
+    val s = setWeather(Rain)(self(active(addStatus(Burned)))(battle))
     s.self.getActive.statusCondition shouldBe defined
     run(Hydration, OnTurnStart)(s).self.getActive.statusCondition shouldBe empty
   }
 
   test("Hydration does not clear status condition when weather is not Rain") {
-    val s = battle self (_ active (_ addStatus Burned))
+    val s = self(active(addStatus(Burned)))(battle)
     run(Hydration, OnTurnStart)(s).self.getActive.statusCondition shouldBe defined
   }
 
@@ -270,7 +268,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // GRASS
 
   test("Overgrow gives 1.5x multiplier to Grass type moves when self HP <= 1/3") {
-    val lowHpState = withSelfAbility(Overgrow) self (_ active (_ takeDamage 30))
+    val lowHpState = self(active(takeDamage(30)))(withSelfAbility(Overgrow))
     grassMoveOpt.foreach: grassMove =>
       AbilityDamageModifier.attackerMultiplier(lowHpState, grassMove) shouldEqual 1.5
   }
@@ -318,7 +316,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("LightningRodLite heals self by maxHp/8 when last opponent move is Electric type") {
     electricMoveOpt.foreach: electricMove =>
-      val damaged = battle self (_ active (_ takeDamage 20))
+      val damaged = self(active(takeDamage(20)))(battle)
       val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
       selfHp(run(LightningRodLite, OnDamageTaken)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 8
   }
@@ -366,7 +364,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("VoltAbsorb heals self by maxHp/4 when hit by Electric type move") {
     electricMoveOpt.foreach: electricMove =>
-      val damaged = battle self (_ active (_ takeDamage 20))
+      val damaged = self(active(takeDamage(20)))(battle)
       val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
       selfHp(run(VoltAbsorb, OnDamageTaken)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 4
   }
@@ -378,7 +376,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("QuickFeet boosts self speed by 1.5x when self has a status condition") {
-    val s = battle self (_ active (_ addStatus Paralyzed))
+    val s = self(active(addStatus(Paralyzed)))(battle)
     val before = s.self.getActive.modifiedStats.speed
     run(QuickFeet, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual (before * 1.5).toInt
   }
@@ -391,7 +389,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // PSYCHIC
 
   test("Synchronize copies self status condition to opponent when self has a status condition") {
-    val s = battle self (_ active (_ addStatus Paralyzed))
+    val s = self(active(addStatus(Paralyzed)))(battle)
     run(Synchronize, OnDamageTaken)(s).opponent.getActive.statusCondition shouldEqual Some(Paralyzed)
   }
 
@@ -411,13 +409,13 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("Insomnia prevents self from falling asleep") {
     val s = withSelfAbility(Insomnia)
-    val afterSleep = s self (_ active (_ setStatus Sleeping(3)))
+    val afterSleep = self(active(_.setStatus(Sleeping(3))))(s)
     afterSleep.self.getActive.statusCondition shouldBe empty
   }
 
   test("Insomnia does not block non-sleep status conditions") {
     val s = withSelfAbility(Insomnia)
-    val afterBurn = s self (_ active (_ setStatus Burned))
+    val afterBurn = self(active(_.setStatus(Burned)))(s)
     afterBurn.self.getActive.statusCondition shouldEqual Some(Burned)
   }
 
@@ -427,7 +425,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("DrySkin heals self by maxHp/16 when weather is Rain") {
-    val damaged = (battle self (_ active (_ takeDamage 20))).setWeather(Rain)
+    val damaged = setWeather(Rain)(self(active(takeDamage(20)))(battle))
     selfHp(run(DrySkin, OnTurnEnd)(damaged)) shouldEqual selfHp(damaged) + maxSelfHp(damaged) / 16
   }
 
@@ -476,7 +474,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // POISON
 
   test("ShedSkin may clear self status condition (10 probabilistic trials)") {
-    val s = battle self (_ active (_ addStatus Poisoned))
+    val s = self(active(addStatus(Poisoned)))(battle)
     val results = (1 to 50).map(_ => run(ShedSkin, OnTurnStart)(s))
     results.exists(_.self.getActive.statusCondition.isEmpty) shouldBe true
     results.exists(_.self.getActive.statusCondition.isDefined) shouldBe true

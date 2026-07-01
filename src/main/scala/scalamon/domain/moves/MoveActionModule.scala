@@ -2,11 +2,7 @@ package scalamon.domain.moves
 
 import Accuracy.*
 import Accuracy.ProbabilityRoll
-import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
-import scalamon.logics.state.StatsStateModuleImpl.*
-import scalamon.logics.state.PokemonStateModuleImpl.*
-import scalamon.logics.state.MoveStateModuleImpl.*
 import scalamon.logics.state.DamageMoveCalculatorImpl.{Damage, getDamage}
 import scalamon.logics.state.DamagePolicy
 import scalamon.domain.moves.EffectTarget.*
@@ -21,16 +17,15 @@ object MoveActionModuleImpl extends MoveActionModule:
     def execute(target: EffectTarget = Opponent)(using roll: ProbabilityRoll): Action =
       val isHit = move.accuracy.test
       
-      val ppStep: StateTransformer = battleState =>
-        battleState self (_ active (_ .updateMove(move.name)(_.decreasePpBy(1))))
+      val ppStep: StateTransformer = self(active(updateMove(move.name)(_.decreasePpBy(1))))
           
       val damageStep: StateTransformer = battleState =>
         if isHit then move match
           case damageMove: DamageMove => 
             val damageAmount: Damage = getDamage(battleState, damageMove)
             target match
-              case Self => battleState self (_ active (_ currentHp (_ decrease damageAmount)))
-              case Opponent => battleState opponent (_ active (_ currentHp (_ decrease damageAmount)))
+              case Self => self(active(currentHp(decrease(damageAmount))))(battleState)
+              case Opponent => opponent(active(currentHp(decrease(damageAmount))))(battleState)
           case statusMove: StatusMove => battleState
         else
           battleState

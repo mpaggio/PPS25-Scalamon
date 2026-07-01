@@ -83,7 +83,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
     val halfHp = pokemon.baseStats.hp.toInt / 2
     val battleInitialState: BattleState = createBattleState(recover)
-    val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => halfHp)))
+    val damagedState: BattleState = self ( active ( currentHp (_ => halfHp)))(battleInitialState)
     val battleEndingState =
       MoveAction(recover).execute().foldLeft(damagedState)((state, transformer) => transformer(state))
     battleEndingState.self.team(pokemon.name).currentHp shouldBe halfHp
@@ -96,7 +96,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
     val battleInitialState: BattleState = createBattleState(recover)
     val halfHp = pokemon.baseStats.hp.toInt / 2
-    val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => halfHp)))
+    val damagedState: BattleState = self ( active ( currentHp (_ => halfHp)))(battleInitialState)
     val action: MoveAction = MoveAction(recover)
     val battleFinalState: BattleState = action.execute().foldLeft(damagedState)((state, transformer) => transformer(state))
     battleFinalState.self.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
@@ -119,14 +119,14 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     import scalamon.logics.state.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
-    val transformation1: StateTransformer = _ opponent (_ bench (_ currentHp (_ decrease 10)))
-    val transformation2: StateTransformer = _ opponent (_ active (_ modifyStats (_ speed (_ decrease 2))))
-    val transformation3: StateTransformer = _ self (_ active (_ heal 50))
+    val transformation1: StateTransformer = opponent( bench( currentHp( decrease(10))))
+    val transformation2: StateTransformer = opponent( active( modifyStats( speed( decrease(2)))))
+    val transformation3: StateTransformer = self(active( heal( 50)))
     val composedEffect: StateTransformer = transformation1.andThen(transformation2).andThen(transformation3)
     val effect: MoveEffect = Effect transformingBy composedEffect
     val personalizedMove = move named "Composed move" withPP 32 withAccuracy 100 withType Normal withEffect effect as Status
     val battleInitialState: BattleState = createBattleState(personalizedMove)
-    val damagedState: BattleState = battleInitialState self (_ active (_ currentHp (_ => 50)))
+    val damagedState: BattleState = self( active( currentHp(_ => 50)))(battleInitialState)
     val action: MoveAction = MoveAction(personalizedMove)
     val battleFinalState: BattleState = action.execute().foldLeft(damagedState)((state, transformer) => transformer(state))
 

@@ -2,7 +2,7 @@ package scalamon.logics.state
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import scalamon.logics.state.StatsStateModuleImpl.*
+import scalamon.logics.state.StatsStateModuleImpl.{decrease, *}
 import scalamon.domain.pokemon.statistics.Stats
 
 class StatsStateTest extends AnyWordSpec with Matchers with StateFixtures:
@@ -18,20 +18,20 @@ class StatsStateTest extends AnyWordSpec with Matchers with StateFixtures:
 
     "apply single stat modifier correctly" in:
       val stats = myPokemon.modifiedStats
-      val weakModifier: StatModifier = _ attack (_ decrease 10)
+      val weakModifier: StatModifier = attack(decrease(10))
       val newStats = weakModifier(stats)
-      newStats.attack.toInt shouldEqual 42
-      newStats.defense.toInt shouldEqual 43
+      newStats.attack shouldEqual 42
+      newStats.defense shouldEqual 43
 
     "apply sequentially composed stat modifiers" in:
       val stats = myPokemon.modifiedStats
-      val weakModifier: StatModifier = _ attack (_ decrease 2)
-      val armorModifier: StatModifier = _ defense (_ increase 2)
-      val slowModifier: StatModifier = _ speed (_ multiply 0.5)
+      val weakModifier: StatModifier = attack(decrease(2))
+      val armorModifier: StatModifier = defense(increase(2))
+      val slowModifier: StatModifier = speed(multiply(0.5))
       val newStats = weakModifier andThen armorModifier andThen slowModifier apply stats
-      newStats.attack.toInt shouldEqual 50
-      newStats.defense.toInt shouldEqual 45
-      newStats.speed.toInt shouldEqual 32   // base speed is 65, 65 * 0.5 = 32
+      newStats.attack shouldEqual 50
+      newStats.defense shouldEqual 45
+      newStats.speed shouldEqual 32   // base speed is 65, 65 * 0.5 = 32
 
 
 

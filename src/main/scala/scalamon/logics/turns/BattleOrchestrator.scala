@@ -15,6 +15,7 @@ import scalamon.domain.moves.EffectTarget.Self
 import scalamon.domain.pokemon.abilities.AbilityTrigger.{OnDamageDealt, OnDamageTaken, OnKODealt, OnSwitchIn, OnSwitchOut, OnTurnStart}
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
 import scalamon.logics.battle.WeatherState
+import scalamon.logics.state.PlayerStateModuleImpl.switchActive
 
 /**
  * Coordinates the execution of a battle turn.
@@ -92,14 +93,14 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           newState
       case SwitchPokemon(_, from, to, _) =>
         val oriented = if state.self.team.contains(from.value) then state
-        else state.switchUserEnemy
+        else switchSelfOpponent(state)
         val currentSlot = oriented.self.getActive.species.abilitySlot
         val afterSwitchOut = MyAbilityBook.runTrigger(OnSwitchOut, currentSlot)(oriented)
-        val switched = afterSwitchOut.self(_ switchActive to.value)
+        val switched = self(switchActive(to.value))(afterSwitchOut)
         val newSlot = switched.self.getActive.species.abilitySlot
         val afterSwitchIn = MyAbilityBook.runTrigger(OnSwitchIn, newSlot)(switched)
         if state.self.team.contains(from.value) then afterSwitchIn
-        else afterSwitchIn.switchUserEnemy
+        else switchSelfOpponent(afterSwitchIn)
 
   /**
    * Executes one move from the point of view of the attacking Pokémon.
@@ -119,7 +120,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
   private def executeMove(state: BattleState, attacking: PokemonRef, moveRef: MoveRef): BattleState =
     val oriented =
       if state.self.team.contains(attacking.value) then state
-      else state.switchUserEnemy
+      else switchSelfOpponent(state)
     val activePokemon = oriented.self.team(oriented.self.activeId)
     resolveMove(moveRef) match
       case Some(move: DamageMove) =>
@@ -142,10 +143,10 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           val defenderIsKnockedOut = isKnockedOut(afterDamageDealt.opponent.getActive)
           if defenderIsKnockedOut then {
             val afterAttackerKO = MyAbilityBook.runTrigger(OnKODealt, attackerSlot)(afterDamageDealt)
-            val flipped = afterAttackerKO.switchUserEnemy
+            val flipped = switchSelfOpponent(afterAttackerKO)
             val defenderSlot = flipped.self.getActive.species.abilitySlot
             val afterDefenderKO = MyAbilityBook.runTrigger(OnKODealt, defenderSlot)(flipped)
-            afterDefenderKO.switchUserEnemy
+            switchSelfOpponent(afterDefenderKO)
           } else
           restoreOrientation(state, attacking, afterDamageDealt)
       case Some(move) =>
@@ -155,10 +156,10 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           state
         else
           val afterMove = MoveAction(move).execute().foldLeft(oriented)((s, f) => f(s))
-          val flipped = afterMove.switchUserEnemy
+          val flipped = switchSelfOpponent(afterMove)
           println(s"DEBUG: ${flipped.self.getActive.species.name} status = ${flipped.self.getActive.statusCondition}")
           val defenderSlot = flipped.self.getActive.species.abilitySlot
-          val afterTrigger = MyAbilityBook.runTrigger(OnDamageTaken, defenderSlot)(flipped).switchUserEnemy
+          val afterTrigger = switchSelfOpponent(MyAbilityBook.runTrigger(OnDamageTaken, defenderSlot)(flipped))
           restoreOrientation(state, attacking, afterTrigger)
       case None => state
 
@@ -202,7 +203,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    */
   private def restoreOrientation(original: BattleState, attacking: PokemonRef, oriented: BattleState): BattleState =
     if original.self.team.contains(attacking.value) then oriented
-    else oriented.switchUserEnemy
+    else switchSelfOpponent(oriented)
 
   /**
    * Applies the given ability trigger to both active Pokémon in order.
@@ -217,9 +218,9 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    */
   private def applyTriggerForBoth(trigger: AbilityTrigger)(state: BattleState): BattleState =
     val afterSelf = MyAbilityBook.runTrigger(trigger, state.self.getActive.species.abilitySlot)(state)
-    val oriented = afterSelf.switchUserEnemy
+    val oriented = switchSelfOpponent(afterSelf)
     val afterOpponent = MyAbilityBook .runTrigger(trigger, oriented.self.getActive.species.abilitySlot)(oriented)
-    afterOpponent.switchUserEnemy
+    switchSelfOpponent(afterOpponent)
 
   /**
    * Applies a forced switch to the self side of the provided battle state.
@@ -242,8 +243,8 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @return the updated battle state with the requested opponent active Pokémon
    */
   def applyOpponentForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
-    val switched = state opponent (_ switchActive newActive.value)
-    val oriented = switched.switchUserEnemy
+    val switched = opponent(switchActive(newActive.value))(state)
+    val oriented = switchSelfOpponent(switched)
     val slotIn = oriented.self.getActive.species.abilitySlot
     val afterIn = MyAbilityBook.runTrigger(OnSwitchIn, slotIn)(oriented)
-    afterIn.switchUserEnemy
+    switchSelfOpponent(afterIn)
