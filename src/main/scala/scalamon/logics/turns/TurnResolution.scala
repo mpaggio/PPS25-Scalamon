@@ -7,7 +7,6 @@ import scalamon.domain.pokemon.abilities.AbilityTrigger.OnTurnEnd
 import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
-import scalamon.logics.battle.{BattleContext, WeatherState}
 import scalamon.logics.state.AlteredStatusModule.applyCondition
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
 import scalamon.logics.weather.WeatherSystem.default
@@ -37,7 +36,7 @@ trait TurnResolutionModule:
   def needsForcedSwitch(player: PlayerState): Boolean
   def resolveTurn(state: BattleState): TurnResult
   def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState
-  def endTurn(state: BattleState, weatherState: WeatherState): BattleState
+  def endTurn(state: BattleState): BattleState
 
 object TurnResolutionImpl extends TurnResolutionModule:
 
@@ -105,24 +104,20 @@ object TurnResolutionImpl extends TurnResolutionModule:
 
   /**
    * Applies weather effects to the battle state at the end of the turn.
-   * @param state The current state of the battle.
    * @param weatherState The current state of the weather in the battle.
    * @return the updated state of the battle after applying weather effects.
    */
-  private def applyWeatherEffects(state: BattleState, weatherState: WeatherState): BattleState =
-    val context = BattleContext(state, weatherState)
-    summon[WeatherEndTurnResolver].apply(context).state
+  private def applyWeatherEffects(state: BattleState): BattleState =
+    summon[WeatherEndTurnResolver].apply(state)
 
   /**
    * Resolves the end-of-turn effects for the battle, including status damage, weather effects, and end-of-turn abilities.
    * @param state the current state of the battle after all actions have been executed.
-   * @param weatherState the current state of the weather in the battle.
    * @return the updated state of the battle after applying all end-of-turn effects.
    */
-  override def endTurn(state: BattleState, weatherState: WeatherState): BattleState =
-    val pipeline: List[BattleState => BattleState] = List(
+  override def endTurn(state: BattleState): BattleState =
+    List[BattleState => BattleState](
       applyStatusDamage,
-      s => applyWeatherEffects(s, weatherState),
+      applyWeatherEffects,
       applyEndOfTurnAbilities
-    )
-    pipeline.foldLeft(state)((s, f) => f(s))
+    ).foldLeft(state)((s, f) => f(s))
