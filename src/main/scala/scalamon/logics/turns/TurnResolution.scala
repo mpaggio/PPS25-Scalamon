@@ -126,4 +126,6 @@ object TurnResolutionImpl extends TurnResolutionModule:
       s => applyWeatherEffects(s, weatherState),
       applyEndOfTurnAbilities
     )
+    
+    
     pipeline.foldLeft(state)((s, f) => f(s))

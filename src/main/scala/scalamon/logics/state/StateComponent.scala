@@ -5,3 +5,4 @@ trait StateComponent:
   protected type Op = State => State
   protected type InnerState
   protected type InnerOp = InnerState => InnerState
+

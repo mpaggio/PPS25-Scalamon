@@ -33,13 +33,15 @@ object AlteredStatusModule:
       case Sleeping(turns) =>
         if turns > 1 then
           self(active(addStatus(Sleeping(turns - 1))))(battleState)
-        else self(active(_.clearStatusCondition))(battleState)
+        else removeCondition(Sleeping(turns - 1))(battleState)
       case Confused(turns) =>
         if turns > 1 then
           self(active(addStatus(Confused(turns - 1))))(battleState)
-        else self(active(_.clearStatusCondition))(battleState)
+        else removeCondition(Confused(turns - 1))(battleState)
       case Charging(turns) =>
         if turns > 1 then
           self(active(addStatus(Charging(turns - 1))))(battleState)
-        else self(active(_.clearStatusCondition))(battleState)
+        else removeCondition(Charging(turns - 1))(battleState)
       case _ => battleState
+      
+  private def removeCondition(status: AlteredStatus): StateTransformer = self(active(removeStatus(status)))

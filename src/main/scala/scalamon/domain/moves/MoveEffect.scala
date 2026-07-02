@@ -4,17 +4,12 @@ import Accuracy.*
 import Accuracy.given
 import AlteredStatus.*
 import scalamon.domain.pokemon.statistics.StatADT.*
-import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
-import scalamon.logics.state.BattleStateImpl.*
-import scalamon.logics.state.PlayerStateModuleImpl.*
-import scalamon.logics.state.{PokemonStateModuleImpl, StateTransformerModuleImpl, StatsStateModule, StatsStateModuleImpl}
-import scalamon.logics.state.PokemonStateModuleImpl.*
+import scalamon.logics.state.StateTransformerModuleImpl.*
 
 /**
  * Represents the possible targets of an effect
  */
-enum EffectTarget:
-  case Self, Opponent
+
 
 /**
  * Represents all the possible effects that a move can have.
@@ -49,11 +44,11 @@ case class AlteredState(statusFactory: () => AlteredStatus, probability: Accurac
  * Modifies one of the target's stats by a number of stages.
  * Positives values increase stats, negative values decrease them.
  */
-case class StatChange(modifier: StatsState => StatsState, effectTarget: EffectTarget, probability: Accuracy) extends MoveEffect:
+case class StatChange(modifier: StatsState => StatsState, effectTarget: Target, probability: Accuracy) extends MoveEffect:
   override def executeEffect: StateTransformer =
     if probability.test then effectTarget match
-      case EffectTarget.Self => self(active(modifyStats(modifier)))
-      case EffectTarget.Opponent => opponent(active(modifyStats(modifier)))
+      case Target.Self => self(active(modifyStats(modifier)))
+      case Target.Opponent => opponent(active(modifyStats(modifier)))
     else
       identity
 
@@ -149,12 +144,12 @@ object MoveEffectDSL:
    * Builder for stat modification effects.
    * Represents the second step in the creation: define probability.
    */
-  case class StatChangeEffectBuilder(modifier: StatsState => StatsState, target: EffectTarget = EffectTarget.Opponent):
+  case class StatChangeEffectBuilder(modifier: StatsState => StatsState, target: Target = Target.Opponent):
 
     /**
      * Defines the target of the stat change effect
      */
-    infix def ofTarget(effectTarget: EffectTarget): StatChangeEffectBuilder = copy(target = effectTarget)
+    infix def ofTarget(effectTarget: Target): StatChangeEffectBuilder = copy(target = effectTarget)
 
     /**
      * Defines probability using Int percentage (0 - 100)

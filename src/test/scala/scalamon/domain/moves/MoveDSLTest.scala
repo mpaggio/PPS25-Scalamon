@@ -11,7 +11,7 @@ import Accuracy.*
 import AlteredStatus.*
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.InnerOp
-import EffectTarget.*
+import scalamon.logics.state.StateTransformerModuleImpl.Target.*
 
 class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
 

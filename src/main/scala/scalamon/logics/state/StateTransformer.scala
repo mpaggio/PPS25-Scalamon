@@ -8,11 +8,17 @@ trait StateTransformerModule:
 object StateTransformerModuleImpl extends StateTransformerModule:
   override type BattleState = BattleStateImpl.BattleState
 
+  enum Target:
+    case Self, Opponent
+    
+  export Target.*
   export MoveStateModuleImpl.*
   export StatsStateModuleImpl.*
   export PokemonStateModuleImpl.{StatsState => _, MoveState => _, *}
   export PlayerStateModuleImpl.{PokemonState => _, *}
   export BattleStateImpl.{PlayerState => _, BattleState => _, *}
+
+
 
 /*
 // Example of how to use the StateTransformerModule to implement abilities and effects in a Pokemon battle system.
@@ -105,7 +111,7 @@ object BattleEngine:
       case switchProspective => List(action)
       case _ => passiveAbilities.foldLeft(List(action))((currentActions, entry) =>
         val (origin, ability) = entry // !!
-        currentActions.flatMap(act => ability.apply(act, origin))
+        currentActions.flatMap(act => ability(act, origin))
       )
     )
 */
