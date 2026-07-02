@@ -1,10 +1,8 @@
 package scalamon.logics.weather
 
 import scalamon.domain.weather.Weather
-import scalamon.logics.battle.BattleContext
-import scalamon.logics.state.BattleStateImpl.PlayerState
+import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.weather.WeatherEndTurnResolver
-import scalamon.logics.weather.BattleContextOps.*
 import scalamon.logics.weather.WeatherSystem
 
 /**
@@ -22,7 +20,7 @@ trait WeatherEndTurnResolver:
    * @return
    * an updated battle context after applying weather damage and healing
    */
-  def apply(context: BattleContext): BattleContext
+  def apply(state: BattleState): BattleState
 
 object WeatherEndTurnResolver:
   /**
@@ -34,16 +32,13 @@ object WeatherEndTurnResolver:
    */
   given default(using weatherSystem: WeatherSystem): WeatherEndTurnResolver with
 
-    override def apply(context: BattleContext): BattleContext =
-      if context.state.flags.weatherSuppressed then context
+    override def apply(state: BattleState): BattleState =
+      if state.flags.weatherSuppressed then state
       else
-        val weather = context.currentWeather
-        val updatedSelf = applyToActive(context.state.self, weather)
-        val updateOpponent = applyToActive(context.state.opponent, weather)
-        context.copy(
-          state = context.state.copy(
-            self = updatedSelf,
-            opponent = updateOpponent)
+        val weather = state.weather
+        state.copy(
+          self = applyToActive(state.self, weather),
+          opponent = applyToActive(state.opponent, weather)
         )
 
     /**

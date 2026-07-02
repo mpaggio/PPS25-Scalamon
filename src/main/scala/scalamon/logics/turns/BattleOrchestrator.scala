@@ -14,7 +14,6 @@ import scalamon.domain.moves.Accuracy.given
 import scalamon.domain.moves.EffectTarget.Self
 import scalamon.domain.pokemon.abilities.AbilityTrigger.{OnDamageDealt, OnDamageTaken, OnKODealt, OnSwitchIn, OnSwitchOut, OnTurnStart}
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
-import scalamon.logics.battle.WeatherState
 
 /**
  * Coordinates the execution of a battle turn.
@@ -38,20 +37,21 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    *   5. resolves the resulting battle outcome,
    *   6. applies end-of-turn effects only if the turn remains ongoing.
    *
+   * Weather is read directly from the battle state.
+   *
    * @param state the current battle state
    * @param choices the actions selected for the turn
-   * @param weatherState the current weather context used by end-of-turn logic
    * @param speedOf a function that returns the speed of a Pokémon reference
    * @return the updated battle state together with the resolved turn result
    */
-  def runTurn(state: BattleState, choices: TurnChoices, weatherState: WeatherState, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
     val plan = turnFlow.startTurn(choices, speedOf)
     val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
     val afterTurnStart = applyTriggerForBoth(OnTurnStart)(resetState)
     val afterExecution = plan.orderedActions.foldLeft(afterTurnStart)(executeScheduled)
     val result = resolveTurn(afterExecution)
     val finalState = result match
-      case TurnResult.Ongoing(s) => endTurn(s, weatherState)
+      case TurnResult.Ongoing(s) => endTurn(s)
       case TurnResult.ForcedSwitch(s, _) => s
       case TurnResult.OpponentForcedSwitch(s, _) => s
       case TurnResult.BothForcedSwitch(s, _, _) => s
