@@ -2,24 +2,26 @@ package scalamon.logics.state
 
 trait StatsStateModule extends StateComponent:
   type StatsState
-  type Stats
   type Stat
-  override type SubComponent = Stat
+  override protected type State = StatsState
+  override protected type InnerState = Stat
+  type Stats
 
   def statsInitialState(value: Stats): StatsState
 
-  extension (ss: StatsState)
-    def attack(f: Modifier): StatsState
-    def defense(f: Modifier): StatsState
-    def specialAttack(f: Modifier): StatsState
-    def specialDefense(f: Modifier): StatsState
-    def speed(f: Modifier): StatsState
+  def attack(f: InnerOp): Op
+  def defense(f: InnerOp): Op
+  def specialAttack(f: InnerOp): Op
+  def specialDefense(f: InnerOp): Op
+  def speed(f: InnerOp): Op
+
+  def decrease(amount: Int): InnerOp
+  def increase(amount: Int): InnerOp
+  def multiply(factor: Double): InnerOp
 
   extension (s: Stat)
-    infix def decrease(amount: Int): Stat
-    infix def increase(amount: Int): Stat
-    infix def multiply(factor: Double): Stat
-
+    def clamped(min: Int, max: Int): Stat
+    def positive: Stat
 
 object StatsStateModuleImpl extends StatsStateModule:
 
@@ -36,18 +38,17 @@ object StatsStateModuleImpl extends StatsStateModule:
     value.speed.toInt
   )
 
-  extension (ss: StatsState)
-    infix def maxHp(f: Modifier): StatsState = ss.copy(hp = f(ss.hp))
-    infix def attack(f: Modifier): StatsState = ss.copy(attack = f(ss.attack))
-    infix def defense(f: Modifier): StatsState = ss.copy(defense = f(ss.defense))
-    infix def specialAttack(f: Modifier): StatsState = ss.copy(specialAttack = f(ss.specialAttack))
-    infix def specialDefense(f: Modifier): StatsState = ss.copy(specialDefense = f(ss.specialDefense))
-    infix def speed(f: Modifier): StatsState = ss.copy(speed = f(ss.speed))
+  def maxHp(f: InnerOp): Op = ss => ss.copy(hp = f(ss.hp))
+  def attack(f: InnerOp): Op = ss => ss.copy(attack = f(ss.attack))
+  def defense(f: InnerOp): Op = ss => ss.copy(defense = f(ss.defense))
+  def specialAttack(f: InnerOp): Op = ss => ss.copy(specialAttack = f(ss.specialAttack))
+  def specialDefense(f: InnerOp): Op = ss => ss.copy(specialDefense = f(ss.specialDefense))
+  def speed(f: InnerOp): Op = ss => ss.copy(speed = f(ss.speed))
+
+  def decrease(amount: Int): Stat => Stat = _ - amount
+  def increase(amount: Int): Stat => Stat = _ + amount
+  def multiply(factor: Double): Stat => Stat = s => (s * factor).toInt
 
   extension (s: Stat)
-    infix def decrease(amount: Int): Stat = s - amount
-    infix def increase(amount: Int): Stat = s + amount
-    infix def multiply(factor: Double): Stat = (s * factor).toInt
-
-    infix def clamped(min: Int, max: Int): Stat = s.max(min).min(max)
-    infix def positive: Stat = s.max(0)
+    def clamped(min: Int, max: Int): Stat = s.max(min).min(max)
+    def positive: Stat = s.max(0)

@@ -39,9 +39,8 @@ final class WeatherEndTurnResolverTest extends AnyFunSuite:
       abilitySlot = AbilitySlot(primary = Blaze)
     )
 
-  private def mkPokemonState(pokemon: Pokemon, currentHp: Int): PokemonState =
-    pokemonInitialState(pokemon, Map.empty)
-      .currentHp(_ => currentHp)
+  private def mkPokemonState(pokemon: Pokemon, overrideHp: Int): PokemonState =
+    currentHp(hp => overrideHp)(pokemonInitialState(pokemon, Map.empty))
 
   private def mkContext(
                          selfType: Type,

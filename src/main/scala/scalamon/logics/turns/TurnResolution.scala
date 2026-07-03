@@ -4,10 +4,11 @@ import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.pokemon.abilities
 import scalamon.domain.pokemon.abilities.MyAbilityBook
 import scalamon.domain.pokemon.abilities.AbilityTrigger.OnTurnEnd
-import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
+import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState, switchSelfOpponent}
 import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 import scalamon.logics.state.AlteredStatusModule.applyCondition
+import scalamon.logics.state.PlayerStateModuleImpl.switchActive
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
 import scalamon.logics.weather.WeatherSystem.default
 
@@ -72,7 +73,7 @@ object TurnResolutionImpl extends TurnResolutionModule:
     case state => TurnResult.Ongoing(state)
 
   override def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState =
-    if player.team.contains(newActive.value) then player switchActive newActive.value
+    if player.team.contains(newActive.value) then switchActive(newActive.value)(player)
     else player
 
   /**
@@ -82,10 +83,10 @@ object TurnResolutionImpl extends TurnResolutionModule:
    */
   private def applyStatusDamage(state: BattleState) =
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
-      val oriented = if isSelf then s else s.switchUserEnemy
+      val oriented = if isSelf then s else switchSelfOpponent(s)
       val pokemon = oriented.self.getActive
       val updated = pokemon.status.foldLeft(oriented)((state, status) => status.applyCondition(state))
-      if isSelf then updated else updated.switchUserEnemy
+      if isSelf then updated else switchSelfOpponent(updated)
     applyForPlayer(applyForPlayer(state, true), false)
 
   /**
@@ -97,9 +98,9 @@ object TurnResolutionImpl extends TurnResolutionModule:
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
       val slot = if isSelf then s.self.getActive.species.abilitySlot
       else s.opponent.getActive.species.abilitySlot
-      val oriented = if isSelf then s else s.switchUserEnemy
+      val oriented = if isSelf then s else switchSelfOpponent(s)
       val result = MyAbilityBook.runTrigger(OnTurnEnd, slot)(oriented)
-      if isSelf then result else result.switchUserEnemy
+      if isSelf then result else switchSelfOpponent(result)
     applyForPlayer(applyForPlayer(state, true), false)
 
   /**

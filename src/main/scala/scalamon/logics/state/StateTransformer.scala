@@ -8,12 +8,25 @@ trait StateTransformerModule:
 object StateTransformerModuleImpl extends StateTransformerModule:
   override type BattleState = BattleStateImpl.BattleState
 
+  enum Target:
+    case Self, Opponent
+    
+  export Target.*
+  export MoveStateModuleImpl.*
+  export StatsStateModuleImpl.*
+  export PokemonStateModuleImpl.{StatsState => _, MoveState => _, *}
+  export PlayerStateModuleImpl.{PokemonState => _, *}
+  export BattleStateImpl.{PlayerState => _, BattleState => _, *}
+
+
+
 /*
 // Example of how to use the StateTransformerModule to implement abilities and effects in a Pokemon battle system.
 
 import StateTransformerModuleImpl.*
 import PokemonStateModuleImpl.*
 import scalamon.domain.moves.DamageMove
+import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.*
 
 
@@ -43,40 +56,38 @@ case class DamageAction(move: DamageMove) extends Action:   // implicit paramete
 
 // Example abilities:
 
-enum Ability(selector: (StateTransformer, Origin) => Boolean, mapper: TransformerFlatMapper) extends PassiveEffect(selector)(mapper):
+class Ability(selector: (StateTransformer, Origin) => Boolean, mapper: TransformerFlatMapper) extends PassiveEffect(selector)(mapper)
 
-  case ShadowTag extends Ability(
-    {
-      case (SwitchAction(_), Origin.Opponent) => true
-      case _ => false
-    },
-    _ => Nil
-  )
+val shadowTag = Ability(
+  {
+    case (SwitchAction(_), Origin.Opponent) => true
+    case _ => false
+  },
+  _ => Nil
+)
 
-  case MagicGuard extends Ability(
-    {
-      case (DamageAction(_), Origin.Opponent) => false    // errata
-      case _ => false
-    },
-    _ => Nil
-  )
-
-  case Regenerator extends Ability(
-    {
-      case (SwitchAction(_), Origin.Self) => true
-      case _ => false
-    },
-    bs => List(bs, s => s self (_ active (_ currentHp (_ increase 3))))
-  )
+val regenerator = Ability(
+  {
+    case (SwitchAction(_), Origin.Self) => true
+    case _ => false
+  },
+  bs => List(bs, s => s self (_ active (_ currentHp (_ increase 3))))
+)
 
 
-
+class AlteredStatus(effect: PassiveEffect, duration: Int, update: Int => Int):
+  def apply(actions: List[StateTransformer]): List[StateTransformer] =
+    val updatedDuration = update(duration)
+    if updatedDuration > 0 then
+      actions.flatMap(action => effect.apply(action, Origin.Self))
+    else actions
+    
 
 // Engine example:
 
 object BattleEngine:
 
-  private val switchProspective: StateTransformer = s => s.switchUserEnemy
+  private val switchProspective: StateTransformer = s => s.switchSelfOpponent
 
   def resolveTurn(initialState: BattleState, p1Action: List[StateTransformer], p2Action: List[StateTransformer]): BattleState =
 
@@ -92,15 +103,15 @@ object BattleEngine:
   private def resolvePassiveEffects(actions: List[StateTransformer], battleState: BattleState): List[StateTransformer] =
 
     val passiveAbilities: List[(Origin, Ability)] = List(
-      (Origin.Self, Ability.Regenerator),  //  battleState.self.getActive.species.abilitySlot.primary
-      (Origin.Opponent, Ability.ShadowTag)  // battleState.oppotent.getActive.species.abilitySlot.primary ...
+      (Origin.Self, shadowTag),  //  battleState.self.getActive.species.abilitySlot.primary
+      (Origin.Opponent, regenerator)  // battleState.oppotent.getActive.species.abilitySlot.primary ...
     )
 
     actions.flatMap(action => action match
       case switchProspective => List(action)
       case _ => passiveAbilities.foldLeft(List(action))((currentActions, entry) =>
         val (origin, ability) = entry // !!
-        currentActions.flatMap(act => ability.apply(act, origin))
+        currentActions.flatMap(act => ability(act, origin))
       )
     )
 */
