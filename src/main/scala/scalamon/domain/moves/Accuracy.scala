@@ -35,6 +35,8 @@ object Accuracy:
     require(accuracy >= 0.0 && accuracy <= 1.0, s"Invalid accuracy: $accuracy")
     (accuracy * 100.0).toInt
 
+  private def clamp(value: Int): Accuracy = math.max(0, math.min(100, value))
+
   /**
    * Extension methods for working with Accuracy values.
    */
@@ -48,14 +50,20 @@ object Accuracy:
     /**
      * @return accuracy as Int percentage value (0 - 100).
      */
-    def asInt: Int = accuracy
+    def asInt: Int = clamp(accuracy)
 
     /**
      * @return accuracy as Double percentage value (0.0 - 100.0).
      */
-    def asDouble: Double = accuracy.toDouble
+    def asDouble: Double = clamp(accuracy).toDouble
 
     /**
      * @return true if the accuracy test has passed (roll result <= of accuracy Int value)
      */
     def test(using roll: ProbabilityRoll): Boolean = roll() <= accuracy.asInt
+
+    infix def +(value: Int) : Accuracy = accuracy + value
+
+    infix def -(value: Int) : Accuracy = accuracy - value
+
+    infix def *(value: Double) : Accuracy = (accuracy.toDouble * value).toInt
