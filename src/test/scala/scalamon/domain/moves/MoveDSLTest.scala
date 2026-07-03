@@ -10,8 +10,7 @@ import MoveEffectDSL.Effect.*
 import Accuracy.*
 import AlteredStatus.*
 import scalamon.logics.state.StatsStateModuleImpl.*
-import scalamon.logics.state.PokemonStateModuleImpl.InnerOp
-import scalamon.logics.state.StateTransformerModuleImpl.Target.*
+import scalamon.domain.pokemon.abilities.Target.*
 
 class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
 

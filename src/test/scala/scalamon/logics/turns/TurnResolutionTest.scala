@@ -2,7 +2,6 @@ package scalamon.logics.turns
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{a, be, shouldBe, shouldEqual, shouldNot}
-import scalamon.domain.weather.Weather.ClearSky
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
@@ -189,7 +188,7 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   test("endTurn applies burn damage to the active burned Pokemon") {
     import scalamon.logics.state.AlteredStatusModule.applyCondition
     import scalamon.domain.moves.AlteredStatus.Burned
-    val burned = self(active(_ setStatus Burned))(battle)
+    val burned = self(active(_.setStatus(Burned)))(battle)
     val hpBefore = burned.self.getActive.currentHp
     val afterBurn = Burned.applyCondition(burned)
     val expectedDamage = burned.self.getActive.maxHp / 8

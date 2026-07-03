@@ -4,6 +4,8 @@ import Accuracy.*
 import Accuracy.given
 import AlteredStatus.*
 import scalamon.domain.pokemon.statistics.StatADT.*
+import scalamon.domain.pokemon.abilities.Target
+import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 
 /**

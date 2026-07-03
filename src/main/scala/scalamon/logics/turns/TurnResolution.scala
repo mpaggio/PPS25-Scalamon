@@ -4,11 +4,8 @@ import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.pokemon.abilities
 import scalamon.domain.pokemon.abilities.MyAbilityBook
 import scalamon.domain.pokemon.abilities.AbilityTrigger.OnTurnEnd
-import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState, switchSelfOpponent}
-import scalamon.logics.state.{BattleStateImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
-import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
+import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.AlteredStatusModule.applyCondition
-import scalamon.logics.state.PlayerStateModuleImpl.switchActive
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
 import scalamon.logics.weather.WeatherSystem.default
 
@@ -105,7 +102,7 @@ object TurnResolutionImpl extends TurnResolutionModule:
 
   /**
    * Applies weather effects to the battle state at the end of the turn.
-   * @param weatherState The current state of the weather in the battle.
+   * @param state The current state of the battle.
    * @return the updated state of the battle after applying weather effects.
    */
   private def applyWeatherEffects(state: BattleState): BattleState =

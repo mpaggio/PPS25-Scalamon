@@ -1,7 +1,5 @@
 package scalamon.domain.actions
 
-import scalamon.domain.actions.*
-import scalamon.domain.moves.Accuracy
 import scalamon.domain.pokemon.abilities.AbilityTrigger
 import scalamon.domain.pokemon.abilities.Target
 import AbilityTrigger.*
@@ -17,7 +15,7 @@ object Items:
                    onCancel: StateTransformer = identity
                  ) extends Action:
     def apply(bs: BattleState): BattleState =
-      addPassiveEffect(if until.contains(_) then onCancel else identity)(effect(bs))
+      addPassiveEffect(t => if until.contains(t) then onCancel else identity)(effect(bs))
 
   val all: Map[String, Item] = Map(
     "potion"       -> Item(self(active(currentHp(increase(20))))),

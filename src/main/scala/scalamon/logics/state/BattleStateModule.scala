@@ -1,7 +1,6 @@
 package scalamon.logics.state
 
 import scalamon.domain.moves.DamageMove
-import scalamon.domain.pokemon.abilities.MyAbilityBook
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.ClearSky
 
@@ -11,8 +10,7 @@ trait BattleStateModule extends StateComponent:
   override protected type State = BattleState
   override protected type InnerState = PlayerState
   type Trigger
-  type Subject
-  type PassiveEffect = (Trigger, Subject) => Op
+  type PassiveEffect = Trigger => Op
 
   def battleState(enemyPokemon: PlayerState, userPokemon: PlayerState): BattleState
   
@@ -35,7 +33,6 @@ object BattleStateImpl extends BattleStateModule:
   override type BattleState = Bs
   override type PlayerState = PlayerStateModuleImpl.PlayerState
   override type Trigger = scalamon.domain.pokemon.abilities.AbilityTrigger
-  override type Subject = scalamon.logics.state.StateTransformerModuleImpl.Target
   def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState): BattleState =
     Bs(userPokemon, enemyPokemon, List(), ClearSky, BattleFlags())
 

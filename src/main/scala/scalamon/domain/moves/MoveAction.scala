@@ -2,8 +2,10 @@ package scalamon.domain.moves
 
 import Accuracy.*
 import Accuracy.ProbabilityRoll
+import scalamon.domain.pokemon.abilities.Target
+import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
-import scalamon.logics.state.DamageMoveCalculatorImpl.{Damage, getDamage}
+import scalamon.logics.state.DamageMoveCalculatorImpl.getDamage
 import scalamon.logics.state.DamagePolicy
 
 import scalamon.domain.actions.Action

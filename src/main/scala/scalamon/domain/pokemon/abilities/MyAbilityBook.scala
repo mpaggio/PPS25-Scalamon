@@ -5,6 +5,7 @@ import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.abilities.AbilityDSL.{AbilityBook, OnTrigger}
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
+import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
@@ -66,7 +67,7 @@ object MyAbilityBook:
 
     // FIRE
 
-    OnTrigger(OnDamageDealt) define Blaze as { state =>
+    OnTrigger(OnDamageTaken(Opponent)) define Blaze as { state =>
       state
     },
 
@@ -84,25 +85,25 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnSwitchIn) define Drought as { state =>
+    OnTrigger(OnSwitchIn(Self)) define Drought as { state =>
       if state.weather == Weather.ClearSky then
         println(s"[Drought] ${state.self.getActive.species.name} sets Heavy Sunlight!")
         setWeather(Weather.HeavySunlight)(state)
       else state
     },
 
-    OnTrigger(OnDamageTaken) define FlashFire as { state =>
+    OnTrigger(OnDamageTaken(Self)) define FlashFire as { state =>
       if state.flags.lastOpponentMove.exists(_.moveType == Fire) then
         println(s"[FlashFire] ${state.self.getActive.species.name} is now immune to Fire moves and gains a boost!")
         state.updateFlags(_.copy(selfFlashFireActive = true))
       else state
     },
 
-    OnTrigger(OnDamageDealt) define DroughtAura as { state =>
+    OnTrigger(OnDamageTaken(Opponent)) define DroughtAura as { state =>
       state
     },
 
-    OnTrigger(OnDamageTaken) define FlameBody as{ state =>
+    OnTrigger(OnDamageTaken(Self)) define FlameBody as{ state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[FlameBody] ${state.opponent.getActive.species.name} is burned!")
         opponent(active(addStatus(Burned)))(state)
@@ -119,13 +120,13 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnDamageDealt) define Guts as { state =>
+    OnTrigger(OnDamageTaken(Opponent)) define Guts as { state =>
       state
     },
 
     // WATER
 
-    OnTrigger(OnDamageDealt) define Torrent as { state =>
+    OnTrigger(OnDamageTaken(Opponent)) define Torrent as { state =>
       state
     },
 
@@ -136,7 +137,7 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnDamageTaken) define WaterAbsorb as { state =>
+    OnTrigger(OnDamageTaken(Self)) define WaterAbsorb as { state =>
       state.flags.lastOpponentMove match
         case Some(move) if move.moveType == Water =>
           val maxHp = state.self.getActive.maxHp
@@ -152,19 +153,19 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnSwitchIn) define Intimidate as { state =>
+    OnTrigger(OnSwitchIn(Self)) define Intimidate as { state =>
       println(s"[Intimidate] ${state.self.getActive.species.name} intimidates the opponent! -10% Attack")
       reduceOpponentAttack(state, 0.1)
     },
 
-    OnTrigger(OnKODealt) define Moxie as { state =>
+    OnTrigger(OnKOTaken(Opponent)) define Moxie as { state =>
       println(s"[Moxie] ${state.self.getActive.species.name} gains +10% Attack after KO!")
       self(active(modifyStats(attack(multiply(1.1)))))(state)
     },
 
     // GRASS
 
-    OnTrigger(OnDamageDealt) define Overgrow as { state =>
+    OnTrigger(OnDamageTaken(Opponent)) define Overgrow as { state =>
       state
     },
 
@@ -175,11 +176,11 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnDamageTaken) define ThickFat as { state =>
+    OnTrigger(OnDamageTaken(Self)) define ThickFat as { state =>
       state
     },
 
-    OnTrigger(OnDamageTaken) define EffectSpore as { state =>
+    OnTrigger(OnDamageTaken(Self)) define EffectSpore as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         val status = Random.nextInt(3) match
           case 0 => Paralyzed
@@ -190,7 +191,7 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnSwitchOut) define Regenerator as { state =>
+    OnTrigger(OnSwitchOut(Self)) define Regenerator as { state =>
       val maxHp = state.self.getActive.maxHp
       println(s"[Regenerator] ${state.self.getActive.species.name} regenerates 1/3 of its max HP while leaving!")
       self(active(heal(maxHp / 3)))(state)
@@ -198,14 +199,14 @@ object MyAbilityBook:
 
     // ELECTRIC
 
-    OnTrigger(OnDamageDealt) define Static as { state =>
+    OnTrigger(OnDamageTaken(Opponent)) define Static as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[Static] ${state.opponent.getActive.species.name} is paralyzed!")
         opponent(active(addStatus(Paralyzed)))(state)
       else state
     },
 
-    OnTrigger(OnDamageTaken) define LightningRodLite as { state =>
+    OnTrigger(OnDamageTaken(Self)) define LightningRodLite as { state =>
       state.flags.lastOpponentMove match
         case Some(move) if move.moveType == Electric =>
           println(s"[LightningRodLite] ${state.self.getActive.species.name} is protected from Electric Moves!")
@@ -214,7 +215,7 @@ object MyAbilityBook:
         case _ => state
     },
 
-    OnTrigger(OnDamageTaken) define LightningRod as { state =>
+    OnTrigger(OnDamageTaken(Self)) define LightningRod as { state =>
       state.flags.lastOpponentMove match
         case Some(move) if move.moveType == Electric =>
           println(s"[LightningRod] ${state.self.getActive.species.name} draws Electric moves and boosts Special Attack!")
@@ -229,12 +230,12 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnKODealt) define Aftermath as { state =>
+    OnTrigger(OnKOTaken(Self)) define Aftermath as { state =>
       println(s"[Aftermath] ${state.opponent.getActive.species.name} takes damage after KO!")
       opponent(active(takeDamage(state.opponent.getActive.maxHp / 8)))(state)
     },
 
-    OnTrigger(OnDamageTaken) define VoltAbsorb as { state =>
+    OnTrigger(OnDamageTaken(Self)) define VoltAbsorb as { state =>
       state.flags.lastOpponentMove match
         case Some(move) if move.moveType == Electric =>
           val maxHp = state.self.getActive.maxHp
@@ -253,7 +254,7 @@ object MyAbilityBook:
 
     // PSICO
 
-    OnTrigger(OnDamageTaken) define Synchronize as { state =>
+    OnTrigger(OnDamageTaken(Self)) define Synchronize as { state =>
       println(s"[Synchronize] if ${state.self.getActive.species.name} obtains a Status condition, it applies it to the opponent too!")
       state.self.getActive.statusCondition match
         case Some(s) => opponent(active(addStatus(s)))(state)
@@ -265,11 +266,11 @@ object MyAbilityBook:
       state.updateFlags(_.copy(selfMagicGuardActive = true))
     },
 
-    OnTrigger(OnDamageTaken) define Insomnia as { state =>
+    OnTrigger(OnDamageTaken(Self)) define Insomnia as { state =>
       state
     },
 
-    OnTrigger(OnSwitchIn) define Forewarn as { state =>
+    OnTrigger(OnSwitchIn(Self)) define Forewarn as { state =>
       foreWarnLog(state)
     },
 
@@ -284,7 +285,7 @@ object MyAbilityBook:
         case _ => state
     },
 
-    OnTrigger(OnDamageTaken) define Pressure as { state =>
+    OnTrigger(OnDamageTaken(Self)) define Pressure as { state =>
       state.flags.lastOpponentMove match
         case Some(move) =>
           println(s"[Pressure] ${state.opponent.getActive.species.name}'s ${move.name} loses 1 additional PP due to Pressure!")
@@ -292,7 +293,7 @@ object MyAbilityBook:
         case None => state
     },
 
-    OnTrigger(OnSwitchIn) define CloudNine as { state =>
+    OnTrigger(OnSwitchIn(Self)) define CloudNine as { state =>
       println(s"[CloudNine] ${state.self.getActive.species.name} suppresses weather effects!")
       state.updateFlags(_.copy(weatherSuppressed = true))
     },
@@ -313,18 +314,18 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnDamageDealt) define PoisonTouch as { state =>
+    OnTrigger(OnDamageTaken(Opponent)) define PoisonTouch as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
         println(s"[PoisonTouch] ${state.opponent.getActive.species.name} is poisoned!")
         opponent(active(addStatus(Poisoned)))(state)
       else state
     },
 
-    OnTrigger(OnDamageTaken) define Levitate as { state =>
+    OnTrigger(OnDamageTaken(Self)) define Levitate as { state =>
       state
     },
 
-    OnTrigger(OnDamageTaken) define CursedBody as { state =>
+    OnTrigger(OnDamageTaken(Self)) define CursedBody as { state =>
       if Random.nextDouble() < 0.30 && state.flags.lastOpponentMove.isDefined then
         val moveName = state.flags.lastOpponentMove.get.name
         println(s"[CursedBody] ${state.opponent.getActive.species.name}'s $moveName is disabled!")
@@ -332,12 +333,12 @@ object MyAbilityBook:
       else state
     },
 
-    OnTrigger(OnSwitchIn) define ShadowTag as { state =>
+    OnTrigger(OnSwitchIn(Self)) define ShadowTag as { state =>
       println(s"[ShadowTag] ${state.self.getActive.species.name} prevents the opponent from switching the active Pokemon!")
       state.updateFlags(_.copy(opponentSwitchBlocked = true))
     },
 
-    OnTrigger(OnDamageTaken) define LiquidOoze as { state =>
+    OnTrigger(OnDamageTaken(Self)) define LiquidOoze as { state =>
       if Random.nextDouble() < 0.30 then
         val attacker = state.opponent.getActive
         val maxHp = attacker.maxHp

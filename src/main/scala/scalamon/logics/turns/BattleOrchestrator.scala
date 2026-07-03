@@ -9,7 +9,9 @@ import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
 import scalamon.logics.state.AlteredStatusModule.*
 import scalamon.domain.moves.Accuracy.given
-import scalamon.domain.pokemon.abilities.AbilityTrigger.{OnDamageDealt, OnDamageTaken, OnKODealt, OnSwitchIn, OnSwitchOut, OnTurnStart}
+import scalamon.domain.pokemon.abilities.Target
+import scalamon.domain.pokemon.abilities.Target.*
+import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
 
 /**
@@ -90,10 +92,9 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
       case SwitchPokemon(_, from, to, _) =>
         val oriented = if state.self.team.contains(from.value) then state
         else switchSelfOpponent(state)
-        val afterSwitchOut = applyPassiveEffects(OnSwitchOut, Self)(oriented)
+        val afterSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(oriented)
         val switched = self(switchActive(to.value))(afterSwitchOut)
-        val newSlot = switched.self.getActive.species.abilitySlot
-        val afterSwitchIn = applyPassiveEffects(OnSwitchIn, Self)(switched)
+        val afterSwitchIn = applyPassiveEffects(OnSwitchIn(Self))(switched)
         if state.self.team.contains(from.value) then afterSwitchIn
         else switchSelfOpponent(afterSwitchIn)
 
@@ -133,13 +134,12 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
         else
           val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))
           val afterMove = MoveAction(move)(orientedWithMove)
-          val afterDamageDealt = applyPassiveEffects(OnDamageDealt, Self)(afterMove)
+          val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
           val defenderIsKnockedOut = isKnockedOut(afterDamageDealt.opponent.getActive)
           if defenderIsKnockedOut then {
-            val afterAttackerKO = applyPassiveEffects(OnKODealt, Self)(afterDamageDealt)
+            val afterAttackerKO = applyPassiveEffects(OnKOTaken(Opponent))(afterDamageDealt)
             val flipped = switchSelfOpponent(afterAttackerKO)
-            val defenderSlot = flipped.self.getActive.species.abilitySlot
-            val afterDefenderKO = applyPassiveEffects(OnKODealt, Self)(flipped)
+            val afterDefenderKO = applyPassiveEffects(OnKOTaken(Self))(flipped)
             switchSelfOpponent(afterDefenderKO)
           } else
           restoreOrientation(state, attacking, afterDamageDealt)
@@ -152,7 +152,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
           val afterMove = MoveAction(move)(oriented)
           val flipped = switchSelfOpponent(afterMove)
           println(s"DEBUG: ${flipped.self.getActive.species.name} status = ${flipped.self.getActive.statusCondition}")
-          val afterTrigger = switchSelfOpponent(applyPassiveEffects(OnDamageTaken, Self)(flipped))
+          val afterTrigger = switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flipped))
           restoreOrientation(state, attacking, afterTrigger)
       case None => state
 
@@ -210,9 +210,9 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @return the updated battle state after applying the trigger to both sides
    */
   private def applyTriggerForBoth(trigger: AbilityTrigger)(state: BattleState): BattleState =
-    val afterSelf = applyPassiveEffects(trigger, Self)(state)
+    val afterSelf = applyPassiveEffects(trigger)(state)
     val oriented = switchSelfOpponent(afterSelf)
-    val afterOpponent = applyPassiveEffects(trigger, Self)(oriented)
+    val afterOpponent = applyPassiveEffects(trigger)(oriented)
     switchSelfOpponent(afterOpponent)
 
   /**
@@ -225,8 +225,7 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
   def applyForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
     val newSelf = TurnResolutionImpl.applyForcedSwitch(state.self, newActive)
     val switched = state.copy(self = newSelf)
-    val slotIn = switched.self.getActive.species.abilitySlot
-    applyPassiveEffects(OnSwitchIn, Self)(switched)
+    applyPassiveEffects(OnSwitchIn(Self))(switched)
 
   /**
    * Applies a forced switch to the opponent side of the provided battle state.
@@ -238,13 +237,9 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
   def applyOpponentForcedSwitch(state: BattleState, newActive: PokemonRef): BattleState =
     val switched = opponent(switchActive(newActive.value))(state)
     val oriented = switchSelfOpponent(switched)
-    val slotIn = oriented.self.getActive.species.abilitySlot
-    val afterIn = applyPassiveEffects(OnSwitchIn, Self)(oriented)
+    val afterIn = applyPassiveEffects(OnSwitchIn(Self))(oriented)
     switchSelfOpponent(afterIn)
 
-  private def applyPassiveEffects(trigger: Trigger, target: Target)(bs: BattleState): BattleState =
-    val newBs = target match
-      case Self => MyAbilityBook.runTrigger(trigger, bs.self.getActive.species.abilitySlot)(bs)
-      case _ => MyAbilityBook.runTrigger(trigger, bs.opponent.getActive.species.abilitySlot)(bs)
-
-    newBs.passiveEffects.foldLeft(newBs)((state, effect) => effect(trigger, target)(state))
+  private def applyPassiveEffects(trigger: Trigger)(bs: BattleState): BattleState =
+    val newBs = MyAbilityBook.runTrigger(trigger, bs.self.getActive.species.abilitySlot)(bs)
+    newBs.passiveEffects.foldLeft(newBs)((state, effect) => effect(trigger)(state))

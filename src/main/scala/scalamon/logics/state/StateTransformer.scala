@@ -7,11 +7,7 @@ trait StateTransformerModule:
 
 object StateTransformerModuleImpl extends StateTransformerModule:
   override type BattleState = BattleStateImpl.BattleState
-
-  enum Target:
-    case Self, Opponent
-    
-  export Target.*
+  
   export MoveStateModuleImpl.*
   export StatsStateModuleImpl.*
   export PokemonStateModuleImpl.{StatsState => _, MoveState => _, *}

@@ -3,8 +3,6 @@ package scalamon.logics.weather
 import scalamon.domain.weather.Weather
 import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
 import scalamon.logics.state.PlayerStateModuleImpl.active
-import scalamon.logics.weather.WeatherEndTurnResolver
-import scalamon.logics.weather.WeatherSystem
 import scalamon.logics.state.PokemonStateModuleImpl.*
 
 /**

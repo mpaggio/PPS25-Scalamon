@@ -8,6 +8,7 @@ import scalamon.domain.moves.DamageMoveCategory.Physical
 import scalamon.domain.moves.MoveDatabase.allMoves
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
+import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
@@ -137,12 +138,12 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("Drought sets weather to HeavySunlight when current weather is ClearSky") {
     val s = withWeather(ClearSky)
-    run(Drought, OnSwitchIn)(s).weather shouldEqual HeavySunlight
+    run(Drought, OnSwitchIn(Self))(s).weather shouldEqual HeavySunlight
   }
 
   test("Drought does not change weather when is already non-ClearSky") {
     val s = withWeather(Rain)
-    run(Drought, OnSwitchIn)(s).weather shouldEqual Rain
+    run(Drought, OnSwitchIn(Self))(s).weather shouldEqual Rain
   }
 
   test("DroughtAura gives 1.1x multiplier to Fire type moves") {
@@ -160,17 +161,17 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   test("FlashFire activates flag when last opponent move is Fire Type") {
     fireMoveOpt.foreach: fireMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = fireMoveOpt))
-      run(FlashFire, OnDamageTaken)(s).flags.selfFlashFireActive shouldBe true
+      run(FlashFire, OnDamageTaken(Self))(s).flags.selfFlashFireActive shouldBe true
   }
 
   test("FlashFire does not activate flag when last opponent move is not Fire type") {
     waterMoveOpt.foreach: waterMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = waterMoveOpt))
-      run(FlashFire, OnDamageTaken)(s).flags.selfFlashFireActive shouldBe false
+      run(FlashFire, OnDamageTaken(Self))(s).flags.selfFlashFireActive shouldBe false
   }
 
   test("FlashFire does not activate flag when there is no last opponent move") {
-    run(FlashFire, OnDamageTaken)(battle).flags.selfFlashFireActive shouldBe false
+    run(FlashFire, OnDamageTaken(Self))(battle).flags.selfFlashFireActive shouldBe false
   }
 
   test("FlashFire gives 1.3x multiplier to Fire type moves when flag is active") {
@@ -181,7 +182,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("FlameBody may burn opponent when hit (10 probabilistic trials") {
-    val results = (1 to 50).map(_ => run(FlameBody, OnDamageTaken)(battle))
+    val results = (1 to 50).map(_ => run(FlameBody, OnDamageTaken(Self))(battle))
     results.exists(_.opponent.getActive.statusCondition.contains(Burned)) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
@@ -232,14 +233,14 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     waterMoveOpt.foreach: waterMove =>
       val damaged = self(active(takeDamage(20)))(battle)
       val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(waterMove)))
-      val result = run(WaterAbsorb, OnDamageTaken)(s)
+      val result = run(WaterAbsorb, OnDamageTaken(Self))(s)
       result.self.getActive.currentHp shouldEqual s.self.getActive.currentHp + s.self.getActive.maxHp / 4
   }
 
   test("WaterAbsorb does not heal when hit by non-Water move") {
     fireMoveOpt.foreach: fireMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
-      run(WaterAbsorb, OnDamageTaken)(s).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
+      run(WaterAbsorb, OnDamageTaken(Self))(s).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
   }
 
   test("Hydration clears status condition when weather is Rain") {
@@ -255,13 +256,13 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("Intimidate reduces opponent's active attack by 10%") {
     val before = battle.opponent.getActive.modifiedStats.attack
-    val after = run(Intimidate, OnSwitchIn)(battle).opponent.getActive.modifiedStats.attack
+    val after = run(Intimidate, OnSwitchIn(Self))(battle).opponent.getActive.modifiedStats.attack
     after shouldEqual (before * 0.9).toInt
   }
 
   test("Moxie boosts self active attack by 10% after KO") {
     val before = battle.self.getActive.modifiedStats.attack
-    val after = run(Moxie, OnKODealt)(battle).self.getActive.modifiedStats.attack
+    val after = run(Moxie, OnKOTaken(Opponent))(battle).self.getActive.modifiedStats.attack
     after shouldEqual (before * 1.1).toInt
   }
 
@@ -297,11 +298,11 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("Regenerator heals self by maxHp/3 when switching out") {
     val s = withDamagedSelf(30)
-    selfHp(run(Regenerator, OnSwitchOut)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 3
+    selfHp(run(Regenerator, OnSwitchOut(Self))(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 3
   }
 
   test("EffectSpore may apply a random status condition to opponent when hit (10 probabilistic trials)") {
-    val results = (1 to 50).map(_ => run(EffectSpore, OnDamageTaken)(battle))
+    val results = (1 to 50).map(_ => run(EffectSpore, OnDamageTaken(Self))(battle))
     results.exists(_.opponent.getActive.statusCondition.isDefined) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
@@ -309,7 +310,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   // ELECTRIC
 
   test("Static may paralyze opponent when hit (10 probabilistic trials)") {
-    val results = (1 to 50).map(_ => run(Static, OnDamageDealt)(battle))
+    val results = (1 to 50).map(_ => run(Static, OnDamageTaken(Opponent))(battle))
     results.exists(_.opponent.getActive.statusCondition.contains(Paralyzed)) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
@@ -318,27 +319,27 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     electricMoveOpt.foreach: electricMove =>
       val damaged = self(active(takeDamage(20)))(battle)
       val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
-      selfHp(run(LightningRodLite, OnDamageTaken)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 8
+      selfHp(run(LightningRodLite, OnDamageTaken(Self))(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 8
   }
 
   test("LightningRodLite does not heal when last opponent move is not Electric type") {
     fireMoveOpt.foreach: fireMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
-      run(LightningRodLite, OnDamageTaken)(s).self.getActive.currentHp shouldEqual s.self.getActive.currentHp
+      run(LightningRodLite, OnDamageTaken(Self))(s).self.getActive.currentHp shouldEqual s.self.getActive.currentHp
   }
 
   test("LightningRod boosts self special attack by 1.5x when last opponent move is Electric type") {
     electricMoveOpt.foreach: electricMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
       val before = s.self.getActive.modifiedStats.specialAttack
-      run(LightningRod, OnDamageTaken)(s).self.getActive.modifiedStats.specialAttack shouldEqual (before * 1.5).toInt
+      run(LightningRod, OnDamageTaken(Self))(s).self.getActive.modifiedStats.specialAttack shouldEqual (before * 1.5).toInt
   }
 
   test("LightningRod does not boost self special attack when last opponent move is not Electric type") {
     fireMoveOpt.foreach: fireMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
       val before = s.self.getActive.modifiedStats.specialAttack
-      run(LightningRod, OnDamageTaken)(s).self.getActive.modifiedStats.specialAttack shouldEqual before
+      run(LightningRod, OnDamageTaken(Self))(s).self.getActive.modifiedStats.specialAttack shouldEqual before
   }
 
   test("SurgeSurfer doubles self speed when Thunderstorm weather is active and not suppressed") {
@@ -359,20 +360,20 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("Aftermath damages opponent by maxHp/8 after KO") {
-    enemyHp(run(Aftermath, OnKODealt)(battle)) shouldEqual enemyHp(battle) - maxEnemyHp(battle) / 8
+    enemyHp(run(Aftermath, OnKOTaken(Self))(battle)) shouldEqual enemyHp(battle) - maxEnemyHp(battle) / 8
   }
 
   test("VoltAbsorb heals self by maxHp/4 when hit by Electric type move") {
     electricMoveOpt.foreach: electricMove =>
       val damaged = self(active(takeDamage(20)))(battle)
       val s = damaged.updateFlags(_.copy(lastOpponentMove = Some(electricMove)))
-      selfHp(run(VoltAbsorb, OnDamageTaken)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 4
+      selfHp(run(VoltAbsorb, OnDamageTaken(Self))(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 4
   }
 
   test("VoltAbsorb does not heal when hit by non-Electric move") {
     fireMoveOpt.foreach: fireMove =>
       val s = battle.updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
-      run(VoltAbsorb, OnDamageTaken)(s).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
+      run(VoltAbsorb, OnDamageTaken(Self))(s).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
   }
 
   test("QuickFeet boosts self speed by 1.5x when self has a status condition") {
@@ -390,11 +391,11 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   test("Synchronize copies self status condition to opponent when self has a status condition") {
     val s = self(active(addStatus(Paralyzed)))(battle)
-    run(Synchronize, OnDamageTaken)(s).opponent.getActive.statusCondition shouldEqual Some(Paralyzed)
+    run(Synchronize, OnDamageTaken(Self))(s).opponent.getActive.statusCondition shouldEqual Some(Paralyzed)
   }
 
   test("Synchronize does not copy status condition when self has no status condition") {
-    run(Synchronize, OnDamageTaken)(battle).opponent.getActive.statusCondition shouldEqual None
+    run(Synchronize, OnDamageTaken(Self))(battle).opponent.getActive.statusCondition shouldEqual None
   }
 
   test("MagicGuard sets selfMagicGuardActive flag to true") {
@@ -421,7 +422,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   // ONLY LOG ABILITY
   test("Forewarn does not modify battle state on switch in") {
-    run(Forewarn, OnSwitchIn)(battle) shouldEqual battle
+    run(Forewarn, OnSwitchIn(Self))(battle) shouldEqual battle
   }
 
   test("DrySkin heals self by maxHp/16 when weather is Rain") {
@@ -444,17 +445,17 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
       val s = withOpponentMove(fireMove)
         .updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
       val before = s.opponent.getActive.moves(fireMove.name).currentPp
-      run(Pressure, OnDamageTaken)(s).opponent.getActive.moves(fireMove.name).currentPp shouldEqual before - 1
+      run(Pressure, OnDamageTaken(Self))(s).opponent.getActive.moves(fireMove.name).currentPp shouldEqual before - 1
   }
 
   test("CloudNine suppresses weather on switch in") {
     val s = withSelfAbility(CloudNine)
-    run(CloudNine, OnSwitchIn)(s).flags.weatherSuppressed shouldEqual true
+    run(CloudNine, OnSwitchIn(Self))(s).flags.weatherSuppressed shouldEqual true
   }
 
   test("CloudNine on switch-in suppresses weather, so Chlorophyll does not boost speed") {
     val s = withWeather(HeavySunlight)
-    val suppressed = run(CloudNine, OnSwitchIn)(s)
+    val suppressed = run(CloudNine, OnSwitchIn(Self))(s)
     val before = suppressed.self.getActive.modifiedStats.speed
     run(Chlorophyll, OnTurnStart)(suppressed).self.getActive.modifiedStats.speed shouldEqual before
   }
@@ -481,18 +482,18 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("PoisonTouch may poison opponent when hit (10 probabilistic trials)") {
-    val results = (1 to 50).map(_ => run(PoisonTouch, OnDamageDealt)(battle))
+    val results = (1 to 50).map(_ => run(PoisonTouch, OnDamageTaken(Opponent))(battle))
     results.exists(_.opponent.getActive.statusCondition.contains(Poisoned)) shouldBe true
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
 
   test("ShadowTag sets opponentSwitchBlocked flag to true on switch in") {
     val s = withSelfAbility(ShadowTag)
-    run(ShadowTag, OnSwitchIn)(s).flags.opponentSwitchBlocked shouldEqual true
+    run(ShadowTag, OnSwitchIn(Self))(s).flags.opponentSwitchBlocked shouldEqual true
   }
 
   test("LiquidOoze may damage opponent (10 probabilistic trials)") {
-    val results = (1 to 50).map(_ => run(LiquidOoze, OnDamageTaken)(battle))
+    val results = (1 to 50).map(_ => run(LiquidOoze, OnDamageTaken(Self))(battle))
     results.exists(_.opponent.getActive.currentHp < battle.opponent.getActive.currentHp) shouldBe true
     results.exists(_.opponent.getActive.currentHp == battle.opponent.getActive.currentHp) shouldBe true
   }
@@ -501,7 +502,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     fireMoveOpt.foreach: fireMove =>
       val s = withOpponentMove(fireMove)
         .updateFlags(_.copy(lastOpponentMove = Some(fireMove)))
-      val results = (1 to 50).map(_ => run(CursedBody, OnDamageTaken)(s))
+      val results = (1 to 50).map(_ => run(CursedBody, OnDamageTaken(Self))(s))
       results.exists(_.opponent.getActive.moves(fireMove.name).currentPp == 0) shouldBe true
       results.exists(_.opponent.getActive.moves(fireMove.name).currentPp > 0) shouldBe true
   }
