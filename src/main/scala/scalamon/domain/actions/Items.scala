@@ -3,7 +3,9 @@ package scalamon.domain.actions
 import scalamon.domain.actions.*
 import scalamon.domain.moves.Accuracy
 import scalamon.domain.pokemon.abilities.AbilityTrigger
-import scalamon.domain.pokemon.abilities.AbilityTrigger.*
+import scalamon.domain.pokemon.abilities.Target
+import AbilityTrigger.*
+import Target.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.domain.moves.AlteredStatus.*
 
@@ -11,11 +13,11 @@ object Items:
 
   case class Item(
                    effect: StateTransformer,
-                   until: Set[(AbilityTrigger, Target)] = Set.empty,
+                   until: Set[AbilityTrigger] = Set.empty,
                    onCancel: StateTransformer = identity
                  ) extends Action:
     def apply(bs: BattleState): BattleState =
-      addPassiveEffect((t, s) => if until.contains(t -> s) then onCancel else identity)(effect(bs))
+      addPassiveEffect(if until.contains(_) then onCancel else identity)(effect(bs))
 
   val all: Map[String, Item] = Map(
     "potion"       -> Item(self(active(currentHp(increase(20))))),
@@ -36,24 +38,24 @@ object Items:
     "elixir" -> Item(self(active(moves(currentPp(increase(10)))))),
 
     "x_attack"  -> Item(
-      effect   = Item(self(active(modifyStats(attack(increase(1)))))),
-      until    = Set((OnSwitchOut, Self), (OnKODealt, Opponent)),
-      onCancel = Item(self(active(modifyStats(attack(decrease(1)))))),
+      effect   = self(active(modifyStats(attack(increase(1))))),
+      until    = Set(OnSwitchOut(Self), OnKOTaken(Self)),
+      onCancel = self(active(modifyStats(attack(decrease(1))))),
     ),
     "x_defense" -> Item(
-      effect   = Item(self(active(modifyStats(defense(increase(1)))))),
-      until    = Set((OnSwitchOut, Self), (OnKODealt, Opponent)),
-      onCancel = Item(self(active(modifyStats(defense(decrease(1)))))),
+      effect   = self(active(modifyStats(defense(increase(1))))),
+      until    = Set(OnSwitchOut(Self), OnKOTaken(Self)),
+      onCancel = self(active(modifyStats(defense(decrease(1))))),
     ),
     "x_speed"   -> Item(
-      effect   = Item(self(active(modifyStats(speed(increase(1)))))),
-      until    = Set((OnSwitchOut, Self), (OnKODealt, Opponent)),
-      onCancel = Item(self(active(modifyStats(speed(decrease(1)))))),
+      effect   = self(active(modifyStats(speed(increase(1))))),
+      until    = Set(OnSwitchOut(Self), OnKOTaken(Self)),
+      onCancel = self(active(modifyStats(speed(decrease(1))))),
     ),
     "x_precision" -> Item(
-      effect   = self(active(moves(accuracyPercent(_ + 10)))),
-      until    = Set((OnSwitchOut, Self), (OnKODealt, Opponent)),
-      onCancel = self(active(moves(accuracyPercent(_ - 10))))
+      effect   = self(active(moves(accuracyPercent(_ + 100)))),
+      until    = Set(OnSwitchOut(Self), OnKOTaken(Self)),
+      onCancel = self(active(moves(accuracyPercent(_ - 100))))
     ),
 
     "calcium" -> Item(
