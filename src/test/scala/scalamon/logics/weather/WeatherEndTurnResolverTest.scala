@@ -11,7 +11,6 @@ import scalamon.domain.types.Type
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.battle.{BattleContext, WeatherState}
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
@@ -40,84 +39,79 @@ final class WeatherEndTurnResolverTest extends AnyFunSuite:
     )
 
   private def mkPokemonState(pokemon: Pokemon, overrideHp: Int): PokemonState =
-    currentHp(hp => overrideHp)(pokemonInitialState(pokemon, Map.empty))
+    currentHp(_ => overrideHp)(pokemonInitialState(pokemon, Map.empty))
 
-  private def mkContext(
-                         selfType: Type,
-                         selfHp: Int,
-                         opponentType: Type = Water,
-                         opponentHp: Int = 160,
-                         weather: Weather = ClearSky
-                       ): BattleContext =
+  private def mkBattleState(
+                             selfType: Type,
+                             selfHp: Int,
+                             opponentType: Type = Water,
+                             opponentHp: Int = 160,
+                             weather: Weather = ClearSky
+                           ): BattleState =
     val selfPokemon = mkPokemon("self", selfType, 160)
     val opponentPokemon = mkPokemon("opp", opponentType, 160)
     val selfState = mkPokemonState(selfPokemon, selfHp)
     val opponentState = mkPokemonState(opponentPokemon, opponentHp)
     val selfPlayer = playerState(Map("self" -> selfState), "self")
     val opponentPlayer = playerState(Map("opp" -> opponentState), "opp")
-    BattleContext(
-      state = battleState(selfPlayer, opponentPlayer),
-      weatherState = WeatherState(weather)
-    )
+    setWeather(weather)(battleState(selfPlayer, opponentPlayer))
 
   test("Rain damages Fire active pokemon at the end of the turn") {
-    val context = mkContext(selfType = Fire, selfHp = 160, weather = Rain)
-    val updated = summon[WeatherEndTurnResolver].apply(context)
-    assert(updated.state.self.getActive.currentHp == 150)
+    val state = mkBattleState(selfType = Fire, selfHp = 160, weather = Rain)
+    val updated = summon[WeatherEndTurnResolver].apply(state)
+    assert(updated.self.getActive.currentHp == 150)
   }
 
   test("Fog heals Psychic active pokemon at the end of the turn") {
-    val context = mkContext(selfType = Psychic, selfHp = 80, weather = Fog)
-    val updated = summon[WeatherEndTurnResolver].apply(context)
-    assert(updated.state.self.getActive.currentHp == 90)
+    val state = mkBattleState(selfType = Psychic, selfHp = 80, weather = Fog)
+    val updated = summon[WeatherEndTurnResolver].apply(state)
+    assert(updated.self.getActive.currentHp == 90)
   }
 
   test("ClearSky does not change hp") {
-    val context = mkContext(selfType = Fire, selfHp = 120, weather = ClearSky)
-    val updated = summon[WeatherEndTurnResolver].apply(context)
-    assert(updated.state.self.getActive.currentHp == 120)
-    assert(updated.state.opponent.getActive.currentHp == 160)
+    val state = mkBattleState(selfType = Fire, selfHp = 120, weather = ClearSky)
+    val updated = summon[WeatherEndTurnResolver].apply(state)
+    assert(updated.self.getActive.currentHp == 120)
+    assert(updated.opponent.getActive.currentHp == 160)
   }
 
   test("Thunderstorm damages non-Electric active pokemon on both sides") {
-    val context = mkContext(
+    val state = mkBattleState(
       selfType = Fire,
       selfHp = 160,
       opponentType = Grass,
       opponentHp = 160,
       weather = Thunderstorm
     )
-    val updated = summon[WeatherEndTurnResolver].apply(context)
-    assert(updated.state.self.getActive.currentHp == 150)
-    assert(updated.state.opponent.getActive.currentHp == 150)
+    val updated = summon[WeatherEndTurnResolver].apply(state)
+    assert(updated.self.getActive.currentHp == 150)
+    assert(updated.opponent.getActive.currentHp == 150)
   }
 
   test("Thunderstorm does not damage Electric active pokemon") {
-    val context = mkContext(
+    val state = mkBattleState(
       selfType = Electric,
       selfHp = 160,
       opponentType = Electric,
       opponentHp = 160,
       weather = Thunderstorm
     )
-    val updated = summon[WeatherEndTurnResolver].apply(context)
-    assert(updated.state.self.getActive.currentHp == 160)
-    assert(updated.state.opponent.getActive.currentHp == 160)
+    val updated = summon[WeatherEndTurnResolver].apply(state)
+    assert(updated.self.getActive.currentHp == 160)
+    assert(updated.opponent.getActive.currentHp == 160)
   }
 
   test("Fog healing does not exceed max hp") {
-    val context = mkContext(selfType = Psychic, selfHp = 155, weather = Fog)
-    val updated = summon[WeatherEndTurnResolver].apply(context)
-    assert(updated.state.self.getActive.currentHp == 160)
+    val state = mkBattleState(selfType = Psychic, selfHp = 155, weather = Fog)
+    val updated = summon[WeatherEndTurnResolver].apply(state)
+    assert(updated.self.getActive.currentHp == 160)
   }
 
   test("weatherSuppressed prevents weather end-turn effects") {
-    val context =
-      mkContext(selfType = Fire, selfHp = 160, weather = Rain).copy(
-        state = mkContext(selfType = Fire, selfHp = 160, weather = Rain).state
-          .updateFlags(_.copy(weatherSuppressed = true))
-      )
-    val updated = summon[WeatherEndTurnResolver].apply(context)
-    assert(updated.state.self.getActive.currentHp == 160)
-    assert(updated.state.opponent.getActive.currentHp == 160)
+    val state =
+      mkBattleState(selfType = Fire, selfHp = 160, weather = Rain)
+        .updateFlags(_.copy(weatherSuppressed = true))
+    val updated = summon[WeatherEndTurnResolver].apply(state)
+    assert(updated.self.getActive.currentHp == 160)
+    assert(updated.opponent.getActive.currentHp == 160)
   }
