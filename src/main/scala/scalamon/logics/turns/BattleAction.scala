@@ -1,5 +1,8 @@
 package scalamon.logics.turns
 
+import scalamon.domain.actions.SwitchAction
+import scalamon.logics.state.StateTransformerModule
+
 /**
  * Opaque identifier of a trainer involved in a battle turn.
  */
@@ -75,43 +78,10 @@ object MoveRef:
 /**
  * Action selected by a trainer during a battle turn.
  */
-enum BattleAction:
-  /**
-   * Uses a move against an opposing Pokémon.
-   *
-   * @param trainerId
-   * the trainer performing the action
-   * @param attacking
-   * the attacking Pokémon
-   * @param defending
-   * the defending Pokémon
-   * @param move
-   * the selected move
-   * @param priority
-   * the action priority used to resolve execution order
-   */
-  case UseMove(
-              trainerId: TrainerId,
-              attacking: PokemonRef,
-              defending: PokemonRef,
-              move: MoveRef,
-              priority: Int
-              )
-  /**
-   * Switches the currently active Pokémon with another one.
-   *
-   * @param trainerId
-   * the trainer performing the action
-   * @param from
-   * the Pokémon being switched out
-   * @param to
-   * the Pokémon being switched in
-   * @param priority
-   * the action priority used to resolve execution order
-   */
-  case SwitchPokemon(
-                    trainerId: TrainerId,
-                    from: PokemonRef,
-                    to: PokemonRef,
-                    priority: Int
-                    )
+trait BattleAction:
+  def priority: Int
+
+case class UseMove(move: MoveRef, priority: Int = 0) extends BattleAction
+
+case class SwitchPokemon(to: PokemonRef) extends BattleAction:
+  def priority: Int = 0

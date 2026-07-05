@@ -23,6 +23,7 @@ object Speed:
      *   the raw speed value
      */
     def value: Int = speed
+    def >=(other: Speed): Boolean = speed >= other.value
 
 /**
  * A battle action scheduled together with the speed used to resolve its order.

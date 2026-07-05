@@ -76,7 +76,7 @@ class TurnFlowTest extends AnyFunSuite:
     val speedOf: PokemonRef => Speed = ref =>
       if ref.value == "pikachu" then Speed(90)
       else Speed(45)
-    val plan = flow.startTurn(choises, speedOf)
+    val plan = flow.actionOrdering(choises, speedOf)
     assert(plan.orderedActions.head.action == choises.second)
 
   test("BattleAction priority returns the priority of a move action"):

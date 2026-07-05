@@ -3,7 +3,9 @@ package scalamon.logics.turns
 import scalamon.domain.moves.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.DamagePolicy
-import scalamon.logics.turns.BattleAction.*
+import scalamon.logics.turns.BattleAction
+import scalamon.logics.turns.UseMove
+import scalamon.logics.turns.SwitchPokemon
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
@@ -13,6 +15,7 @@ import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
+import scalamon.logics.turns.ActionOrder.*
 
 /**
  * Coordinates the execution of a battle turn.
@@ -24,7 +27,7 @@ import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
  * @constructor creates a battle orchestrator using the provided turn flow
  * @param turnFlow the component used to schedule and order turn actions
  */
-final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
+final class BattleOrchestrator(using DamagePolicy):
   /**
    * Executes one complete turn from the current battle state.
    *
@@ -43,11 +46,11 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @param speedOf a function that returns the speed of a Pokémon reference
    * @return the updated battle state together with the resolved turn result
    */
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PokemonRef => Speed): (BattleState, TurnResult) =
-    val plan = turnFlow.startTurn(choices, speedOf)
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (BattleState, TurnResult) =
+    val plan = TurnFlow.actionOrdering(state, choices, speedOf)
     val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
     val afterTurnStart = applyTriggerForBoth(OnTurnStart)(resetState)
-    val afterExecution = plan.orderedActions.foldLeft(afterTurnStart)(executeScheduled)
+    val afterExecution = orderedActions(plan)(choices).foldLeft(afterTurnStart)((s, f) => f(s))
     val result = resolveTurn(afterExecution)
     val finalState = result match
       case TurnResult.Ongoing(s) => endTurn(s)
@@ -57,6 +60,20 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
       case TurnResult.SelfWins(s) => s
       case TurnResult.SelfLoses(s) => s
     (finalState, result)
+
+  private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[StateTransformer] = plan match
+    case SelfFirst => List(
+      executeAction(choices.first),
+      switchSelfOpponent,
+      executeAction(choices.second),
+      switchSelfOpponent
+    )
+    case OpponentFirst => List(
+      switchSelfOpponent,
+      executeAction(choices.second),
+      switchSelfOpponent,
+      executeAction(choices.first)
+    )
 
   /**
    * Executes a single scheduled action against the given battle state.
@@ -68,36 +85,24 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @param scheduled the action to execute
    * @return the updated battle state after the scheduled action
    */
-  private def executeScheduled(state: BattleState, scheduled: ScheduledAction): BattleState =
-    scheduled.action match
-      case UseMove(_, attacking, _, moveRef, _) =>
-        val attackerHp = state.self.team.get(attacking.value)
-          .orElse(state.opponent.team.get(attacking.value))
-          .map(_.currentHp)
-          .getOrElse(0)
+  private def executeAction(battleAction: BattleAction)(state: BattleState): BattleState =
+    battleAction match
+      case UseMove(moveRef, _) =>
+        val attackerHp = state.self.getActive.currentHp
         if attackerHp <= 0 then
-          println(s"  ${attacking.value} e' KO e non puo' attaccare!")
+          println(s"  ${state.self.getActive.species.name} e' KO e non puo' attaccare!")
           state
         else
-          val newState = executeMove(state, attacking, moveRef)
-          val defenderRef = scheduled.action match
-            case UseMove(_, _, defending, _, _) => defending.value
-            case _ => "?"
-          val defenderHp = newState.self.team.get(defenderRef)
-            .orElse(newState.opponent.team.get(defenderRef))
-            .map(_.currentHp)
-            .getOrElse(0)
-          println(s"  ${attacking.value} usa ${moveRef.value} | $defenderRef HP: $defenderHp")
+          val newState = executeMove(moveRef)(state)
+          val defenderName = state.opponent.getActive.species.name
+          val defenderHp = newState.opponent.getActive.currentHp
+          println(s"  ${state.self.getActive.species.name} usa ${moveRef.value} | $defenderName HP: $defenderHp")
           newState
-      case SwitchPokemon(_, from, to, _) =>
-        val oriented = if state.self.team.contains(from.value) then state
-        else switchSelfOpponent(state)
-        val afterSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(oriented)
-        val switched = self(switchActive(to.value))(afterSwitchOut)
-        val afterSwitchIn = applyPassiveEffects(OnSwitchIn(Self))(switched)
-        if state.self.team.contains(from.value) then afterSwitchIn
-        else switchSelfOpponent(afterSwitchIn)
 
+      case SwitchPokemon(to) =>
+        val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
+        val switched = self(switchActive(to.value))(beforeSwitchOut)
+        applyPassiveEffects(OnSwitchIn(Self))(switched)
   /**
    * Executes one move from the point of view of the attacking Pokémon.
    *
@@ -113,47 +118,43 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    * @param moveRef   the move reference selected by the attacker
    * @return the updated battle state after the move execution
    */
-  private def executeMove(state: BattleState, attacking: PokemonRef, moveRef: MoveRef): BattleState =
-    val oriented =
-      if state.self.team.contains(attacking.value) then state
-      else switchSelfOpponent(state)
-    val activePokemon = oriented.self.team(oriented.self.activeId)
+  private def executeMove(moveRef: MoveRef)(state: BattleState): BattleState =
+    val activePokemon = state.self.getActive
     resolveMove(moveRef) match
       case Some(move: DamageMove) =>
         val currentMoveState = activePokemon.moveState(move.name)
         if currentMoveState.currentPp <= 0 then
-          println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
+          println(s" ${activePokemon.species.name} non ha abbastanza PP per user ${moveRef.value}!")
           state
         else if !canMove(activePokemon) then
-          println(s" ${attacking.value} non puo' muoversi a causa del suo stato!")
-          restoreOrientation(state, attacking, oriented)
+          println(s" ${activePokemon.species.name} non puo' muoversi a causa del suo stato!")
+          state
         else if isSelfHitting(activePokemon) then
-          println(s" ${attacking.value} si colpisce da solo usando ${moveRef.value}!")
-          val selfTargeted = MoveAction(move, Target.Self)(oriented)
-          restoreOrientation(state, attacking, selfTargeted)
+          println(s" ${activePokemon.species.name} si colpisce da solo usando ${moveRef.value}!")
+          MoveAction(move, Target.Self)(state)
+
         else
-          val orientedWithMove = oriented.updateFlags(_.copy(lastOpponentMove = Some(move)))
+          val orientedWithMove = state.updateFlags(_.copy(lastOpponentMove = Some(move)))
           val afterMove = MoveAction(move)(orientedWithMove)
           val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
           val defenderIsKnockedOut = isKnockedOut(afterDamageDealt.opponent.getActive)
-          if defenderIsKnockedOut then {
+          if defenderIsKnockedOut then
             val afterAttackerKO = applyPassiveEffects(OnKOTaken(Opponent))(afterDamageDealt)
             val flipped = switchSelfOpponent(afterAttackerKO)
             val afterDefenderKO = applyPassiveEffects(OnKOTaken(Self))(flipped)
             switchSelfOpponent(afterDefenderKO)
-          } else
-          restoreOrientation(state, attacking, afterDamageDealt)
+          else
+            afterDamageDealt
       case Some(move) =>
         val currentMoveState = activePokemon.moveState(move.name)
         if currentMoveState.currentPp <= 0 then
-          println(s" ${attacking.value} non ha abbastanza PP per user ${moveRef.value}!")
+          println(s" ${activePokemon.species.name} non ha abbastanza PP per user ${moveRef.value}!")
           state
         else
-          val afterMove = MoveAction(move)(oriented)
+          val afterMove = MoveAction(move)(state)
           val flipped = switchSelfOpponent(afterMove)
           println(s"DEBUG: ${flipped.self.getActive.species.name} status = ${flipped.self.getActive.statusCondition}")
-          val afterTrigger = switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flipped))
-          restoreOrientation(state, attacking, afterTrigger)
+          switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flipped))
       case None => state
 
   /**
@@ -182,21 +183,6 @@ final class BattleOrchestrator(turnFlow: TurnFlow)(using DamagePolicy):
    */
   private def isSelfHitting(pokemon: PokemonState): Boolean =
     pokemon.statusCondition.exists(_.isSelfHitting)
-
-  /**
-   * Restores the original battle orientation after an oriented operation.
-   *
-   * If the attacker belonged to the original `self` side, the oriented state is
-   * returned as-is; otherwise the state is re-flipped back to the original view.
-   *
-   * @param original  the original battle state before orientation
-   * @param attacking the Pokémon that was acting in the oriented view
-   * @param oriented  the battle state produced while oriented around the attacker
-   * @return the state restored to the original orientation
-   */
-  private def restoreOrientation(original: BattleState, attacking: PokemonRef, oriented: BattleState): BattleState =
-    if original.self.team.contains(attacking.value) then oriented
-    else switchSelfOpponent(oriented)
 
   /**
    * Applies the given ability trigger to both active Pokémon in order.

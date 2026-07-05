@@ -1,6 +1,9 @@
 package scalamon.logics.turns
 
-import scalamon.logics.turns.BattleAction.{SwitchPokemon, UseMove}
+import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
+import scalamon.logics.turns.BattleAction
+import scalamon.logics.turns.UseMove
+import scalamon.logics.turns.SwitchPokemon
 
 /**
  * The two actions selected by the trainers for the current turn.
@@ -11,6 +14,10 @@ import scalamon.logics.turns.BattleAction.{SwitchPokemon, UseMove}
  *   the second chosen action
  */
 final case class TurnChoices(first: BattleAction, second: BattleAction)
+
+enum ActionOrder:
+  case SelfFirst, OpponentFirst
+
 
 /**
  * Resolves the execution plan for a turn starting from the players' choices.
@@ -26,26 +33,17 @@ trait TurnFlow:
    * @return
    * the execution plan for the turn
    */
-  def startTurn(choices: TurnChoices, speedOf: PokemonRef => Speed): TurnExecutionPlan
+  def actionOrdering(state: BattleState,choices: TurnChoices , speedOf: PlayerState => Speed): ActionOrder
 
 object TurnFlow:
-  /**
-   * Creates a [[TurnFlow]] backed by the given action order resolver.
-   *
-   * @param resolver
-   * the resolver used to determine action order
-   * @return
-   * a turn flow instance
-   */
-  def apply(resolver: ActionOrderResolver): TurnFlow = new TurnFlow:
-    override def startTurn(choices: TurnChoices, speedOf: PokemonRef => Speed): TurnExecutionPlan =
-      val scheduledAction = List(choices.first, choices.second).map(_.scheduleWith(speedOf))
-      TurnExecutionPlan(resolver.order(scheduledAction))
 
-    extension (action: BattleAction)
-      def user: PokemonRef = action match
-        case UseMove(_, user, _, _, _) => user
-        case SwitchPokemon(_, from, _, _) => from
+  def actionOrdering(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): ActionOrder =
 
-      def scheduleWith(speedOf: PokemonRef => Speed): ScheduledAction =
-        ScheduledAction(action = action, speed = speedOf(action.user))
+    if choices.first.priority < choices.second.priority then
+      ActionOrder.SelfFirst
+    else if choices.first.priority > choices.second.priority then
+      ActionOrder.OpponentFirst
+    else if speedOf(state.self) >= speedOf(state.opponent) then
+      ActionOrder.SelfFirst
+    else
+      ActionOrder.OpponentFirst

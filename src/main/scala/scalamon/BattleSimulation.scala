@@ -5,15 +5,15 @@ import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.domain.pokemon.pokedex.MyPokedex
 import scalamon.logics.state.BattleStateImpl.{BattleState, battleState}
 import scalamon.logics.state.{DamagePolicy, PlayerStateModuleImpl}
-import scalamon.logics.state.MoveStateModuleImpl.moveInitialState
-import scalamon.logics.state.PlayerStateModuleImpl.playerState
-import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
-import scalamon.logics.turns.BattleAction.UseMove
-import scalamon.logics.turns.{ActionOrderResolver, BattleOrchestrator, MoveRef, PokemonRef, Speed, TrainerId, TurnChoices, TurnFlow, TurnResult}
+import scalamon.logics.state.StateTransformerModuleImpl.*
+import scalamon.logics.turns.BattleAction
+import scalamon.logics.turns.UseMove
+import scalamon.logics.turns.SwitchPokemon
+import scalamon.logics.turns.*
 import scalamon.logics.turns.TurnResult.*
 
 object BattleSimulation extends App:
-/*
+
   // SETUP INIZIALE
 
   given DamagePolicy = DamagePolicy.Medium.given_DamagePolicy
@@ -38,7 +38,7 @@ object BattleSimulation extends App:
 
   // ORCHESTRATOR
 
-  private val orchestrator = BattleOrchestrator(TurnFlow(ActionOrderResolver.default))
+  private val orchestrator = BattleOrchestrator()
 
   // HELPER UTILI
 
@@ -48,13 +48,8 @@ object BattleSimulation extends App:
       .map(_._1)
       .getOrElse(throw RuntimeException(s"${ps.getActive.species.name} HA ESAURITO TUTTI I PP!"))
 
-  private def speedOf(ref: PokemonRef): Speed =
-    val inSelf = state.self.team.get(ref.value)
-    val inOpponent = state.opponent.team.get(ref.value)
-    val pokemon = (inSelf orElse inOpponent).getOrElse(
-      throw RuntimeException(s"Pokemon ${ref.value} non trovato in nessuna squadra!")
-    )
-    val baseSpeed = pokemon.modifiedStats.speed
+  private def speedOf(playerState: PlayerState): Speed =
+    val baseSpeed = playerState.getActive.modifiedStats.speed
     Speed(baseSpeed)
 
   private def printState(bs: BattleState, turn: Int): Unit =
@@ -75,10 +70,8 @@ object BattleSimulation extends App:
     val move1Name = firstAvailableMove(state.self)
     val move2Name = firstAvailableMove(state.opponent)
 
-    val player1Action = UseMove(TrainerId("Player1"), PokemonRef(state.self.activeId), PokemonRef(state.opponent.activeId),
-                        MoveRef(move1Name), priority = 0)
-    val player2Action = UseMove(TrainerId("Player2"), PokemonRef(state.opponent.activeId), PokemonRef(state.self.activeId),
-                        MoveRef(move2Name), priority = 0)
+    val player1Action = UseMove(MoveRef(move1Name))
+    val player2Action = UseMove(MoveRef(move2Name))
 
     val (newState, result) = orchestrator.runTurn(state, TurnChoices(player1Action, player2Action), speedOf)
     state = newState
@@ -136,5 +129,3 @@ object BattleSimulation extends App:
         running = false
 
     turn += 1
-    
- */
