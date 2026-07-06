@@ -1,101 +1,81 @@
 package scalamon.logics.turns
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.logics.turns.BattleAction.{SwitchPokemon, UseMove}
-import scalamon.logics.turns.ActionOrderResolver.priority
+import scalamon.domain.pokemon.Pokemon
+import scalamon.domain.pokemon.abilities.Ability.Blaze
+import scalamon.domain.pokemon.abilities.AbilitySlot
+import scalamon.domain.pokemon.pokedex.PokedexADT
+import scalamon.domain.pokemon.statistics.StatADT.fromInt
+import scalamon.domain.pokemon.statistics.Stats
+import scalamon.domain.types.Type.Grass
+import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.PlayerStateModuleImpl.*
+import scalamon.logics.state.PokemonStateModuleImpl.*
 
 class TurnFlowTest extends AnyFunSuite:
 
-  test("ActionOrderResolver orders actions by priority descending"):
-    val actions = List(
-      ScheduledAction(
-        UseMove(
-          trainerId = TrainerId("p1"),
-          attacking = PokemonRef("pikachu"),
-          defending = PokemonRef("bulbasaur"),
-          move = MoveRef("thunderbolt"),
-          priority = 0
-        ),
-        speed = Speed(100)
-      ),
-      ScheduledAction(
-        SwitchPokemon(
-          trainerId = TrainerId("p2"),
-          from = PokemonRef("charmander"),
-          to = PokemonRef("squirtle"),
-          priority = 6
-        ),
-        speed = Speed(50)
-      )
-    )
-    val ordered = ActionOrderResolver.default.order(actions)
-    assert(ordered.head.action == actions(1).action)
+ private def makeStats: Stats =
+   Stats(
+     hp = fromInt(100),
+     attack = fromInt(50),
+     defense = fromInt(50),
+     specialAttack = fromInt(50),
+     specialDefense = fromInt(50),
+     speed = fromInt(50)
+   )
 
-  test("ActionOrderResolver orders action by speed if priority is equal"):
-    val slow = ScheduledAction(
-      UseMove(
-        trainerId = TrainerId("p1"),
-        attacking = PokemonRef("bulbasaur"),
-        defending = PokemonRef("pikachu"),
-        move = MoveRef("vine-whip"),
-        priority = 0
-      ),
-      speed = Speed(50)
-    )
-    val fast = ScheduledAction(
-      UseMove(
-        trainerId = TrainerId("p2"),
-        attacking = PokemonRef("pikachu"),
-        defending = PokemonRef("bulbasaur"),
-        move = MoveRef("quick-attack"),
-        priority = 0
-      ),
-      speed = Speed(90)
-    )
-    val ordered = ActionOrderResolver.default.order(List(slow, fast))
-    assert(ordered == List(fast, slow))
+ private def makePokemon(name: String): Pokemon =
+   Pokemon(
+     pokedexId = PokedexADT.fromInt(1),
+     name = name,
+     pokemonType = Grass,
+     baseStats = makeStats,
+     abilitySlot = AbilitySlot(primary = Blaze)
+   )
 
-  test("TurnFlow builds and orders scheduled actions from player choises"):
-    val flow = TurnFlow(ActionOrderResolver.default)
-    val choises = TurnChoices(
-      player1Action = UseMove(
-        trainerId = TrainerId("p1"),
-        attacking = PokemonRef("bulbasaur"),
-        defending = PokemonRef("pikachu"),
-        move = MoveRef("tackle"),
-        priority = 0
-      ),
-      player2Action = UseMove(
-        trainerId = TrainerId("p2"),
-        attacking = PokemonRef("pikachu"),
-        defending = PokemonRef("bulbasaur"),
-        move = MoveRef("quick-attack"),
-        priority = 1
-      )
-    )
-    val speedOf: PokemonRef => Speed = ref =>
-      if ref.value == "pikachu" then Speed(90)
-      else Speed(45)
-    val plan = flow.actionOrdering(choises, speedOf)
-    assert(plan.orderedActions.head.action == choises.player2Action)
+ private def makeBattleState: BattleState =
+   val selfPokemon = pokemonInitialState(makePokemon("bulbasaur"), Map.empty)
+   val opponentPokemon = pokemonInitialState(makePokemon("pikachu"), Map.empty)
+   val selfPlayer = playerState(Map("bulbasaur" -> selfPokemon), "bulbasaur")
+   val opponentPlayer = playerState(Map("pikachu" -> opponentPokemon), "pikachu")
+   battleState(selfPlayer, opponentPlayer)
 
-  test("BattleAction priority returns the priority of a move action"):
-    val action =
-      UseMove(
-        trainerId = TrainerId("p1"),
-        attacking = PokemonRef("pikachu"),
-        defending = PokemonRef("bulbasaur"),
-        move = MoveRef("quick-attack"),
-        priority = 1
-      )
-    assert(action.priority == 1)
+ test("TurnFlow orders player1 first when player1 has higher priority"):
+   val state = makeBattleState
+   val choices = TurnChoices(
+     player1Action = UseMove(MoveRef("quick-attack"), priority = 1),
+     player2Action = UseMove(MoveRef("tackle"))
+   )
+   val speedOf: PlayerState => Speed = _ => Speed(50)
+   val result = TurnFlow.actionOrdering(state, choices, speedOf)
+   assert(result == ActionOrder.Player1First)
 
-  test("BattleAction priority returns the priority of a switch action")
-  val action =
-    SwitchPokemon(
-      trainerId = TrainerId("p1"),
-      from = PokemonRef("pikachu"),
-      to = PokemonRef("bulbasaur"),
-      priority = 6
-    )
-  assert(action.priority == 6)
+ test("TurnFlow orders player2 first when player2 has higher priority"):
+   val state = makeBattleState
+   val choices = TurnChoices(
+     player1Action = UseMove(MoveRef("tackle")),
+     player2Action = UseMove(MoveRef("quick-attack"), priority = 1)
+   )
+   val speedOf: PlayerState => Speed = _ => Speed(50)
+   val result = TurnFlow.actionOrdering(state, choices, speedOf)
+   assert(result == ActionOrder.Player2First)
+
+ test("TurnFlow orders by speed when priorities are equal"):
+   val state = makeBattleState
+   val choices = TurnChoices(
+     player1Action = UseMove(MoveRef("tackle")),
+     player2Action = UseMove(MoveRef("thunderbolt"))
+   )
+   val speedOf: PlayerState => Speed = _ => Speed(60)
+   val result = TurnFlow.actionOrdering(state, choices, speedOf)
+   assert(result == ActionOrder.Player1First)
+
+ test("UseMove exposes its priority") {
+   val action = UseMove(MoveRef("quick-attack"), priority = 1)
+   assert(action.priority == 1)
+ }
+
+ test("SwitchPokemon has default priority 0") {
+   val action = SwitchPokemon(PokemonRef("bulbasaur"))
+   assert(action.priority == 0)
+ }

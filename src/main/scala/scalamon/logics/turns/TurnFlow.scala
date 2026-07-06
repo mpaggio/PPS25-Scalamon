@@ -39,9 +39,9 @@ object TurnFlow:
 
   def actionOrdering(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): ActionOrder =
 
-    if choices.player1Action.priority < choices.player2Action.priority then
+    if choices.player1Action.priority > choices.player2Action.priority then
       ActionOrder.Player1First
-    else if choices.player1Action.priority > choices.player2Action.priority then
+    else if choices.player1Action.priority < choices.player2Action.priority then
       ActionOrder.Player2First
     else if speedOf(state.self) >= speedOf(state.opponent) then
       ActionOrder.Player1First
