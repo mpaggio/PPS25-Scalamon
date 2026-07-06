@@ -3,9 +3,6 @@ package scalamon.logics.turns
 import scalamon.domain.moves.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.DamagePolicy
-import scalamon.logics.turns.BattleAction
-import scalamon.logics.turns.UseMove
-import scalamon.logics.turns.SwitchPokemon
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.domain.moves.MoveDatabase.findByName
 import scalamon.logics.turns.TurnResult.BothForcedSwitch
@@ -61,18 +58,22 @@ final class BattleOrchestrator(using DamagePolicy):
       case TurnResult.SelfLoses(s) => s
     (finalState, result)
 
+
+  /**
+  * It assumes that the battle state is oriented with the first player as `self` and the second player as `opponent`.
+  */
   private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[StateTransformer] = plan match
-    case SelfFirst => List(
-      executeAction(choices.first),
+    case Player1First => List(
+      executeAction(choices.player1Action),
       switchSelfOpponent,
-      executeAction(choices.second),
+      executeAction(choices.player2Action),
       switchSelfOpponent
     )
-    case OpponentFirst => List(
+    case Player2First => List(
       switchSelfOpponent,
-      executeAction(choices.second),
+      executeAction(choices.player2Action),
       switchSelfOpponent,
-      executeAction(choices.first)
+      executeAction(choices.player1Action)
     )
 
   /**
@@ -103,6 +104,7 @@ final class BattleOrchestrator(using DamagePolicy):
         val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
         val switched = self(switchActive(to.value))(beforeSwitchOut)
         applyPassiveEffects(OnSwitchIn(Self))(switched)
+
   /**
    * Executes one move from the point of view of the attacking Pokémon.
    *

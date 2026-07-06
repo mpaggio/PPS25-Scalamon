@@ -58,14 +58,14 @@ class TurnFlowTest extends AnyFunSuite:
   test("TurnFlow builds and orders scheduled actions from player choises"):
     val flow = TurnFlow(ActionOrderResolver.default)
     val choises = TurnChoices(
-      first = UseMove(
+      player1Action = UseMove(
         trainerId = TrainerId("p1"),
         attacking = PokemonRef("bulbasaur"),
         defending = PokemonRef("pikachu"),
         move = MoveRef("tackle"),
         priority = 0
       ),
-      second = UseMove(
+      player2Action = UseMove(
         trainerId = TrainerId("p2"),
         attacking = PokemonRef("pikachu"),
         defending = PokemonRef("bulbasaur"),
@@ -77,7 +77,7 @@ class TurnFlowTest extends AnyFunSuite:
       if ref.value == "pikachu" then Speed(90)
       else Speed(45)
     val plan = flow.actionOrdering(choises, speedOf)
-    assert(plan.orderedActions.head.action == choises.second)
+    assert(plan.orderedActions.head.action == choises.player2Action)
 
   test("BattleAction priority returns the priority of a move action"):
     val action =

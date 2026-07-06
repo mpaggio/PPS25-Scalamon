@@ -8,15 +8,15 @@ import scalamon.logics.turns.SwitchPokemon
 /**
  * The two actions selected by the trainers for the current turn.
  *
- * @param first
+ * @param player1Action
  *   the first chosen action
- * @param second
+ * @param player2Action
  *   the second chosen action
  */
-final case class TurnChoices(first: BattleAction, second: BattleAction)
+final case class TurnChoices(player1Action: BattleAction, player2Action: BattleAction)
 
 enum ActionOrder:
-  case SelfFirst, OpponentFirst
+  case Player1First, Player2First
 
 
 /**
@@ -39,11 +39,11 @@ object TurnFlow:
 
   def actionOrdering(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): ActionOrder =
 
-    if choices.first.priority < choices.second.priority then
-      ActionOrder.SelfFirst
-    else if choices.first.priority > choices.second.priority then
-      ActionOrder.OpponentFirst
+    if choices.player1Action.priority < choices.player2Action.priority then
+      ActionOrder.Player1First
+    else if choices.player1Action.priority > choices.player2Action.priority then
+      ActionOrder.Player2First
     else if speedOf(state.self) >= speedOf(state.opponent) then
-      ActionOrder.SelfFirst
+      ActionOrder.Player1First
     else
-      ActionOrder.OpponentFirst
+      ActionOrder.Player2First
