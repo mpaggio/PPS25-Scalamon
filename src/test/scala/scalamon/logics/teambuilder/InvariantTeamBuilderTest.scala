@@ -2,7 +2,6 @@ package scalamon.logics.teambuilder
 
 import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.moves.Move
-import scalamon.domain.moves.MoveDatabase.allMoves
 import scalamon.domain.pokemon.Pokemon
 import scalamon.logics.teambuilder.TeamBuilder.*
 import scala.util.Random
@@ -14,8 +13,8 @@ class InvariantTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:
       override def choosePokemonTeam(available: List[Pokemon]): List[Pokemon] =
         available.take(numberOfPokemonPerTeam - 1)
 
-      override def chooseMoves(pokemon: Pokemon): List[Move] =
-        Random.shuffle(allMoves.toList).take(4)
+      override def chooseMoves(pokemon: Pokemon, availableMoves: List[Move]): List[Move] =
+        Random.shuffle(availableMoves).take(4)
 
     intercept[IllegalArgumentException]:
       brokenTeamBuilder.buildTeam()
@@ -25,8 +24,8 @@ class InvariantTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:
       override def choosePokemonTeam(available: List[Pokemon]): List[Pokemon] =
         available.take(numberOfPokemonPerTeam)
 
-      override def chooseMoves(pokemon: Pokemon): List[Move] =
-        Random.shuffle(allMoves.toList).take(3)
+      override def chooseMoves(pokemon: Pokemon, availableMoves: List[Move]): List[Move] =
+        Random.shuffle(availableMoves).take(3)
 
     intercept[IllegalArgumentException]:
       brokenTeamBuilder.buildTeam()

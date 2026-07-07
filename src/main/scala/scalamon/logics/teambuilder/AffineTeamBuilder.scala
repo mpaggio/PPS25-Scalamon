@@ -22,7 +22,6 @@ object AffineTeamBuilder:
   case class AffineTeamBuilder() extends TeamBuilder:
     import scala.util.Random
     import scalamon.domain.moves.Move
-    import scalamon.domain.moves.MoveDatabase.*
     import scalamon.domain.pokemon.Pokemon
     import scalamon.domain.types.Type
     import scalamon.domain.types.Type.values
@@ -46,19 +45,19 @@ object AffineTeamBuilder:
      * 3. Uses a fallback mechanism to ensure the requirement of exactly 4 moves is met.
      *
      * @param pokemon The Pokémon for which to generate the move set.
+     * @param availableMoves The list of all move available in the domain database.
      * @return A list of exactly 4 unique moves.
      */
-    override def chooseMoves(pokemon: Pokemon): List[Move] =
+    override def chooseMoves(pokemon: Pokemon, availableMoves: List[Move]): List[Move] =
       val myType: Type = pokemon.pokemonType
-      val all: List[Move] = allMoves.toList
       val sameTypeMoves: List[Move] =
-        Random.shuffle(all.filter(_.moveType == myType)).take(numberOfSameTypeMoves)
+        Random.shuffle(availableMoves.filter(_.moveType == myType)).take(numberOfSameTypeMoves)
       val affineMoves: List[Move] =
         Random.shuffle(
-          all.filter(m => checkIfMoveTypeIsAffine(m.moveType, myType))
+          availableMoves.filter(m => checkIfMoveTypeIsAffine(m.moveType, myType))
         ).take(numberOfAffineTypeMoves)
       val selectedMovesSoFar = (sameTypeMoves ++ affineMoves).distinct
-      handleFallback(selectedMovesSoFar, all)
+      handleFallback(selectedMovesSoFar, availableMoves)
 
     /**
      * Mechanism that guarantee compliance with the 4-move invariant.

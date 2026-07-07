@@ -18,7 +18,6 @@ object RandomTeamBuilder:
   case class RandomTeamBuilder() extends TeamBuilder:
     import scala.util.Random
     import scalamon.domain.moves.Move
-    import scalamon.domain.moves.MoveDatabase.*
     import scalamon.domain.pokemon.Pokemon
 
     /**
@@ -37,7 +36,8 @@ object RandomTeamBuilder:
      * It uses the entire move database as a valid pool, ignoring type restrictions.
      *
      * @param pokemon The Pokémon for which moves are being selected.
+     * @param availableMoves The list of all move available in the domain database.
      * @return A randomized list of exactly 4 moves.
      */
-    override def chooseMoves(pokemon: Pokemon): List[Move] =
-      Random.shuffle(allMoves.toList).take(numberOfMovesPerPokemon)
+    override def chooseMoves(pokemon: Pokemon, availableMoves: List[Move]): List[Move] =
+      Random.shuffle(availableMoves).take(numberOfMovesPerPokemon)

@@ -1,6 +1,7 @@
 package scalamon.logics.teambuilder
 
 import scalamon.domain.moves.Move
+import scalamon.domain.moves.MoveDatabase.allMoves
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex.*
 import scalamon.logics.state.MoveStateModuleImpl.{MoveState, moveInitialState}
@@ -41,9 +42,10 @@ object TeamBuilder:
      * Abstract step: chooses a list of moves for a specific Pokémon.
      *
      * @param pokemon The Pokémon for which moves are being selected.
+     * @param availableMoves The list of all move available in the domain database.
      * @return A list of moves to be assigned to the Pokémon.
      */
-    def chooseMoves(pokemon: Pokemon): List[Move]
+    def chooseMoves(pokemon: Pokemon, availableMoves: List[Move]): List[Move]
 
     /**
      * Template Method for creating a [[PlayerState]].
@@ -79,7 +81,7 @@ object TeamBuilder:
      * @throws IllegalArgumentException if the move count is not exactly 4.
      */
     private final def buildPokemonState(pokemon: Pokemon): PokemonState =
-      val chosenMoves: List[Move] = chooseMoves(pokemon)
+      val chosenMoves: List[Move] = chooseMoves(pokemon, allMoves.toList)
       require(
         chosenMoves.size == numberOfMovesPerPokemon,
         s"Every Pokemon must have exactly $numberOfMovesPerPokemon moves"
