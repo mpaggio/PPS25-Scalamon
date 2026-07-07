@@ -32,7 +32,7 @@ class AffineTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:
   test("Affine team builder should select smart coverage moves"):
     val charizard = allPokemons.find(_.name == "Charizard").get
     val chosenMoves = builder.chooseMoves(charizard)
-    val coverageMoves = chosenMoves.filter(_.moveType == charizard.pokemonType)
+    val coverageMoves = chosenMoves.filter(_.moveType != charizard.pokemonType)
     coverageMoves.foreach(m =>
       val isAffine = values.exists(targetType =>
         effectiveness(charizard.pokemonType, targetType) == NotVeryEffective &&
