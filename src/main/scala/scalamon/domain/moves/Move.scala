@@ -5,54 +5,72 @@ import Power.*
 import PowerPoints.*
 import scalamon.domain.types.Type
 
+/**
+ * Enumeration representing the status category.
+ * Implemented as a different enumeration because of implementation needs.
+ */
 enum StatusMoveCategory:
   case Status
 
+/**
+ * Enumeration representing the damage move categories (Physical and Special)
+ */
 enum DamageMoveCategory:
   case Physical,Special
 
 /**
- * Base trait representing a Pokemon move.
+ * Base abstraction for any move a Pokémon can perform in battle.
  *
  * A move is defined by:
- * - A name.
- * - A number of power points (PP).
- * - An accuracy value.
- * - A move type (e.g. Fire, Water, Electric).
+ * - Name: unique identifier for the move.
+ * - Power Points: the resource cost associated with the move execution.
+ * - Accuracy: the probabilistic success rate.
+ * - Type: the elemental affinity of the move.
  *
- * This is the common abstraction for both damaging and non-damaging moves.
+ * It is implemented as a sealed trait to ensure that the hierarchy
+ * is closed, allowing for exhaustive pattern matching in the battle engine.
  */
 sealed trait Move:
+  /** @return The human-readable name of the move. */
   def name: String
+  /** @return The power points defining maximum usage count. */
   def pp: PP
+  /** @return The probability of the move hitting the target. */
   def accuracy: Accuracy
+  /** @return The elemental type of the move. */
   def moveType: Type
 
 /**
- * Represents a move that does not deal direct damage.
- *
- * These moves are typically status-oriented and apply effects
- * such as healing, stat changes or status conditions.
+ * A specialized move that focuses on tactical changes rather than direct damage.
+ * These moves are guaranteed to have a [[MoveEffect]] that transforms the battle state.
  */
 sealed trait NonDamagingMove extends Move:
+  /** @return The fixed Status category. */
   def category: StatusMoveCategory
+  /** @return The mandatory tactical consequence of this move. */
   def effect: MoveEffect
 
 /**
- * Represents a move that deals direct damage.
- * Power represents the amount of damage.
- *
- * These moves may optionally have a secondary effect
- * such as status inflictions or stat changes.
+ * A specialized move that deals direct damage to a target.
+ * It introduces offensive properties like power and optional secondary effect.
  */
 sealed trait DamagingMove extends Move:
+  /** @return The base damage value of the move. */
   def power: Power
+  /** @return The offensive category of the move. */
   def category: DamageMoveCategory
+  /** @return An optional secondary consequence applied upon a successful hit. */
   def effect: Option[MoveEffect]
 
 /**
- * Concrete implementation of non-damaging move.
- * Always includes a mandatory MoveEffect.
+ * Concrete implementation of a move that applies purely tactical consequences.
+ *
+ * @param name The name of the move.
+ * @param pp The initial power points of the move.
+ * @param accuracy The hit probability of the move.
+ * @param moveType The elemental type of the move.
+ * @param category The category of the move.
+ * @param effect The mandatory state transformation logic (effect).
  */
 case class StatusMove(
   name: String,
@@ -62,10 +80,17 @@ case class StatusMove(
   category: StatusMoveCategory,
   effect: MoveEffect) extends NonDamagingMove
 
-/**
- * Concrete implementation of damaging move.
- * The effect is optional and may be None.
- */
+  /**
+   * Concrete implementation of a move that deals damage.
+   *
+   * @param name The name of the move.
+   * @param power The base power of the move.
+   * @param pp The initial power points of the move.
+   * @param accuracy The hit probability of the move.
+   * @param moveType The elemental type of the move.
+   * @param category The category of the move.
+   * @param effect The optional secondary tactical consequence (effect).
+   */
 case class DamageMove(
   name: String,
   power: Power,
@@ -76,24 +101,17 @@ case class DamageMove(
   effect: Option[MoveEffect]) extends DamagingMove
 
 /**
- * Domain Specific Language (DSL) for constructing Move instances.
+ * Module providing a fluent Domain Specific Language (DSL) for move creation.
  *
- * This DSL provides a fluent API to define secondary move effects
- * in a readable and expressive way, avoiding direct use of constructors.
- *
- * Example usage:
- * {{{
- * move named "Thunder" withPower 110 withPP 10 withAccuracy 70 withType Electric withEffect (Effect applying Paralyzed withProbability 10) as Special
- * }}}
+ * This DSL mitigates primitive obsession and opacity by providing readable verbs
+ * that guide the construction of valid [[Move]] instances.
  */
 object MoveDSL:
   import scalamon.domain.moves.StatusMoveCategory.*
 
   /**
-   * Internal builder used by the DSL to accumulate move properties.
-   *
-   * All fields are optional during construction and validated
-   * when converting into a concrete Move instance.
+   * Internal builder used by the DSL to accumulate properties before move instantiation.
+   * Leverages optional fields and requirement validation at the terminal step.
    */
   case class MoveBuilder(
     name: Option[String] = None,
@@ -105,13 +123,13 @@ object MoveDSL:
 
   /**
    * Entry point of the DSL.
+   * @return A fresh [[MoveBuilder]].
    */
   def move: MoveBuilder =
     MoveBuilder()
 
   /**
-   * Extension methods providing fluent DSL operators
-   * for building Move instances.
+   * Extension methods providing fluent DSL operators for building Move instances.
    */
   extension (builder: MoveBuilder)
 
@@ -124,7 +142,7 @@ object MoveDSL:
       builder.copy(name = Some(name))
 
     /**
-     * Sets the move name.
+     * Sets the move base power.
      *
      * @param power power of the move expressed as a Double value.
      */
@@ -132,7 +150,7 @@ object MoveDSL:
       builder.copy(power = Some(powerFromDouble(power)))
 
     /**
-     * Sets the move name.
+     * Sets the move base power.
      *
      * @param power power of the move expressed as an Int value.
      */
@@ -140,7 +158,7 @@ object MoveDSL:
       builder.copy(power = Some(powerFromInt(power)))
 
     /**
-     * Sets the move power points.
+     * Sets the move maximum power points.
      *
      * @param pp power points of the move expressed as Double.
      */
@@ -148,7 +166,7 @@ object MoveDSL:
       builder.copy(pp = Some(powerPointsFromDouble(pp)))
 
     /**
-     * Sets the move power points.
+     * Sets the move maximum power points.
      *
      * @param pp power points of the move expressed as Int.
      */
@@ -156,7 +174,7 @@ object MoveDSL:
       builder.copy(pp = Some(powerPointsFromInt(pp)))
 
     /**
-     * Sets the move accuracy.
+     * Sets the move hit accuracy.
      *
      * @param accuracy accuracy of the move expressed as ratio.
      */
@@ -164,7 +182,7 @@ object MoveDSL:
       builder.copy(accuracy = Some(accuracyFromRatio(accuracy)))
 
     /**
-     * Sets the move accuracy.
+     * Sets the move hit accuracy.
      *
      * @param accuracy accuracy of the move expressed as percentage.
      */
@@ -172,7 +190,7 @@ object MoveDSL:
       builder.copy(accuracy = Some(accuracyFromPercent(accuracy)))
 
     /**
-     * Sets the move type.
+     * Sets the move elemental type.
      *
      * @param moveType type of the move.
      */
@@ -188,10 +206,11 @@ object MoveDSL:
       builder.copy(moveEffect = Some(effect))
 
     /**
-     * Finalizes the builder into a DamageMove.
-     * Requires name, pp, accuracy, type and power.
+     * Terminal step for damaging moves.
      *
      * @param category category of the damage move.
+     * @return A validated [[DamageMove]].
+     * @throws IllegalArgumentException if mandatory fields are missing.
      */
     infix def as(category: DamageMoveCategory): DamageMove =
       require(
@@ -205,10 +224,11 @@ object MoveDSL:
         builder.moveEffect)
 
     /**
-     * Finalizes the builder into a StatusMove.
-     * Requires name, pp, accuracy, type and effect.
+     * Terminal step for non-damaging moves.
      *
      * @param category category of the status move.
+     * @return A validated [[StatusMove]].
+     * @throws IllegalArgumentException if mandatory fields are missing.
      */
     infix def as(category: StatusMoveCategory): StatusMove =
       require(
