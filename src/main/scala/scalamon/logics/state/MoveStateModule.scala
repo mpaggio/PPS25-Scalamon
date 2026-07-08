@@ -92,9 +92,11 @@ object MoveStateModuleImpl extends MoveStateModule:
    * @param f A function transforming the accuracy percentage of the move.
    * @return A [[StateTransformer]] (Op) for MoveState.
    */
-  def accuracyPercent(f: Int => Int): Op = ms => ms.move match
-    case dm: DamageMove => ms.copy(move = dm.copy(accuracy = Accuracy.accuracyFromPercent(f(dm.accuracy.asInt))))
-    case sm: StatusMove => ms.copy(move = sm.copy(accuracy = Accuracy.accuracyFromPercent(f(sm.accuracy.asInt))))
+  def accuracyPercent(f: Int => Int): Op = ms =>
+    val newAccuracyValue = f(ms.move.accuracy.asInt).max(0).min(100)
+    ms.move match
+    case dm: DamageMove => ms.copy(move = dm.copy(accuracy = Accuracy.accuracyFromPercent(newAccuracyValue)))
+    case sm: StatusMove => ms.copy(move = sm.copy(accuracy = Accuracy.accuracyFromPercent(newAccuracyValue)))
 
   extension (moveState: MoveState)
     def maxPp: PP = moveState.move.pp.asInt

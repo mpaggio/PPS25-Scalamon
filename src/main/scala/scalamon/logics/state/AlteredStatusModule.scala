@@ -30,7 +30,7 @@ object AlteredStatusModule:
      *
      * @return True if the Pokémon can act, false otherwise.
      */
-    def canMove: Boolean = status match
+    def canMove(using roll: ProbabilityRoll): Boolean = status match
       case Sleeping(_) | Charging(_) => false
       case Frozen => accuracyFromPercent(freezeThawingChance).test
       case Paralyzed => !accuracyFromPercent(paralysisFailureChance).test
@@ -42,7 +42,7 @@ object AlteredStatusModule:
      *
      * @return True if a self-hit occurs, false otherwise.
      */
-    def isSelfHitting: Boolean = status match
+    def isSelfHitting(using roll: ProbabilityRoll): Boolean = status match
       case Confused(_) => accuracyFromPercent(confusionSelfHitChance).test
       case _ => false
 
@@ -58,7 +58,7 @@ object AlteredStatusModule:
      *
      * @return A function that transforms a [[BattleState]] into its next version.
      */
-    def applyCondition: StateTransformer = battleState => status match
+    def applyCondition(using roll: ProbabilityRoll): StateTransformer = battleState => status match
       case Burned | Poisoned =>
         if battleState.flags.selfMagicGuardActive then battleState
         else

@@ -54,12 +54,12 @@ object Accuracy:
     /**
      * @return The accuracy as Int percentage value (0 - 100).
      */
-    def asInt: Int = clamp(accuracy)
+    def asInt: Int = accuracy
 
     /**
      * @return The accuracy as Double percentage value (0.0 - 100.0).
      */
-    def asDouble: Double = clamp(accuracy).toDouble
+    def asDouble: Double = accuracy.toDouble
 
 
     /**
@@ -79,7 +79,7 @@ object Accuracy:
      * @param value The value to be added to the current accuracy.
      * @return The resulting accuracy value (not clamped).
      */
-    infix def +(value: Int) : Accuracy = accuracy + value
+    infix def +(value: Int) : Accuracy = clamp(accuracy + value)
 
     /**
      * Decreases accuracy by a fixed percentage value.
@@ -87,7 +87,7 @@ object Accuracy:
      * @param value The value to be decreased from the current accuracy.
      * @return The resulting accuracy value (not clamped).
      */
-    infix def -(value: Int) : Accuracy = accuracy - value
+    infix def -(value: Int) : Accuracy = clamp(accuracy - value)
 
     /**
      * Multiply accuracy by a fixed double value.
@@ -95,4 +95,4 @@ object Accuracy:
      * @param value The multiplier factor to be multiplied to current accuracy.
      * @return The resulting accuracy value (not clamped).
      */
-    infix def *(value: Double) : Accuracy = (accuracy.toDouble * value).toInt
+    infix def *(value: Double) : Accuracy = clamp((accuracy.toDouble * value).toInt)

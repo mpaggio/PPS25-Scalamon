@@ -10,6 +10,7 @@ import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.turns.PokemonRef
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.logics.turns.TurnResult.*
+import scalamon.domain.moves.Accuracy.given
 
 class TurnResolutionTest extends AnyFunSuite with StateFixtures:
 

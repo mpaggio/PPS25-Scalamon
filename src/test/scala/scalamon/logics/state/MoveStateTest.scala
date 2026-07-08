@@ -50,3 +50,22 @@ class MoveStateTest extends org.scalatest.funsuite.AnyFunSuite:
     val state2 = decreasePpBy(5)(state)
     state.currentPp shouldBe swift.pp.asInt
     state2.currentPp shouldBe (swift.pp.asInt - 5)
+
+  test("AccuracyPercent transformer should correctly decrement move accuracy"):
+    val state = moveInitialState(swift)
+    val updatedState = accuracyPercent(_ - 20)(state)
+    updatedState.move.accuracy.asInt shouldBe 80
+    state.move.accuracy.asInt shouldBe 100
+
+  test("AccuracyPercent transformer should correctly increment move accuracy"):
+    val state = moveInitialState(swift)
+    val updatedState = accuracyPercent(_ - 30 + 20)(state)
+    updatedState.move.accuracy.asInt shouldBe 90
+    state.move.accuracy.asInt shouldBe 100
+
+  test("AccuracyPercent transformer should clamp move accuracy between 0 and 100"):
+    val state = moveInitialState(swift)
+    val overflowState = accuracyPercent(_ + 20)(state)
+    overflowState.move.accuracy.asInt shouldBe 100
+    val underflowState = accuracyPercent(_ - 120)(state)
+    underflowState.move.accuracy.asInt shouldBe 0

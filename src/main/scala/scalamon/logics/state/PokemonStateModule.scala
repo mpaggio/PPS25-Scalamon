@@ -52,8 +52,10 @@ object PokemonStateModuleImpl extends PokemonStateModule:
 
   def currentHp(f: Stat => Stat): Op = ps => ps.copy(currentHp = f(ps.currentHp).clamped(0, ps.maxHp))
   def modifyStats(f: InnerOp): Op = ps => ps.copy(modifiedStats = f(ps.modifiedStats))
-  def addStatus(status: AlteredStatus): Op = ps => ps.copy(status = ps.status + status)
-  def removeStatus(status: AlteredStatus): Op = ps => ps.copy(status = ps.status.filter(a => a.isInstanceOf[status.type]))
+  def addStatus(status: AlteredStatus): Op = ps =>
+    val clearedState = removeStatus(status)(ps)
+    clearedState.copy(status = clearedState.status + status)
+  def removeStatus(status: AlteredStatus): Op = ps => ps.copy(status = ps.status.filterNot(_.ordinal == status.ordinal))
   def moves(f: MoveState => MoveState): Op = ps => ps.copy(moves = ps.moves.map(e => (e._1, f(e._2))))
   def updateMove(moveName: String)(f: MoveState => MoveState): Op = ps =>
     ps.copy(moves = ps.moves.updated(moveName, f(ps.moves(moveName))))

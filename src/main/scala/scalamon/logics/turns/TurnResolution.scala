@@ -4,6 +4,7 @@ import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.pokemon.abilities
 import scalamon.domain.pokemon.abilities.MyAbilityBook
 import scalamon.domain.pokemon.abilities.AbilityTrigger.OnTurnEnd
+import scalamon.domain.moves.Accuracy.given
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.AlteredStatusModule.applyCondition
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
