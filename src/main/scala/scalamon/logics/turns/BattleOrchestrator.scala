@@ -12,15 +12,21 @@ import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
+import scalamon.logics.log.BattleLogger
+import scalamon.logics.log.BattleLogger.{BattleLogger, emptyLogger}
 import scalamon.logics.turns.ActionOrder.*
 
 final class BattleOrchestrator(using DamagePolicy):
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (BattleState, TurnResult) =
+  
+  type ReturnState = (BattleState, BattleLogger)
+  
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (ReturnState, TurnResult) =
+    val logger = BattleLogger.emptyLogger
     val plan = TurnFlow.actionOrdering(state, choices, speedOf)
     val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
     val afterTurnStart = applyTriggerForBoth(OnTurnStart)(resetState)
-    val afterExecution = orderedActions(plan)(choices).foldLeft(afterTurnStart)((s, f) => f(s))
-    val result = resolveTurn(afterExecution)
+    val afterExecution = orderedActions(plan)(choices).foldLeft((afterTurnStart, logger))((s, f) => f(s))
+    val result = resolveTurn(afterExecution._1)
     val finalState = result match
       case TurnResult.Ongoing(s) => endTurn(s)
       case TurnResult.ForcedSwitch(s, _) => s
@@ -28,40 +34,40 @@ final class BattleOrchestrator(using DamagePolicy):
       case TurnResult.BothForcedSwitch(s, _, _) => s
       case TurnResult.SelfWins(s) => s
       case TurnResult.SelfLoses(s) => s
-    (finalState, result)
+    ((finalState, afterExecution._2), result)
 
-  private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[StateTransformer] = plan match
-    case Player1First => List(
+  private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[ReturnState => ReturnState] =
+    val turnOrder = List(
       executeAction(choices.player1Action),
-      switchSelfOpponent,
+      switchSelfOpponentPlusLog,
       executeAction(choices.player2Action),
-      switchSelfOpponent
+      switchSelfOpponentPlusLog
     )
-    case Player2First => List(
-      switchSelfOpponent,
-      executeAction(choices.player2Action),
-      switchSelfOpponent,
-      executeAction(choices.player1Action)
-    )
+    
+    plan match
+      case Player1First => turnOrder
+      case Player2First => turnOrder.reverse
 
-  private def executeAction(battleAction: BattleAction)(state: BattleState): BattleState =
+  private def executeAction(battleAction: BattleAction)(returnState: ReturnState): ReturnState = {
+    val state = returnState._1
+    val logger = returnState._2
     battleAction match
       case UseMove(moveRef, _) =>
         val attackerHp = state.self.getActive.currentHp
         if attackerHp <= 0 then
-          println(s"  ${state.self.getActive.species.name} e' KO e non puo' attaccare!")
-          state
+          (state, logger.logIsKo(state.self.getActive))
         else
           val newState = executeMove(moveRef)(state)
           val defenderName = state.opponent.getActive.species.name
           val defenderHp = newState.opponent.getActive.currentHp
-          println(s"  ${state.self.getActive.species.name} usa ${moveRef.value} | $defenderName HP: $defenderHp")
-          newState
+          (newState, logger.logUseMove(state.self.getActive, state.opponent.getActive, resolveMove(moveRef)))
 
       case SwitchPokemon(to) =>
+        val pokemonToSwitch = state.self.getActive
         val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
         val switched = self(switchActive(to.value))(beforeSwitchOut)
-        applyPassiveEffects(OnSwitchIn(Self))(switched)
+        (applyPassiveEffects(OnSwitchIn(Self))(switched), logger.logSwitchPokemon(pokemonToSwitch, state.self.getActive))
+  }
 
   private def executeMove(moveRef: MoveRef)(state: BattleState): BattleState =
     val activePokemon = state.self.getActive
@@ -76,6 +82,9 @@ final class BattleOrchestrator(using DamagePolicy):
       case Some(move: DamageMove) => executeDamageMove(move)(state)
       case Some(move: NonDamagingMove) => executeNonDamageMove(move)(state)
       case None => state
+      
+  private def switchSelfOpponentPlusLog(state: ReturnState): ReturnState =
+    (switchSelfOpponent(state._1), state._2)
 
   private def resolveMove(moveRef: MoveRef): Option[Move] =
     MoveDatabase.allMoves.findByName(moveRef.value)

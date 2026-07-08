@@ -158,8 +158,9 @@ object BattleSimulationFromInput extends App:
 
     val (newState, result) =
       orchestrator.runTurn(state, TurnChoices(player1Action, player2Action), speedOf)
-    state = newState
+    state = newState._1
 
+    println(newState._2.getLog)
     printState(state, turn)
 
     result match

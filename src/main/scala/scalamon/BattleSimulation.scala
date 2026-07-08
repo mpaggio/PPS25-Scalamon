@@ -14,7 +14,7 @@ import scalamon.logics.turns.TurnResult.*
 import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
 
 object BattleSimulation extends App:
-
+/*
   // SETUP INIZIALE
 
   given DamagePolicy = DamagePolicy.Medium.given_DamagePolicy
@@ -179,3 +179,4 @@ object BattleSimulation extends App:
         running = false
 
     turn += 1
+ */
