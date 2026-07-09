@@ -1,7 +1,5 @@
 package scalamon.logics.state
 
-import scalamon.logics.state.Prova.Lens
-
 trait PlayerStateModule extends StateComponent:
   type PlayerState
   protected type PokemonState
