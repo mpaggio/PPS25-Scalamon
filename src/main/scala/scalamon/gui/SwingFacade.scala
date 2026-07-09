@@ -16,11 +16,15 @@ object SwingFacade:
   trait Frame:
     def setSize(width: Int, height: Int): Frame
     def addButton(text: String, name: String): Frame
+    def addCenterButton(text: String, name: String): Frame
     def addLabel(text: String, name: String): Frame
+    def addCenterLabel(text: String, name: String): Frame
     def updateLabel(text: String, name: String): Frame
     def updateButtonText(text: String, name: String): Frame
     def show(): Frame
     def clear(): Frame
+    def useMenuCenter(): Frame
+    def useGridCenter(): Frame
     def nextEvent(): String
 
   def createFrame(): Frame = new FrameImpl()
@@ -34,45 +38,108 @@ object SwingFacade:
     private val eventQueue = new LinkedBlockingQueue[String]()
     private var labels = Map.empty[String, Label]
     private val buttons = scala.collection.mutable.Map[String, Button]()
-    private val panel = new BoxPanel(Orientation.Vertical)
-    private var lastEvent: Option[String] = None
+
+    private val topPanel = new BoxPanel(Orientation.Vertical)
+    private val bottomPanel = new BoxPanel(Orientation.Horizontal)
+    private val gridPanel = new GridPanel(0, 4)
+    private val menuPanel = new BoxPanel(Orientation.Vertical)
+
+    private var currentCenter: Component = menuPanel
+
+    private val rootPanel = new BorderPanel:
+      add(topPanel, BorderPanel.Position.North)
+      add(menuPanel, BorderPanel.Position.Center)
+      add(bottomPanel, BorderPanel.Position.South)
 
     private val frame = new MainFrame:
       title = "Scalamon"
-      contents = panel
+      contents = rootPanel
 
     def setSize(width: Int, height: Int): Frame =
       frame.preferredSize = new Dimension(width, height)
       this
 
     private def notifyEvent(name: String): Unit =
-      lastEvent = Some(name)
       eventQueue.put(name)
+
+    private def switchCenter(newCenter: Component): Unit =
+      rootPanel.layout -= currentCenter
+      currentCenter = newCenter
+      rootPanel.layout(currentCenter) = BorderPanel.Position.Center
+      rootPanel.revalidate()
+      rootPanel.repaint()
+
+    def useMenuCenter(): Frame =
+      switchCenter(menuPanel)
+      this
+
+    def useGridCenter(): Frame =
+      switchCenter(new ScrollPane(gridPanel))
+      this
 
     def addButton(text: String, name: String): Frame =
       val button = new Button(text)
       button.name = name
       button.reactions += {
-        case event.ButtonClicked(_) => notifyEvent(name)
+        case ButtonClicked(_) => notifyEvent(name)
       }
+      button.listenTo(button)
       buttons(name) = button
-      panel.contents += button
+      if name.startsWith("Pick_") || name.startsWith("MovePick_") then
+        button.preferredSize = new Dimension(180, 60)
+        gridPanel.contents += button
+      else
+        bottomPanel.contents += button
+      rootPanel.revalidate()
+      rootPanel.repaint()
+      this
+
+    def addCenterButton(text: String, name: String): Frame =
+      val button = new Button(text)
+      button.name = name
+      button.preferredSize = new Dimension(220, 45)
+      button.maximumSize = new Dimension(220, 45)
+      button.xLayoutAlignment = 0.5
+      button.reactions += {
+        case ButtonClicked(_) => notifyEvent(name)
+      }
+      button.listenTo(button)
+      buttons(name) = button
+      menuPanel.contents += Swing.VStrut(10)
+      menuPanel.contents += button
+      rootPanel.revalidate()
+      rootPanel.repaint()
       this
 
     def updateButtonText(text: String, name: String): Frame =
       buttons.get(name).foreach(_.text = text)
-      panel.revalidate()
-      panel.repaint()
+      rootPanel.revalidate()
+      rootPanel.repaint()
       this
 
     def addLabel(text: String, labelName: String): Frame =
       val lbl = new Label(text)
       labels += (labelName -> lbl)
-      panel.contents += lbl
+      topPanel.contents += lbl
+      rootPanel.revalidate()
+      rootPanel.repaint()
+      this
+
+    def addCenterLabel(text: String, labelName: String): Frame =
+      val lbl = new Label(text)
+      lbl.xAlignment = Alignment.Center
+      lbl.xLayoutAlignment = 0.5
+      labels += (labelName -> lbl)
+      menuPanel.contents += Swing.VStrut(10)
+      menuPanel.contents += lbl
+      rootPanel.revalidate()
+      rootPanel.repaint()
       this
 
     def updateLabel(text: String, name: String): Frame =
       labels.get(name).foreach(_.text = text)
+      rootPanel.revalidate()
+      rootPanel.repaint()
       this
 
     def show(): Frame =
@@ -81,10 +148,13 @@ object SwingFacade:
       this
 
     def clear(): Frame =
-      panel.contents.clear()
+      topPanel.contents.clear()
+      menuPanel.contents.clear()
+      gridPanel.contents.clear()
+      bottomPanel.contents.clear()
       labels = Map()
-      panel.revalidate()
-      panel.repaint()
+      buttons.clear()
+      switchCenter(menuPanel)
       this
 
     def nextEvent(): String = eventQueue.take()

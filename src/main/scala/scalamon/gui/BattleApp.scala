@@ -1,53 +1,28 @@
 package scalamon.gui
 
-import scalamon.domain.moves.MoveDatabase.{allMoves, findByName}
-import scalamon.domain.pokemon.Pokemon
-import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
 import scalamon.logics.state.BattleStateImpl.BattleState
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.state.DamagePolicy
-import scalamon.logics.turns.{BattleOrchestrator, BattleSetup, Speed, *}
+import scalamon.logics.turns.*
 import scalamon.logics.turns.TurnResult.*
-import scalamon.logics.teambuilder.TeamBuilder.TeamBuilder
-import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
-import scalamon.logics.teambuilder.RandomTeamBuilder.RandomTeamBuilder
-import scalamon.logics.teambuilder.AffineTeamBuilder.AffineTeamBuilder
 import BattleWindowStateImpl.*
+import scalamon.gui.SetupGUI.{chooseGameSetup, damagePolicyFromChoice, buildOpponentBuilder, buildAutomaticPlayerBuilder, GameSetup}
+import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
 @main def runScalamonGUI(): Unit =
 
-  given DamagePolicy = DamagePolicy.Medium.given_DamagePolicy
+  val (windowAfterSetup, gameSetup) = chooseGameSetup(initialWindow)
+
+  given DamagePolicy = damagePolicyFromChoice(gameSetup.selectedDifficulty)
 
   val orchestrator = BattleOrchestrator()
-
-  def pokemonNamed(name: String): Pokemon =
-    allPokemons.find(_.name == name).getOrElse(throw new NoSuchElementException(name))
-
-  def moveNamed(name: String) =
-    allMoves.findByName(name).getOrElse(throw new NoSuchElementException(name))
-
-  val fixedTeam = List("Bulbasaur", "Charmander", "Squirtle", "Venusaur", "Charizard", "Blastoise").map(pokemonNamed)
-
-  val fallbackManualBuilder = ManualTeamBuilder(
-    pokemonSelector = _ => fixedTeam,
-    moveSelector = (_, _) => List("Body slam", "Hyper beam", "Double edge", "Slash").map(moveNamed)
-  )
-
-  def buildPlayerBuilder(mode: String): TeamBuilder = mode match
-    case "Random" => RandomTeamBuilder()
-    case "Affine" => AffineTeamBuilder()
-    case "Manual" => fallbackManualBuilder
-    case _        => RandomTeamBuilder()
-
-  def buildOpponentBuilder(): TeamBuilder =
-    RandomTeamBuilder()
 
   def speedOf(ps: PlayerState): Speed =
     Speed(ps.getActive.modifiedStats.speed)
 
   def firstAvailableMove(ps: PlayerState): String =
     ps.getActive.moves.find((_, ms) => ms.currentPp > 0).map(_._1)
-      .getOrElse(throw RuntimeException("Nessuna mossa disponibile"))
+      .getOrElse(throw RuntimeException("No available move!"))
 
   def activeMoveNames(ps: PlayerState): List[String] =
     ps.getActive.moves.toList.map(_._1).take(4)
@@ -82,13 +57,13 @@ import BattleWindowStateImpl.*
     }
 
   def printInitialSetupLog(mode: String, bs: BattleState): Unit =
-    println(s"Modalità selezionata: $mode")
+    println(s"Selected Mode: $mode")
     println()
     printTeam("TEAM PLAYER1", bs.self)
     println()
     printTeam("TEAM PLAYER2", bs.opponent)
     println()
-    println(s"Lead iniziale: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}")
+    println(s"Lead Pokemon: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}")
     println()
 
   def applyPlayerMove(state: BattleState, buttonName: String): (BattleState, String) =
@@ -102,9 +77,9 @@ import BattleWindowStateImpl.*
     println(logger)
     val message = result match
       case Ongoing(_) => battleStatusString(newState)
-      case SelfWins(_) => "PLAYER1 VINCE!"
-      case SelfLoses(_) => "PLAYER2 VINCE!"
-      case _ => battleStatusString(newState) + " | Cambio forzato!"
+      case SelfWins(_) => "PLAYER1 WINS!"
+      case SelfLoses(_) => "PLAYER2 WINS!"
+      case _ => battleStatusString(newState) + " | Needs Forced Switch!"
     (newState, message)
 
   def getStatus: State[BattleState, String] =
@@ -123,29 +98,14 @@ import BattleWindowStateImpl.*
       ((sm2, sv2), av)
     }
 
-  def setupScreen: State[Window, Unit] = for
-    _ <- clear()
-    _ <- setSize(420, 260)
-    _ <- addLabel("Scegli team building", "SetupTitle")
-    _ <- addButton("Manual", "Manual")
-    _ <- addButton("Random", "Random")
-    _ <- addButton("Affine", "Affine")
-    _ <- show()
-  yield ()
-
-  def chooseModeScreen: State[Window, String] = for
-    _     <- setupScreen
-    event <- nextEvent()
-  yield event
-
   def windowCreation(initialInfo: String): State[Window, Unit] = for
     _ <- clear()
     _ <- setSize(500, 400)
     _ <- addLabel(initialInfo, "BattleLog")
-    _ <- addButton("Attacco 1", "Move1")
-    _ <- addButton("Attacco 2", "Move2")
-    _ <- addButton("Attacco 3", "Move3")
-    _ <- addButton("Attacco 4", "Move4")
+    _ <- addButton("Attack 1", "Move1")
+    _ <- addButton("Attack 2", "Move2")
+    _ <- addButton("Attack 3", "Move3")
+    _ <- addButton("Attack 4", "Move4")
     _ <- show()
   yield ()
 
@@ -165,9 +125,14 @@ import BattleWindowStateImpl.*
     _ <- gameLoop
   yield ()
 
-  val (windowAfterChoice, selectedMode) = chooseModeScreen.run(initialWindow)
+  val selectedMode = gameSetup.selectedMode
 
-  val playerBuilder = buildPlayerBuilder(selectedMode)
+  val (windowAfterManualSelection, playerBuilder) =
+    selectedMode match
+      case "Manual" => chooseManualBuilder(windowAfterSetup)
+      case _        => (windowAfterSetup, buildAutomaticPlayerBuilder(selectedMode))
+
+
   val opponentBuilder = buildOpponentBuilder()
   val initialBattleState = BattleSetup.setupBattle(playerBuilder, opponentBuilder)
 
@@ -178,4 +143,4 @@ import BattleWindowStateImpl.*
     _ <- gameLoop
   yield ()
 
-  fullProgram.run((initialBattleState, windowAfterChoice))
+  fullProgram.run((initialBattleState, windowAfterManualSelection))
