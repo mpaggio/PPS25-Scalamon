@@ -60,14 +60,14 @@ object TeamBuilder:
      * @return A fully initialized [[PlayerState]] ready for battle.
      * @throws IllegalArgumentException if the chosen team size is not exactly 6.
      */
-    final def buildTeam(): PlayerState =
+    final def buildTeam(playerName: String): PlayerState =
       val chosenPokemonTeam: List[Pokemon] = choosePokemonTeam(allPokemons)
       require(
         chosenPokemonTeam.size == numberOfPokemonPerTeam,
         s"Every player team must contain exactly $numberOfPokemonPerTeam Pokemon"
       )
       val team: Map[String, PokemonState] = chosenPokemonTeam.map(p => p.name -> buildPokemonState(p)).toMap
-      playerInitialState(team, chosenPokemonTeam.head.name, Items.all)      // TODO : item selection
+      playerInitialState(playerName, team, chosenPokemonTeam.head.name, Items.all)      // TODO : item selection
 
     /**
      * Template Method for creating a [[PokemonState]].

@@ -1,6 +1,6 @@
 package scalamon.logics.turns
 
-import scalamon.domain.actions.Items
+import scalamon.domain.actions.{Items, SwitchAction}
 import scalamon.domain.moves.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.DamagePolicy
@@ -14,69 +14,69 @@ import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
 import scalamon.logics.log.BattleLogger
-import scalamon.logics.log.BattleLogger.{BattleLogger, emptyLogger}
+import scalamon.logics.log.BattleLogger.emptyLogger
 import scalamon.logics.turns.ActionOrder.*
 
 final class BattleOrchestrator(using DamagePolicy):
   
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): TurnResult =
-    val logger = BattleLogger.emptyLogger
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (BattleState, TurnResult) =
     val plan = TurnFlow.actionOrdering(state, choices, speedOf)
-    val resetState = state.updateFlags(_.copy(selfMagicGuardActive = false))
+    val resetState = updateLogs(_ => emptyLogger)(state.updateFlags(_.copy(selfMagicGuardActive = false)))
     val afterTurnStart = applyTriggerForBoth(OnTurnStart)(resetState)
-    val afterExecution = orderedActions(plan)(choices).foldLeft((afterTurnStart, logger))((s, f) => f(s))
-    resolveTurn(afterExecution._1)
+    val afterExecution = orderedActions(plan)(choices).foldLeft(afterTurnStart)((s, f) => f(s))
+    val result = resolveTurn(afterExecution)
+    val finalState = result match
+      case TurnResult.Ongoing(s) => endTurn(s)
+      case TurnResult.ForcedSwitch(s, _) => s
+      case TurnResult.OpponentForcedSwitch(s, _) => s
+      case TurnResult.BothForcedSwitch(s, _, _) => s
+      case TurnResult.SelfWins(s) => s
+      case TurnResult.SelfLoses(s) => s
+    (finalState, result)
 
-  private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[LoggedState => LoggedState] =
+  private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[StateTransformer] =
     val turnOrder = List(
       executeAction(choices.player1Action),
-      switchSelfOpponentPlusLog,
+      switchSelfOpponent,
       executeAction(choices.player2Action),
-      switchSelfOpponentPlusLog
+      switchSelfOpponent
     )
     
     plan match
       case Player1First => turnOrder
       case Player2First => turnOrder.reverse
 
-  private def executeAction(battleAction: BattleAction)(loggedState: LoggedState): LoggedState =
-    val state = loggedState._1
-    val logger = loggedState._2
+  private def executeAction(battleAction: BattleAction)(state: BattleState): BattleState =
     battleAction match
       case UseMove(moveRef, _) =>
         val attackerHp = state.self.getActive.currentHp
         if attackerHp <= 0 then
-          (state, logger.logIsKo(state.self.getActive))
+          updateLogs(BattleLogger.logCannotMoveIsKo(state.self.getActive))(state)
         else
-          executeMove(moveRef)(state, logger)
+          executeMove(moveRef)(state)
 
       case SwitchPokemon(to) =>
         val previousActive = state.self.getActive
         val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
-        val switched = self(switchActive(to.value))(beforeSwitchOut)
-        val finaleState = applyPassiveEffects(OnSwitchIn(Self))(switched)
-        (finaleState, logger.logSwitchPokemon(previousActive, finaleState.self.getActive))
+        val switched = SwitchAction(to.value)(beforeSwitchOut)
+        applyPassiveEffects(OnSwitchIn(Self))(switched)
 
-      case UseItem(name) => 
-        val itemOption = state.self.items.find(_.name == name)
-        (itemOption.getOrElse(Items.nullItem)(state), logger.logUseItem(state.self.getActive, itemOption))
+      case UseItem(name) => state.self.items.find(_.name == name)
+        .getOrElse(updateLogs(BattleLogger.logError(s"Item $name not found")))(state)
 
 
-  private def executeMove(moveRef: MoveRef)(loggedState: LoggedState): LoggedState =
-    val state = loggedState.state
-    val logger = loggedState.log
+  private def executeMove(moveRef: MoveRef)(state: BattleState): BattleState =
     val activePokemon = state.self.getActive
     findMove(moveRef) match
-      case Some(move) if !hasPpFor(activePokemon, move) => (state, logger.logNotEnoughPP(activePokemon, move))
-      case Some(move: DamageMove) if !canMove(activePokemon) => (state, logger.logCannotMove(activePokemon))
+      case Some(move) if !hasPpFor(activePokemon, move) =>
+        updateLogs(BattleLogger.logNotEnoughPP(activePokemon, move))(state)
+      case Some(move: DamageMove) if !canMove(activePokemon) =>
+        updateLogs(BattleLogger.logCannotMove(activePokemon))(state)
       case Some(move: DamageMove) if isSelfHitting(activePokemon) =>
-        (MoveAction(move, Target.Self)(state), logger.logSelfHit(activePokemon, move))
-      case Some(move: DamageMove) => executeDamageMove(move)(loggedState)
-      case Some(move: NonDamagingMove) => executeNonDamageMove(move)(loggedState)
-      case None => (state, logger.logMoveNotFound(activePokemon, moveRef))
-      
-  private def switchSelfOpponentPlusLog(state: LoggedState): LoggedState =
-    (switchSelfOpponent(state._1), state._2)
+        updateLogs(BattleLogger.logSelfHit(activePokemon))(state)
+      case Some(move: DamageMove) => executeDamageMove(move)(state)
+      case Some(move: NonDamagingMove) => executeNonDamageMove(move)(state)
+      case None => updateLogs(BattleLogger.logError(s"Move ${moveRef.value} not found"))(state)
 
   private def findMove(moveRef: MoveRef): Option[Move] =
     MoveDatabase.allMoves.findByName(moveRef.value)
@@ -90,9 +90,8 @@ final class BattleOrchestrator(using DamagePolicy):
   private def isSelfHitting(pokemon: PokemonState): Boolean =
     pokemon.statusCondition.exists(_.isSelfHitting)
 
-  private def executeDamageMove(move: DamageMove)(loggedState: LoggedState): LoggedState =
-    val logger = loggedState.log
-    val withLastMove = loggedState.state.updateFlags(_.copy(lastOpponentMove = Some(move)))
+  private def executeDamageMove(move: DamageMove)(state: BattleState): BattleState =
+    val withLastMove = state.updateFlags(_.copy(lastOpponentMove = Some(move)))
     val afterMove = MoveAction(move)(withLastMove)
     val afterDamageTaken = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
     if isKnockedOut(afterDamageTaken.opponent.getActive) then
@@ -103,7 +102,7 @@ final class BattleOrchestrator(using DamagePolicy):
     else
       afterDamageTaken
 
-  private def executeNonDamageMove(move: Move)(loggedState: LoggedState): LoggedState =
+  private def executeNonDamageMove(move: Move)(state: BattleState): BattleState =
     val afterMove = MoveAction(move)(state)
     val flipped = switchSelfOpponent(afterMove)
     println(s"DEBUG: ${flipped.self.getActive.species.name} status = ${flipped.self.getActive.statusCondition}")

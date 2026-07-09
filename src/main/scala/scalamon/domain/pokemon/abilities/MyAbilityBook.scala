@@ -95,7 +95,7 @@ object MyAbilityBook:
     OnTrigger(OnDamageTaken(Self)) define FlashFire as { state =>
       if state.flags.lastOpponentMove.exists(_.moveType == Fire) then
         val loggedState = log(s"[FlashFire] ${state.self.getActive.species.name} is now immune to Fire moves and gains a boost!")(state)
-        state.updateFlags(_.copy(selfFlashFireActive = true))
+        loggedState.updateFlags(_.copy(selfFlashFireActive = true))
       else state
     },
 
@@ -154,8 +154,8 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnSwitchIn(Self)) define Intimidate as { state =>
-      val loggedState = log(s"[Intimidate] ${state.self.getActive.species.name} intimidates the opponent! -10% Attack")
-      reduceOpponentAttack(state, 0.1)
+      val loggedState = log(s"[Intimidate] ${state.self.getActive.species.name} intimidates the opponent! -10% Attack")(state)
+      reduceOpponentAttack(loggedState, 0.1)
     },
 
     OnTrigger(OnKOTaken(Opponent)) define Moxie as { state =>
@@ -263,7 +263,7 @@ object MyAbilityBook:
 
     OnTrigger(OnTurnStart) define MagicGuard as { state =>
       val loggedState = log(s"[MagicGuard] ${state.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
-      state.updateFlags(_.copy(selfMagicGuardActive = true))
+      loggedState.updateFlags(_.copy(selfMagicGuardActive = true))
     },
 
     OnTrigger(OnDamageTaken(Self)) define Insomnia as { state =>
@@ -295,7 +295,7 @@ object MyAbilityBook:
 
     OnTrigger(OnSwitchIn(Self)) define CloudNine as { state =>
       val loggedState = log(s"[CloudNine] ${state.self.getActive.species.name} suppresses weather effects!")(state)
-      state.updateFlags(_.copy(weatherSuppressed = true))
+      loggedState.updateFlags(_.copy(weatherSuppressed = true))
     },
 
     OnTrigger(OnTurnStart) define SwiftSwim as { state =>
@@ -335,7 +335,7 @@ object MyAbilityBook:
 
     OnTrigger(OnSwitchIn(Self)) define ShadowTag as { state =>
       val loggedState = log(s"[ShadowTag] ${state.self.getActive.species.name} prevents the opponent from switching the active Pokemon!")(state)
-      state.updateFlags(_.copy(opponentSwitchBlocked = true))
+      loggedState.updateFlags(_.copy(opponentSwitchBlocked = true))
     },
 
     OnTrigger(OnDamageTaken(Self)) define LiquidOoze as { state =>

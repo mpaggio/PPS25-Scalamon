@@ -14,35 +14,44 @@ trait BattleLogger:
   def logUseItem(player: PlayerState, itemName: String)(logger: BattleLogger): BattleLogger
   def logMoveRoll(move: Move, boolean: Boolean)(logger: BattleLogger): BattleLogger
   def logSwitchPokemon(from: PokemonState, to: PokemonState)(logger: BattleLogger): BattleLogger
+  def logCannotMoveIsKo(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger
+  def logNotEnoughPP(pokemonState: PokemonState, move: Move)(logger: BattleLogger): BattleLogger
+  def logCannotMove(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger
+  def logSelfHit(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger
 
+  extension (logger: BattleLogger)
+    def getLog: String
+    def setPlayer(playerName: String): BattleLogger
 
 object BattleLogger:
-  override opaque type BattleLogger = List[String]
+  opaque type BattleLogger = List[String]
 
   def emptyLogger: BattleLogger = List.empty
 
   extension (logger: BattleLogger)
-    def logUseMove(attacker: PokemonState, defender: PokemonState, move: Option[Move]): BattleLogger = move match
-      case Some(m) => s"${attacker.species.name} usa ${m.name} | ${defender.species.name} HP: ${defender.currentHp}" :: logger
-      case _ => "Nessuna mossa trovata" :: logger
+    def getLog: String = logger.foldLeft("")((acc, l) => l.concat(acc))
+    def setPlayer(playerName: String): BattleLogger = s"\n[$playerName]: " :: logger
 
-    def logIsKo(pokemonState: PokemonState): BattleLogger =
-      s"${pokemonState.species.name} e' KO e non puo' attaccare" :: logger
+  def logMessage(message: String)(logger: BattleLogger): BattleLogger = s"$message" :: logger
+  def logError(message: String)(logger: BattleLogger): BattleLogger = s"ERROR: $message" :: logger
 
-    def logNotEnoughPP(pokemonState: PokemonState, move: Move): BattleLogger =
-      s"${pokemonState.species.name} non ha abbastanza PP per usare ${move.name}" :: logger
+  def logUseItem(player: PlayerState, item: String)(logger: BattleLogger): BattleLogger =
+    s"${player.getActive.species.name} ha usato l'oggetto ${item}" :: logger
 
-    def getLog: String = logger.foldLeft("")((acc, l) => l.concat(acc + "\n"))
-
-  def logUseItem(player: PlayerState, item: String)(logger: BattleLogger): BattleLogger = item match
-    case Some(item) => s"${player.getActive.species.name} ha usato l'oggetto ${item}" :: logger
-    case _ => "Nessun oggetto trovato" :: logger
+  def logCannotMoveIsKo(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} e' KO e non puo' attaccare" :: logger
 
   def logSwitchPokemon(from: PokemonState, to: PokemonState)(logger: BattleLogger): BattleLogger =
     s"Scambio tra ${from.species.name} e ${to.species.name} avvenuto" :: logger
 
   def logMoveRoll(move: Move, boolean: Boolean)(logger: BattleLogger): BattleLogger =
     s"Il lancio della mossa ${move.name} e' ${if boolean then "andato a buon fine" else "fallito"}" :: logger
-  
-  def logError(message: String)(logger: BattleLogger): BattleLogger =
-    s"ERROR: $message" :: logger
+
+  def logNotEnoughPP(pokemonState: PokemonState, move: Move)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} non ha abbastanza PP per usare ${move.name}" :: logger
+
+  def logCannotMove(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} non puo' muoversi" :: logger
+
+  def logSelfHit(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} si e' colpito da solo" :: logger

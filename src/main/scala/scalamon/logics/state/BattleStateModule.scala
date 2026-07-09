@@ -10,6 +10,7 @@ trait BattleStateModule extends StateComponent:
   override protected type State = BattleState
   override protected type InnerState = PlayerState
   type Trigger
+  type Logger
   type PassiveEffect = Trigger => Op
 
   def battleState(enemyPokemon: PlayerState, userPokemon: PlayerState): BattleState
@@ -17,6 +18,9 @@ trait BattleStateModule extends StateComponent:
   def self(f: InnerOp): Op
   def opponent(f: InnerOp): Op
   def switchSelfOpponent: Op
+  def addPassiveEffect(effect: PassiveEffect): Op
+  def setWeather(w: Weather): Op
+  def updateLogs(f: Logger => Logger): Op
 
 object BattleStateImpl extends BattleStateModule:
   
@@ -30,18 +34,19 @@ object BattleStateImpl extends BattleStateModule:
    lastOpponentMove: Option[DamageMove] = None
   )
 
-  
   case class Bs(
                  self: PlayerState,
                  opponent: PlayerState,
                  passiveEffects: List[PassiveEffect],
                  weather: Weather,
                  flags: BattleFlags,
-                 logs: BattleLogger
+                 logs: Logger
                )
+
   override type BattleState = Bs
   override type PlayerState = PlayerStateModuleImpl.PlayerState
   override type Trigger = scalamon.domain.pokemon.abilities.AbilityTrigger
+  override type Logger = BattleLogger
   def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState): BattleState =
     Bs(userPokemon, enemyPokemon, List(), ClearSky, BattleFlags(), emptyLogger)
 
@@ -53,7 +58,7 @@ object BattleStateImpl extends BattleStateModule:
   def switchSelfOpponent: Op = bs => bs.copy(self = bs.opponent, opponent = bs.self)
   def addPassiveEffect(effect: PassiveEffect): Op = bs => bs.copy(passiveEffects = effect :: bs.passiveEffects)
   def setWeather(w: Weather): Op = bs => bs.copy(weather = w)
-  def updateLogs(f: BattleLogger => BattleLogger): Op = bs => bs.copy(logs = f(bs.logs))
+  def updateLogs(f: Logger => Logger): Op = bs => bs.copy(logs = f(bs.logs.setPlayer(bs.self.name) ))
   
   extension (bs: BattleState)
     def updateFlags(f: BattleFlags => BattleFlags): BattleState = bs.copy(flags = f(bs.flags))

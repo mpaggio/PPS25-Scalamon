@@ -69,12 +69,12 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
   def applyPlayerMove(state: BattleState, buttonName: String): (BattleState, String) =
     val move1Name = moveNameFromButton(buttonName, state.self)
     val move2Name = firstAvailableMove(state.opponent)
-    val ((newState, logger), result) = orchestrator.runTurn(
+    val (newState, result) = orchestrator.runTurn(
       state,
       TurnChoices(UseMove(MoveRef(move1Name)), UseMove(MoveRef(move2Name))),
       speedOf
     )
-    println(logger)
+    println(newState.logs.getLog)
     val message = result match
       case Ongoing(_) => battleStatusString(newState)
       case SelfWins(_) => "PLAYER1 WINS!"
