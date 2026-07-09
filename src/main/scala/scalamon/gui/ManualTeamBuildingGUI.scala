@@ -84,7 +84,7 @@ object ManualTeamBuildingGUI:
             loop(if selected.nonEmpty then selected.init else selected)
 
           case "ResetManualTeam" =>
-            w.updateLabel("Squadra resettata.", "ManualInfoLabel")
+            w.updateLabel("Team Reset.", "ManualInfoLabel")
             loop(Nil)
 
           case _ =>
