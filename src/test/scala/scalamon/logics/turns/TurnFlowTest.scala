@@ -36,8 +36,8 @@ class TurnFlowTest extends AnyFunSuite:
  private def makeBattleState: BattleState =
    val selfPokemon = pokemonInitialState(makePokemon("bulbasaur"), Map.empty)
    val opponentPokemon = pokemonInitialState(makePokemon("pikachu"), Map.empty)
-   val selfPlayer = playerState(Map("bulbasaur" -> selfPokemon), "bulbasaur")
-   val opponentPlayer = playerState(Map("pikachu" -> opponentPokemon), "pikachu")
+   val selfPlayer = playerInitialState(Map("bulbasaur" -> selfPokemon), "bulbasaur")
+   val opponentPlayer = playerInitialState(Map("pikachu" -> opponentPokemon), "pikachu")
    battleState(selfPlayer, opponentPlayer)
 
  test("TurnFlow orders player1 first when player1 has higher priority"):

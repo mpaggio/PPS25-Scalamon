@@ -1,5 +1,6 @@
 package scalamon.logics.turns
 
+import scalamon.domain.actions.Items
 import scalamon.domain.moves.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.DamagePolicy
@@ -48,7 +49,7 @@ final class BattleOrchestrator(using DamagePolicy):
       case Player1First => turnOrder
       case Player2First => turnOrder.reverse
 
-  private def executeAction(battleAction: BattleAction)(returnState: ReturnState): ReturnState = {
+  private def executeAction(battleAction: BattleAction)(returnState: ReturnState): ReturnState =
     val state = returnState._1
     val logger = returnState._2
     battleAction match
@@ -58,16 +59,19 @@ final class BattleOrchestrator(using DamagePolicy):
           (state, logger.logIsKo(state.self.getActive))
         else
           val newState = executeMove(moveRef)(state)
-          val defenderName = state.opponent.getActive.species.name
-          val defenderHp = newState.opponent.getActive.currentHp
-          (newState, logger.logUseMove(state.self.getActive, state.opponent.getActive, resolveMove(moveRef)))
+          (newState, logger.logUseMove(newState.self.getActive, newState.opponent.getActive, resolveMove(moveRef)))
 
       case SwitchPokemon(to) =>
-        val pokemonToSwitch = state.self.getActive
+        val previousActive = state.self.getActive
         val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
         val switched = self(switchActive(to.value))(beforeSwitchOut)
-        (applyPassiveEffects(OnSwitchIn(Self))(switched), logger.logSwitchPokemon(pokemonToSwitch, state.self.getActive))
-  }
+        val finaleState = applyPassiveEffects(OnSwitchIn(Self))(switched)
+        (finaleState, logger.logSwitchPokemon(previousActive, finaleState.self.getActive))
+
+      case UseItem(name) => 
+        val itemOption = state.self.items.find(_.name == name)
+        (itemOption.getOrElse(Items.nullItem)(state), logger.logUseItem(state.self.getActive, itemOption))
+
 
   private def executeMove(moveRef: MoveRef)(state: BattleState): BattleState =
     val activePokemon = state.self.getActive

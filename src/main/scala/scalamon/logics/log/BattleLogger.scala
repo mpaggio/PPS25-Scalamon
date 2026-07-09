@@ -1,5 +1,6 @@
 package scalamon.logics.log
 
+import scalamon.domain.actions.Items.Item
 import scalamon.domain.moves.Move
 import scalamon.logics.state.PokemonStateModuleImpl.{PokemonState, currentHp}
 
@@ -24,3 +25,6 @@ object BattleLogger:
 
     def getLog: String = logger.foldLeft("")((acc, l) => l.concat(acc + "\n"))
 
+    def logUseItem(pokemon: PokemonState, item: Option[Item]): BattleLogger = item match
+      case Some(item) => s"${pokemon.species.name} ha usato l'oggetto ${item.name}" :: logger
+      case _ => "Nessun oggetto trovato" :: logger

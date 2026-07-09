@@ -23,8 +23,8 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
   val initialMoves = Map(swift.name -> moveInitialState(swift))
   val pokemonStartingState: PokemonState = pokemonInitialState(pokemon, initialMoves)
   val battleStartingState: BattleState = battleState(
-    userPokemon = playerState(Map.from(List(pokemon.name -> pokemonStartingState)), pokemon.name),
-    enemyPokemon = playerState(Map.from(List(pokemon.name -> pokemonStartingState)), pokemon.name)
+    userPokemon = playerInitialState(Map.from(List(pokemon.name -> pokemonStartingState)), pokemon.name),
+    enemyPokemon = playerInitialState(Map.from(List(pokemon.name -> pokemonStartingState)), pokemon.name)
   )
 
   test("A damaging move action should decrease its Power Points (PP) after every single use"):
@@ -59,8 +59,8 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     val moveState = Map(move.name -> moveInitialState(move))
     val pokemonState = pokemonInitialState(pokemon, moveState)
     battleState(
-      userPokemon = playerState(Map.from(List(pokemon.name -> pokemonState)), pokemon.name),
-      enemyPokemon = playerState(Map.from(List(pokemon.name -> pokemonState)), pokemon.name)
+      userPokemon = playerInitialState(Map.from(List(pokemon.name -> pokemonState)), pokemon.name),
+      enemyPokemon = playerInitialState(Map.from(List(pokemon.name -> pokemonState)), pokemon.name)
     )
 
   test("A status move should decrease its Power Points (PP) after every single use"):

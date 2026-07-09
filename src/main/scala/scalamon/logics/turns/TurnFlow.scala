@@ -1,9 +1,6 @@
 package scalamon.logics.turns
 
 import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
-import scalamon.logics.turns.BattleAction
-import scalamon.logics.turns.UseMove
-import scalamon.logics.turns.SwitchPokemon
 
 /**
  * The two actions selected by the trainers for the current turn.
