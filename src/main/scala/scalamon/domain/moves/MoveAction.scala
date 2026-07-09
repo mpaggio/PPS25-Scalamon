@@ -7,8 +7,8 @@ import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.DamageMoveCalculatorImpl.getDamage
 import scalamon.logics.state.DamagePolicy
-
 import scalamon.domain.actions.Action
+import scalamon.logics.log.BattleLogger
 
 /**
  * A concrete [[Action]] representing the execution logic of a Pokémon move during battle.
@@ -38,6 +38,8 @@ case class MoveAction(move: Move, target: Target = Opponent)(using policy: Damag
   override def apply(bs: BattleState): BattleState =
     val isHit = move.accuracy.test
 
+    val logStep = updateLogs(BattleLogger.logMoveRoll(move, isHit))
+
     val ppStep: StateTransformer = self(active(updateMove(move.name)(decreasePpBy(1))))
 
     val damageStep: StateTransformer = battleState =>
@@ -62,4 +64,4 @@ case class MoveAction(move: Move, target: Target = Opponent)(using policy: Damag
           else battleState
         case Self => battleState
 
-    List(ppStep, damageStep, effectStep).foldLeft(bs)((state, transformer) => transformer(state))
+    List(logStep ,ppStep, damageStep, effectStep).foldLeft(bs)((state, transformer) => transformer(state))

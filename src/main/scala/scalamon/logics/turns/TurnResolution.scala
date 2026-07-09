@@ -68,7 +68,7 @@ object TurnResolutionImpl extends TurnResolutionModule:
     case state if needsForcedSwitch(state.opponent) => TurnResult.OpponentForcedSwitch(state, aliveBench(state.opponent))
     case state if isDefeated(state.opponent) => TurnResult.SelfWins(state)
     case state if isDefeated(state.self) => TurnResult.SelfLoses(state)
-    case state => TurnResult.Ongoing(state)
+    case state => TurnResult.Ongoing(endTurn(state))
 
   override def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState =
     if player.team.contains(newActive.value) then switchActive(newActive.value)(player)
