@@ -5,16 +5,17 @@ import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
 import scalamon.domain.pokemon.abilities.AbilityDamageModifier
 import scalamon.logics.weather.WeatherSystem
 
+final case class DamageResult(damage: Int, logs: List[String])
+
 /**
  * This trait defines the interface for calculating the move's damage on the battle.
  */
 trait DamageMoveCalculator:
   type BattleState
   type StatsState
-  type Damage
   type Move
 
-  def getDamage(state: BattleState, move: Move)(using DamagePolicy, WeatherSystem, ProbabilityRoll): Damage
+  def getDamage(state: BattleState, move: Move)(using DamagePolicy, WeatherSystem, ProbabilityRoll): DamageResult
 
 object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
@@ -23,8 +24,8 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
   override type BattleState = BattleStateImpl.BattleState
   override type StatsState = StatsStateModuleImpl.StatsState
-  override type Damage = Int
   override type Move = scalamon.domain.moves.DamageMove
+
 
   /**
    * Calculates the move's damage following the standard Pokémon damage formula.
@@ -35,7 +36,7 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
    * @param probabilityRoll a random number generator for determining critical hits
    * @return the calculated damage as an integer
    */
-  def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy, weather: WeatherSystem, probabilityRoll: ProbabilityRoll): Damage =
+  def getDamage(state: BattleState, move: Move)(using policy: DamagePolicy, weather: WeatherSystem, probabilityRoll: ProbabilityRoll): DamageResult =
     val attacker = state.self.getActive
     val defender = state.opponent.getActive
 
@@ -73,11 +74,18 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
 
     val typeEffectiveness = move.moveType.multiplierAgainst(defender.species.pokemonType)
 
-    val abilityAtkMulti = AbilityDamageModifier.attackerMultiplier(state, move)
-    val abilityDefMulti = AbilityDamageModifier.defenderMultiplier(state, move)
+    val atkResult = AbilityDamageModifier.attackerModifier(state, move)
+    val defResult = AbilityDamageModifier.defenderModifier(state, move)
 
     val weatherMulti =
       if state.flags.weatherSuppressed then 1.0
       else weather.movePowerMultiplier(state.weather, move.moveType)
 
-    (baseFormula * stab * typeEffectiveness * policy.multiplier * criticalDamageMultiplier * abilityAtkMulti * abilityDefMulti * weatherMulti).toInt
+    val finalDamage =
+      (baseFormula * stab * typeEffectiveness * policy.multiplier
+        * weatherMulti * criticalDamageMultiplier * atkResult.multiplier * defResult.multiplier).toInt
+
+    DamageResult(
+      damage = finalDamage,
+      logs = atkResult.logs ++ defResult.logs
+    )
