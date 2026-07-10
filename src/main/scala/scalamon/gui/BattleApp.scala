@@ -52,6 +52,9 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     }.mkString("\n")
     s"$title:\n$teamDetails"
 
+  def weatherString(bs: BattleState): String =
+    s"Current Weather: ${bs.weather}"
+
   def getInitialSetupLog(mode: String, bs: BattleState): String =
     s"--- INITIAL SETUP ---\n" +
     s"Selected mode: $mode\n\n" +
@@ -77,6 +80,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     _ <- clear()
     _ <- setSize(500, 600)
     _ <- addLabel(initialInfo, "BattleStatus")
+    _ <- addLabel("Weather: ClearSky", "WeatherStatus")
     _ <- addTextArea("", "BattleLog")
     _ <- addButton("Attack 1", "Move1")
     _ <- addButton("Attack 2", "Move2")
@@ -151,6 +155,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     _ <- State[(BattleState, Window), Unit] :
       case (bs, w) =>
         w.updateTextArea(getInitialSetupLog(selectedMode, bs), "BattleLog")
+        w.updateLabel(weatherString(bs), "WeatherStatus")
         ((bs, w), ())
     _ <- refreshMoveButtons
   yield ()
@@ -174,6 +179,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
       w.updateTextArea(newState.logs.getLog, "BattleLog")
       w.updateLabel(battleStatusString(newState), "BattleStatus")
+      w.updateLabel(weatherString(newState), "WeatherStatus")
 
       ((newState, w), result)
 

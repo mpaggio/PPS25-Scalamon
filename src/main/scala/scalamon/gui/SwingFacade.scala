@@ -41,17 +41,19 @@ object SwingFacade:
     private val eventQueue = new LinkedBlockingQueue[String]()
     private var labels = Map.empty[String, Label]
     private val buttons = scala.collection.mutable.Map[String, Button]()
-    private val panel = new BoxPanel(Orientation.Vertical)
     private var textAreas = Map.empty[String, TextArea]
 
-    private val topPanel = new BoxPanel(Orientation.Vertical)
-    private val bottomPanel = new BoxPanel(Orientation.Horizontal)
-    private val gridPanel = new GridPanel(0, 4)
-    private val menuPanel = new BoxPanel(Orientation.Vertical)
+    private val panel = new BoxPanel(Orientation.Vertical)  // FOR TEXT AREAS & LOGGER
+    private val topPanel = new BoxPanel(Orientation.Vertical)   // TOP PART
+    private val statusRowPanel = new BoxPanel(Orientation.Horizontal) // TOP ROW WITH BATTLE AND WEATHER STATUS, HEADERS
+    private val bottomPanel = new BoxPanel(Orientation.Horizontal)  // BOTTOM PART WITH BUTTONS
+    private val gridPanel = new GridPanel(0, 4)   // FOR THE SELECTION GRIDS
+    private val menuPanel = new BoxPanel(Orientation.Vertical)   // FOR MENU & SETUP
+    topPanel.contents += statusRowPanel
 
     private var currentCenter: Component = menuPanel
 
-    private val rootPanel = new BorderPanel:
+    private val rootPanel = new BorderPanel:   // MAIN PANEL OF THE WINDOW
       add(topPanel, BorderPanel.Position.North)
       add(menuPanel, BorderPanel.Position.Center)
       add(bottomPanel, BorderPanel.Position.South)
@@ -130,7 +132,12 @@ object SwingFacade:
     def addLabel(text: String, labelName: String): Frame =
       val lbl = new Label(text)
       labels += (labelName -> lbl)
-      topPanel.contents += lbl
+      if labelName == "BattleStatus" || labelName == "WeatherStatus" then
+        if labelName == "WeatherStatus" then
+          statusRowPanel.contents += Swing.HGlue  // spinge il meteo a destra
+        statusRowPanel.contents += lbl
+      else
+         topPanel.contents += lbl
       rootPanel.revalidate()
       rootPanel.repaint()
       this
@@ -161,9 +168,14 @@ object SwingFacade:
 
     def clear(): Frame =
       topPanel.contents.clear()
+      statusRowPanel.contents.clear()
+      topPanel.contents += statusRowPanel
+
       menuPanel.contents.clear()
       gridPanel.contents.clear()
       bottomPanel.contents.clear()
+      panel.contents.clear()
+
       labels = Map()
       panel.revalidate()
       panel.repaint()
