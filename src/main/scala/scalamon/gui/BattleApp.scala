@@ -3,7 +3,7 @@ package scalamon.gui
 import scalamon.domain.moves.MoveDatabase.{allMoves, findByName}
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
-import scalamon.logics.state.BattleStateImpl.BattleState
+import scalamon.logics.state.BattleStateImpl.{BattleState, switchSelfOpponent}
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.state.DamagePolicy
 import scalamon.logics.turns.{BattleOrchestrator, BattleSetup, Speed, *}
@@ -67,51 +67,25 @@ import BattleWindowStateImpl.*
       ((bs, w), ())
     }
 
-  def handleMoveClick(buttonName: String): State[(BattleState, Window), Unit] = for
-    _ <- mv(applyMove(buttonName), msg => updateLabel(msg, "BattleLog"))
-    _ <- refreshMoveButtons
-  yield ()
-
   def battleStatusString(bs: BattleState): String =
     s"${bs.self.getActive.species.name} HP:${bs.self.getActive.currentHp} vs ${bs.opponent.getActive.species.name} HP:${bs.opponent.getActive.currentHp}"
 
-  def printTeam(title: String, ps: PlayerState): Unit =
-    println(title)
-    ps.team.foreach { case (name, pokemonState) =>
-      println(s"- $name -> ${pokemonState.moves.keys.mkString(", ")}")
-    }
+  def teamToString(title: String, ps: PlayerState): String =
+    val teamDetails = ps.team.map{
+      case (name, pokemonState) => s"- $name -> ${pokemonState.moves.keys.mkString(", ")}"
+    }.mkString("\n")
+    s"$title:\n$teamDetails"
 
-  def printInitialSetupLog(mode: String, bs: BattleState): Unit =
-    println(s"Modalità selezionata: $mode")
-    println()
-    printTeam("TEAM PLAYER1", bs.self)
-    println()
-    printTeam("TEAM PLAYER2", bs.opponent)
-    println()
-    println(s"Lead iniziale: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}")
-    println()
-
-  def applyPlayerMove(state: BattleState, buttonName: String): (BattleState, String) =
-    val move1Name = moveNameFromButton(buttonName, state.self)
-    val move2Name = firstAvailableMove(state.opponent)
-    val ((newState, logger), result) = orchestrator.runTurn(
-      state,
-      TurnChoices(UseMove(MoveRef(move1Name)), UseMove(MoveRef(move2Name))),
-      speedOf
-    )
-    println(logger)
-    val message = result match
-      case Ongoing(_) => battleStatusString(newState)
-      case SelfWins(_) => "PLAYER1 VINCE!"
-      case SelfLoses(_) => "PLAYER2 VINCE!"
-      case _ => battleStatusString(newState) + " | Cambio forzato!"
-    (newState, message)
+  def getInitialSetupLog(mode: String, bs: BattleState): String =
+    s"--- SETUP INIZIALE ---\n" +
+    s"Modalità selezionata: $mode\n\n" +
+    teamToString("TEAM PLAYER 1", bs.self) + "\n\n" +
+    teamToString("TEAM PLAYER 2", bs.opponent) + "\n\n" +
+    s"Lead iniziale: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}\n" +
+    s"-----------------------\n\n"
 
   def getStatus: State[BattleState, String] =
     State(bs => (bs, battleStatusString(bs)))
-
-  def applyMove(buttonName: String): State[BattleState, String] =
-    State(bs => applyPlayerMove(bs, buttonName))
 
   def nop: State[BattleState, Unit] =
     State(bs => (bs, ()))
@@ -141,41 +115,116 @@ import BattleWindowStateImpl.*
   def windowCreation(initialInfo: String): State[Window, Unit] = for
     _ <- clear()
     _ <- setSize(500, 400)
-    _ <- addLabel(initialInfo, "BattleLog")
+    _ <- addLabel(initialInfo, "BattleStatus")
+    _ <- addTextArea("", "BattleLog")
     _ <- addButton("Attacco 1", "Move1")
     _ <- addButton("Attacco 2", "Move2")
     _ <- addButton("Attacco 3", "Move3")
     _ <- addButton("Attacco 4", "Move4")
+    _ <- addButton("Scambio Pokemon", "SwitchMenu")
     _ <- show()
   yield ()
 
-  def setupState: State[(BattleState, Window), Unit] = for
+  def transitionScreen(message: String): State[Window, Unit] = State:
+    w => javax.swing.JOptionPane.showMessageDialog(
+      null,
+      message,
+      "Cambio giocatore",
+      javax.swing.JOptionPane.INFORMATION_MESSAGE
+    )
+    (w, ())
+
+  def showSwitchMenu: State[(BattleState, Window), BattleAction] = State:
+    case (bs, w) =>
+      val available = bs.self.team.filter((id, p) => id != bs.self.activeId && p.currentHp > 0).keys.toList
+
+      if (available.isEmpty)
+        javax.swing.JOptionPane.showMessageDialog(null, "Non hai altri Pokemon disponibili")
+        ((bs, w), UseMove(MoveRef(firstAvailableMove(bs.self))))
+      else
+        val selection = javax.swing.JOptionPane.showInputDialog(
+          null, "Scegli Pokémon da mandare in campo:", "Cambio",
+          javax.swing.JOptionPane.QUESTION_MESSAGE, null,
+          available.toArray.asInstanceOf[Array[Object]], available.head
+        )
+        val action = if selection != null then
+          SwitchPokemon(PokemonRef(selection.toString))
+        else
+          UseMove(MoveRef("Skip"))
+
+        ((bs, w), action)
+
+  def setupState(selectedMode: String): State[(BattleState, Window), Unit] = for
     _ <- mv(getStatus, windowCreation)
+    _ <- State[(BattleState, Window), Unit] :
+      case (bs, w) =>
+        w.updateTextArea(getInitialSetupLog(selectedMode, bs), "BattleLog")
+        ((bs, w), ())
     _ <- refreshMoveButtons
   yield ()
 
-  def gameLoop: State[(BattleState, Window), Unit] = for
+  def getPlayerAction: State[(BattleState, Window), BattleAction] = for
     event <- mv(nop, _ => nextEvent())
-    _ <- event match
-      case "Move1" => handleMoveClick("Move1")
-      case "Move2" => handleMoveClick("Move2")
-      case "Move3" => handleMoveClick("Move3")
-      case "Move4" => handleMoveClick("Move4")
-      case _       => State.unit[(BattleState, Window), Unit](())
-    _ <- gameLoop
+    action <- event match
+      case "SwitchMenu" => showSwitchMenu
+      case m if m.startsWith("Move") =>
+        State[(BattleState, Window), BattleAction]:
+          case (bs, w) =>
+            val moveName = moveNameFromButton(m, bs.self)
+            ((bs, w), UseMove(MoveRef(moveName)))
+      case _ => getPlayerAction
+  yield action
+
+  def resolveHotSeatTurn(a1: BattleAction, a2: BattleAction): State[(BattleState, Window), TurnResult] = State:
+    case (bs, w) =>
+      val ((newState, logger), result) = orchestrator.runTurn(bs, TurnChoices(a1, a2), speedOf)
+
+      w.updateTextArea(logger.getLog, "BattleLog")
+      w.updateLabel(battleStatusString(newState), "BattleStatus")
+
+      ((newState, w), result)
+
+  def switchPlayerPerspective: State[(BattleState, Window), Unit] =
+    for
+      _ <- mv(
+        BattleStateAdapter.fromOp(switchSelfOpponent),
+        _ => State.unit(())
+      )
+      _ <- refreshMoveButtons
+    yield ()
+
+  def gameLoop: State[(BattleState, Window), Unit] = for
+    action1 <- getPlayerAction
+    _ <- mv(nop, _ => transitionScreen("Tocca al Player 2. Passa il dispositivo!"))
+    action2 <- for
+      _ <- switchPlayerPerspective
+      a <- getPlayerAction
+      _ <- switchPlayerPerspective
+    yield a
+    result <- resolveHotSeatTurn(action1, action2)
+    _ <- refreshMoveButtons
+
+    _ <- result match
+      case SelfWins(_) =>
+        mv(nop, _ => updateLabel("VITTORIA PER IL PLAYER 1", "BattleStatus"))
+      case SelfLoses(_) =>
+        mv(nop, _ => updateLabel("VITTORIA PER IL PLAYER 2", "BattleStatus"))
+      case _ =>
+        gameLoop
   yield ()
 
-  val (windowAfterChoice, selectedMode) = chooseModeScreen.run(initialWindow)
+  def startFullGame(): Unit =
+    val (windowAfterChoice, selectedMode) = chooseModeScreen.run(initialWindow)
 
-  val playerBuilder = buildPlayerBuilder(selectedMode)
-  val opponentBuilder = buildOpponentBuilder()
-  val initialBattleState = BattleSetup.setupBattle(playerBuilder, opponentBuilder)
+    val playerBuilder = buildPlayerBuilder(selectedMode)
+    val opponentBuilder = buildOpponentBuilder()
+    val initialBattleState = BattleSetup.setupBattle(playerBuilder, opponentBuilder)
 
-  printInitialSetupLog(selectedMode, initialBattleState)
+    val fullProgram: State[(BattleState, Window), Unit] = for
+      _ <- setupState(selectedMode)
+      _ <- gameLoop
+    yield ()
 
-  val fullProgram: State[(BattleState, Window), Unit] = for
-    _ <- setupState
-    _ <- gameLoop
-  yield ()
+    fullProgram.run((initialBattleState, windowAfterChoice))
 
-  fullProgram.run((initialBattleState, windowAfterChoice))
+  startFullGame()

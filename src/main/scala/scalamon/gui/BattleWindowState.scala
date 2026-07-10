@@ -12,8 +12,10 @@ trait BattleWindowState:
   def setSize(width: Int, height: Int): State[Window, Unit]
   def addButton(text: String, name: String): State[Window, Unit]
   def addLabel(text: String, name: String): State[Window, Unit]
+  def addTextArea(text: String, name: String): State[Window, Unit]
   def updateLabel(text: String, name: String): State[Window, Unit]
   def updateButtonText(text: String, name: String): State[Window, Unit]
+  def updateTextArea(text: String, name: String): State[Window, Unit]
   def show(): State[Window, Unit]
   def clear(): State[Window, Unit]
   def nextEvent(): State[Window, String]
@@ -36,10 +38,14 @@ object BattleWindowStateImpl extends BattleWindowState:
     State(w => (w.addButton(text, name), ()))
   def addLabel(text: String, name: String): State[Window, Unit] =
     State(w => (w.addLabel(text, name), ()))
+  def addTextArea(text: String, name: String): State[Window, Unit] =
+    State(w => (w.addTextArea(text, name), ()))
   def updateLabel(text: String, name: String): State[Window, Unit] =
     State(w => (w.updateLabel(text, name), ()))
   def updateButtonText(text: String, name: String): State[Window, Unit] =
     State(w => (w.updateButtonText(text, name), ()))
+  def updateTextArea(text: String, name: String): State[Window, Unit] =
+    State(w => (w.updateTextArea(text, name), ()))
   def show(): State[Window, Unit] =
     State(w => (w.show(), ()))
   def clear(): State[Window, Unit] =

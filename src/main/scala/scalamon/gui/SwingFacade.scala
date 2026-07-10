@@ -17,8 +17,10 @@ object SwingFacade:
     def setSize(width: Int, height: Int): Frame
     def addButton(text: String, name: String): Frame
     def addLabel(text: String, name: String): Frame
+    def addTextArea(txt: String, name: String): Frame
     def updateLabel(text: String, name: String): Frame
     def updateButtonText(text: String, name: String): Frame
+    def updateTextArea(text: String, name: String): Frame
     def show(): Frame
     def clear(): Frame
     def nextEvent(): String
@@ -36,6 +38,7 @@ object SwingFacade:
     private val buttons = scala.collection.mutable.Map[String, Button]()
     private val panel = new BoxPanel(Orientation.Vertical)
     private var lastEvent: Option[String] = None
+    private var textAreas = Map.empty[String, TextArea]
 
     private val frame = new MainFrame:
       title = "Scalamon"
@@ -52,6 +55,7 @@ object SwingFacade:
     def addButton(text: String, name: String): Frame =
       val button = new Button(text)
       button.name = name
+      button.listenTo(button)
       button.reactions += {
         case event.ButtonClicked(_) => notifyEvent(name)
       }
@@ -73,6 +77,8 @@ object SwingFacade:
 
     def updateLabel(text: String, name: String): Frame =
       labels.get(name).foreach(_.text = text)
+      panel.revalidate()
+      panel.repaint()
       this
 
     def show(): Frame =
@@ -85,6 +91,27 @@ object SwingFacade:
       labels = Map()
       panel.revalidate()
       panel.repaint()
+      textAreas = Map.empty
       this
 
     def nextEvent(): String = eventQueue.take()
+
+    override def addTextArea(txt: String, name: String): Frame =
+      val textArea = new TextArea{
+        editable = false
+        rows = 12
+        lineWrap = true
+        wordWrap = true
+        text = txt
+      }
+      textAreas += (name -> textArea)
+      panel.contents += new ScrollPane(textArea)
+      this
+
+    override def updateTextArea(text: String, name: String): Frame =
+      textAreas.get(name).foreach: ta =>
+        ta.append(text + "\n")
+        ta.caret.position = ta.text.length
+      panel.revalidate()
+      panel.repaint()
+      this
