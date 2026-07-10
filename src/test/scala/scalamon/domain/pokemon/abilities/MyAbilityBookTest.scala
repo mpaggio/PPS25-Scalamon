@@ -422,7 +422,8 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
 
   // ONLY LOG ABILITY
   test("Forewarn does not modify battle state on switch in") {
-    run(Forewarn, OnSwitchIn(Self))(battle) shouldEqual battle
+    val result = run(Forewarn, OnSwitchIn(Self))(battle)
+    result.copy(logs = battle.logs) shouldEqual battle
   }
 
   test("DrySkin heals self by maxHp/16 when weather is Rain") {

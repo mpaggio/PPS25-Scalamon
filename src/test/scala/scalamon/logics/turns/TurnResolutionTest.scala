@@ -17,6 +17,7 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   private val charmanderAlmostKO =  active(currentHp(decrease(38)))(player1)
 
   private val onlyCharmanderPlayer = playerInitialState(
+    "Player1",
     Map("Charmander" -> myPokemon),
     "Charmander"
   )
@@ -132,6 +133,7 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
 
   test("resolveTurn returns OpponentForcedSwitch when opponent's active Pokemon is KO but bench is alive") {
     val opponentWithBench = playerInitialState(
+      "Player2",
       Map("Squirtle" -> enemyPokemon, "Bulbasaur" -> enemyPokemon),
       "Squirtle"
     )
@@ -142,6 +144,7 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
 
   test("resolveTurn returns BothForcedSwitch when both active Pokemon are KO but both sides have alive bench Pokemon") {
     val opponentWithBench = playerInitialState(
+      "Player2",
       Map("Squirtle" -> enemyPokemon, "Bulbasaur" -> enemyPokemon),
       "Squirtle"
     )

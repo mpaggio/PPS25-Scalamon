@@ -13,15 +13,15 @@ class AffineTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:
   val builder = AffineTeamBuilder()
 
   test(s"Affine team builder should create a team of exactly $numberOfPokemonPerTeam Pokemon"):
-    val playerState = builder.buildTeam()
+    val playerState = builder.buildTeam("Player1")
     playerState.team.size shouldBe numberOfPokemonPerTeam
 
   test(s"Affine team builder should assign exactly $numberOfMovesPerPokemon moves to each Pokemon"):
-    val playerState = builder.buildTeam()
+    val playerState = builder.buildTeam("Player1")
     playerState.team.values.foreach(p => p.moves.size shouldBe numberOfMovesPerPokemon)
 
   test("Affine team builder should select unique Pokemon names"):
-    val playerState = builder.buildTeam()
+    val playerState = builder.buildTeam("Player1")
     playerState.team.keys.toSet.size shouldBe numberOfPokemonPerTeam
 
   test("Affine team builder should prioritize STAB moves (same type)"):

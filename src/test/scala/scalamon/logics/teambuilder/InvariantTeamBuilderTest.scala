@@ -17,7 +17,7 @@ class InvariantTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:
         Random.shuffle(availableMoves).take(4)
 
     intercept[IllegalArgumentException]:
-      brokenTeamBuilder.buildTeam()
+      brokenTeamBuilder.buildTeam("Player1")
 
   test(s"Random team builder should throw IllegalArgumentException if a Pokemon has less then $numberOfPokemonPerTeam moves"):
     val brokenTeamBuilder = new TeamBuilder.TeamBuilder:
@@ -28,4 +28,4 @@ class InvariantTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:
         Random.shuffle(availableMoves).take(3)
 
     intercept[IllegalArgumentException]:
-      brokenTeamBuilder.buildTeam()
+      brokenTeamBuilder.buildTeam("Player1")

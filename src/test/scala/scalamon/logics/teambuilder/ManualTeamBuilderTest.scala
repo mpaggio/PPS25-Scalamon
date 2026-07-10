@@ -46,7 +46,7 @@ class ManualTeamBuilderTest extends AnyFunSuite:
       pokemonSelector = _ => selectedTeam,
       moveSelector = (_, _) => selectedMoves)
 
-    val playerState = builder.buildTeam()
+    val playerState = builder.buildTeam("Player1")
 
     playerState.team.size shouldBe numberOfPokemonPerTeam
     playerState.team.keySet shouldBe selectedTeam.map(_.name).toSet

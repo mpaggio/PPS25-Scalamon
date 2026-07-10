@@ -1,16 +1,13 @@
 package scalamon.gui
 
 import scalamon.logics.state.BattleStateImpl.BattleState
-import scalamon.domain.moves.MoveDatabase.{allMoves, findByName}
-import scalamon.domain.pokemon.Pokemon
-import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
-import scalamon.logics.state.BattleStateImpl.{BattleState, switchSelfOpponent}
+import scalamon.logics.state.BattleStateImpl.switchSelfOpponent
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.state.DamagePolicy
 import scalamon.logics.turns.*
 import scalamon.logics.turns.TurnResult.*
 import BattleWindowStateImpl.*
-import scalamon.gui.SetupGUI.{chooseGameSetup, damagePolicyFromChoice, buildOpponentBuilder, buildAutomaticPlayerBuilder, GameSetup}
+import scalamon.gui.SetupGUI.{GameSetup, buildAutomaticPlayerBuilder, buildOpponentBuilder, chooseGameSetup, damagePolicyFromChoice}
 import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
 @main def runScalamonGUI(): Unit =
@@ -62,31 +59,6 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     teamToString("TEAM PLAYER 2", bs.opponent) + "\n\n" +
     s"Lead iniziale: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}\n" +
     s"-----------------------\n\n"
-  def printInitialSetupLog(mode: String, bs: BattleState): Unit =
-    println(s"Selected Mode: $mode")
-    println()
-    printTeam("TEAM PLAYER1", bs.self)
-    println()
-    printTeam("TEAM PLAYER2", bs.opponent)
-    println()
-    println(s"Lead Pokemon: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}")
-    println()
-
-  def applyPlayerMove(state: BattleState, buttonName: String): (BattleState, String) =
-    val move1Name = moveNameFromButton(buttonName, state.self)
-    val move2Name = firstAvailableMove(state.opponent)
-    val (newState, result) = orchestrator.runTurn(
-      state,
-      TurnChoices(UseMove(MoveRef(move1Name)), UseMove(MoveRef(move2Name))),
-      speedOf
-    )
-    println(newState.logs.getLog)
-    val message = result match
-      case Ongoing(_) => battleStatusString(newState)
-      case SelfWins(_) => "PLAYER1 WINS!"
-      case SelfLoses(_) => "PLAYER2 WINS!"
-      case _ => battleStatusString(newState) + " | Needs Forced Switch!"
-    (newState, message)
 
   def getStatus: State[BattleState, String] =
     State(bs => (bs, battleStatusString(bs)))
@@ -118,7 +90,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     w => javax.swing.JOptionPane.showMessageDialog(
       null,
       message,
-      "Cambio giocatore",
+      "Switch player!",
       javax.swing.JOptionPane.INFORMATION_MESSAGE
     )
     (w, ())
@@ -128,11 +100,11 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
       val available = bs.self.team.filter((id, p) => id != bs.self.activeId && p.currentHp > 0).keys.toList
 
       if (available.isEmpty)
-        javax.swing.JOptionPane.showMessageDialog(null, "Non hai altri Pokemon disponibili")
+        javax.swing.JOptionPane.showMessageDialog(null, "No available Pokemon")
         ((bs, w), UseMove(MoveRef(firstAvailableMove(bs.self))))
       else
         val selection = javax.swing.JOptionPane.showInputDialog(
-          null, "Scegli Pokémon da mandare in campo:", "Cambio",
+          null, "Select a Pokemon to switch to:", "Switch",
           javax.swing.JOptionPane.QUESTION_MESSAGE, null,
           available.toArray.asInstanceOf[Array[Object]], available.head
         )
@@ -166,9 +138,9 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
   def resolveHotSeatTurn(a1: BattleAction, a2: BattleAction): State[(BattleState, Window), TurnResult] = State:
     case (bs, w) =>
-      val ((newState, logger), result) = orchestrator.runTurn(bs, TurnChoices(a1, a2), speedOf)
+      val (newState, result) = orchestrator.runTurn(bs, TurnChoices(a1, a2), speedOf)
 
-      w.updateTextArea(logger.getLog, "BattleLog")
+      w.updateTextArea(newState.logs.getLog, "BattleLog")
       w.updateLabel(battleStatusString(newState), "BattleStatus")
 
       ((newState, w), result)
@@ -177,14 +149,14 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     for
       _ <- mv(
         BattleStateAdapter.fromOp(switchSelfOpponent),
-        _ => State.unit(())
+        _ => State.unit[Window,Unit](())
       )
       _ <- refreshMoveButtons
     yield ()
 
   def gameLoop: State[(BattleState, Window), Unit] = for
     action1 <- getPlayerAction
-    _ <- mv(nop, _ => transitionScreen("Tocca al Player 2. Passa il dispositivo!"))
+    _ <- mv(nop, _ => transitionScreen("Player2's turn. Change the controller!"))
     action2 <- for
       _ <- switchPlayerPerspective
       a <- getPlayerAction
@@ -195,9 +167,9 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
     _ <- result match
       case SelfWins(_) =>
-        mv(nop, _ => updateLabel("VITTORIA PER IL PLAYER 1", "BattleStatus"))
+        mv(nop, _ => updateLabel("PLAYER 1 WINS", "BattleStatus"))
       case SelfLoses(_) =>
-        mv(nop, _ => updateLabel("VITTORIA PER IL PLAYER 2", "BattleStatus"))
+        mv(nop, _ => updateLabel("PLAYER 2 WINS", "BattleStatus"))
       case _ =>
         gameLoop
   yield ()

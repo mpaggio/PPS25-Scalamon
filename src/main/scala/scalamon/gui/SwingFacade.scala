@@ -41,7 +41,6 @@ object SwingFacade:
     private var labels = Map.empty[String, Label]
     private val buttons = scala.collection.mutable.Map[String, Button]()
     private val panel = new BoxPanel(Orientation.Vertical)
-    private var lastEvent: Option[String] = None
     private var textAreas = Map.empty[String, TextArea]
 
     private val topPanel = new BoxPanel(Orientation.Vertical)
@@ -180,6 +179,9 @@ object SwingFacade:
       }
       textAreas += (name -> textArea)
       panel.contents += new ScrollPane(textArea)
+      switchCenter(panel)
+      rootPanel.revalidate()
+      rootPanel.repaint()
       this
 
     override def updateTextArea(text: String, name: String): Frame =

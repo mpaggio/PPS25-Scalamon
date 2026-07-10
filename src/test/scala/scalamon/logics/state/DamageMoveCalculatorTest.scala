@@ -42,10 +42,12 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   val defenderPokemonState: PokemonStateModuleImpl.Pks = pokemonInitialState(defenderSpecies, defenderMoves)
 
   val playerAtk: PlayerStateModuleImpl.Ps = playerInitialState(
+    "Player1",
     team = Map("Charmander" -> attackerPokemonState),
     active = "Charmander"
   )
   val playerDef: PlayerStateModuleImpl.Ps = playerInitialState(
+    "Player2",
     team = Map("Bulbasaur" -> defenderPokemonState),
     active = "Bulbasaur"
   )
@@ -68,6 +70,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage should increase if attacker's attack stat increases (Physical)"){
     given ProbabilityRoll = () => 100 // Force no critical hit
     val boostedPlayerAtk = playerInitialState(
+      "Player1",
       team = Map("Charmander" -> modifyStats(attack(increase(50)))(attackerPokemonState)),
       active = "Charmander"
     )
@@ -84,6 +87,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage should decrease if defender's defense stat increases (Physical)") {
     given ProbabilityRoll = () => 100 // Force no critical hit
     val tankPlayerDef = playerInitialState(
+      "Player1",
       team = Map("Bulbasaur" -> modifyStats(defense(increase(50)))(defenderPokemonState)),
       active = "Bulbasaur"
     )
@@ -100,6 +104,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage should increase if attacker's specialAttack stat increases (Special)") {
     given ProbabilityRoll = () => 100 // Force no critical hit
     val boostedPlayerAtk = playerInitialState(
+      "Player1",
       team = Map("Charmander" -> modifyStats(specialAttack(increase(50)))(attackerPokemonState)),
       active = "Charmander"
     )
@@ -116,6 +121,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage should decrease if defender's specialDefense stat increases (Special)") {
     given ProbabilityRoll = () => 100 // Force no critical hit
     val tankPlayerDef = playerInitialState(
+      "Player2",
       team = Map("Bulbasaur" -> modifyStats(specialDefense(increase(50)))(defenderPokemonState)),
       active = "Bulbasaur"
     )
