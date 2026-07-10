@@ -186,6 +186,28 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
       _ <- refreshMoveButtons
     yield ()
 
+  def handleTurnResult(result: TurnResult): State[(BattleState, Window), Unit] = State:
+    case (bs, w) => result match
+        case ForcedSwitch(candidates) =>
+          val ((nextBs, nextW), choice) =
+            showForcedSwitchMenu("Player1: Pokemon KO, select a substitute [mandatory]:", candidates).run((bs, w))
+          val stateAfterSwitch = orchestrator.applyForcedSwitch(nextBs, choice)
+          ((stateAfterSwitch, nextW), ())
+
+        case OpponentForcedSwitch(candidates) =>
+          val ((nextBs, nextW), choice) =
+            showForcedSwitchMenu("Player2: Pokemon KO, select a substitute [mandatory]:", candidates).run((bs, w))
+          val stateAfterSwitch = orchestrator.applyOpponentForcedSwitch(nextBs, choice)
+          ((stateAfterSwitch, nextW), ())
+
+        case BothForcedSwitch(candidates, oppCandidates) =>
+          val ((s1, w1), c1) = showForcedSwitchMenu("Player 1, choose replacement:", candidates).run((bs, w))
+          val ((s2, w2), c2) = showForcedSwitchMenu("Player 2, choose replacement:", oppCandidates).run((s1, w1))
+          val finalState = orchestrator.applyOpponentForcedSwitch(orchestrator.applyForcedSwitch(s2, c1), c2)
+          ((finalState, w2), ())
+
+        case _ => ((bs, w), ())
+
   def gameLoop: State[(BattleState, Window), Unit] = for
     action1 <- getPlayerAction
     _ <- mv(nop, _ => transitionScreen("Player2's turn. Change the controller!"))
@@ -196,36 +218,12 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     yield a
 
     result <- resolveHotSeatTurn(action1, action2)
-    _ <- refreshMoveButtons
-
+    _ <- handleTurnResult(result)
     _ <- result match
-      case ForcedSwitch(candidates) =>
-        for
-          newPokemon <- showForcedSwitchMenu("Player1: Pokemon KO, select a substitute [mandatory]:", candidates)
-          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyForcedSwitch(bs, newPokemon)), _ => State.unit[Window, Unit](()))
-          _ <- gameLoop
-        yield ()
-
-      case OpponentForcedSwitch(candidates) =>
-        for
-          newPokemon <- showForcedSwitchMenu("Player2: Pokemon KO, select a substitute [mandatory]:", candidates)
-          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyOpponentForcedSwitch(bs, newPokemon)), _ => State.unit[Window, Unit](()))
-          _ <- gameLoop
-        yield ()
-
-      case BothForcedSwitch(candidates, oppCandidates) =>
-        for
-          newPokemon <- showForcedSwitchMenu("Player1: Pokemon KO, select a substitute [mandatory]:", candidates)
-          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyForcedSwitch(bs, newPokemon)), _ => State.unit[Window, Unit](()))
-          newOpponentPokemon <- showForcedSwitchMenu("Player2: Pokemon KO, select a substitute [mandatory]:", oppCandidates)
-          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyOpponentForcedSwitch(bs, newOpponentPokemon)), _ => State.unit[Window, Unit](()))
-          _ <- gameLoop
-        yield ()
-
       case SelfWins =>
-        mv(nop, _ => updateLabel("PLAYER 1 WINS", "BattleStatus"))
+        mv(nop, _ => transitionScreen("PLAYER 1 WINS"))
       case SelfLoses =>
-        mv(nop, _ => updateLabel("PLAYER 2 WINS", "BattleStatus"))
+        mv(nop, _ => transitionScreen("PLAYER 2 WINS"))
       case _ =>
         gameLoop
   yield ()

@@ -45,8 +45,7 @@ object SwingFacade:
     private var textAreas = Map.empty[String, TextArea]
 
     private val topPanel = new BoxPanel(Orientation.Vertical)
-    private val bottomPanel = new BoxPanel(Orientation.Horizontal)
-    private val gridPanel = new GridPanel(0, 4)
+    private val gridPanel = new GridPanel(3, 2)
     private val menuPanel = new BoxPanel(Orientation.Vertical)
 
     private var currentCenter: Component = menuPanel
@@ -54,7 +53,7 @@ object SwingFacade:
     private val rootPanel = new BorderPanel:
       add(topPanel, BorderPanel.Position.North)
       add(menuPanel, BorderPanel.Position.Center)
-      add(bottomPanel, BorderPanel.Position.South)
+      add(gridPanel, BorderPanel.Position.South)
 
     private val frame = new MainFrame:
       title = "Scalamon"
@@ -89,13 +88,12 @@ object SwingFacade:
       button.reactions += {
         case ButtonClicked(_) => notifyEvent(name)
       }
-      button.listenTo(button)
       buttons(name) = button
       if name.startsWith("Pick_") || name.startsWith("MovePick_") then
         button.preferredSize = new Dimension(180, 60)
         gridPanel.contents += button
-      else
-        bottomPanel.contents += button
+      else if name.startsWith("Move") || name.startsWith("ItemMenu") || name.startsWith("SwitchMenu") then
+        gridPanel.contents += button
       rootPanel.revalidate()
       rootPanel.repaint()
       this
@@ -163,7 +161,6 @@ object SwingFacade:
       topPanel.contents.clear()
       menuPanel.contents.clear()
       gridPanel.contents.clear()
-      bottomPanel.contents.clear()
       labels = Map()
       panel.revalidate()
       panel.repaint()
