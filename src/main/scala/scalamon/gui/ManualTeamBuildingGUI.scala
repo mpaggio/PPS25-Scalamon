@@ -1,6 +1,6 @@
 package scalamon.gui
 
-import scalamon.domain.moves.Move
+import scalamon.domain.moves.{DamageMove, Move, StatusMove}
 import scalamon.domain.moves.MoveDatabase.{allMoves, findByName}
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
@@ -16,6 +16,34 @@ object ManualTeamBuildingGUI:
 
   private def pokemonButtonName(pokemon: Pokemon): String =
     s"Pick_${pokemon.name}"
+
+  private def pokemonTooltipText(pokemon: Pokemon): String =
+    s"""<html>
+       |<b>${pokemon.name}</b><br/>
+       |Type: ${pokemon.pokemonType}<br/>
+       |Stats: ${pokemon.baseStats}<br/>
+       |Ability: ${pokemon.abilitySlot}
+       |</html>""".stripMargin
+
+  private def moveTooltipText(move: Move): String = move match
+    case damage: DamageMove =>
+      s"""<html>
+         |<b>${damage.name}</b><br/>
+         |Type: ${damage.moveType}<br/>
+         |Category: ${damage.category}<br/>
+         |Power: ${damage.power}<br/>
+         |Accuracy: ${damage.accuracy}<br/>
+         |PP: ${damage.pp}
+         |</html>""".stripMargin
+
+    case status: StatusMove =>
+      s"""<html>
+         |<b>${status.name}</b><br/>
+         |Type: ${status.moveType}<br/>
+         |Category: ${status.category}<br/>
+         |Accuracy: ${status.accuracy}<br/>
+         |PP: ${status.pp}<br/>
+         |</html>""".stripMargin
 
   private def moveButtonName(move: Move): String =
     s"MovePick_${move.name}"
@@ -40,6 +68,7 @@ object ManualTeamBuildingGUI:
       for
         _ <- acc
         _ <- addButton(pokemon.name, pokemonButtonName(pokemon))
+        _ <- setButtonTooltip(pokemonButtonName(pokemon), pokemonTooltipText(pokemon))
       yield ()
     }
     _ <- addButton("Cancel last choice", "CancelLastChoice")
@@ -106,6 +135,7 @@ object ManualTeamBuildingGUI:
       for
         _ <- acc
         _ <- addButton(move.name, moveButtonName(move))
+        _ <- setButtonTooltip(moveButtonName(move), moveTooltipText(move))
       yield ()
     }
     _ <- addButton("Cancel last choice", "CancelLastMoveChoice")

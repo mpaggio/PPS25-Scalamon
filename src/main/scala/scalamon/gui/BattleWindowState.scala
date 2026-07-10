@@ -16,6 +16,7 @@ trait BattleWindowState:
   def addCenterLabel(text: String, name: String): State[Window, Unit]
   def updateLabel(text: String, name: String): State[Window, Unit]
   def updateButtonText(text: String, name: String): State[Window, Unit]
+  def setButtonTooltip(name: String, text: String): State[Window, Unit]
   def show(): State[Window, Unit]
   def clear(): State[Window, Unit]
   def useMenuCenter(): State[Window, Unit]
@@ -48,6 +49,8 @@ object BattleWindowStateImpl extends BattleWindowState:
     State(w => (w.updateLabel(text, name), ()))
   def updateButtonText(text: String, name: String): State[Window, Unit] =
     State(w => (w.updateButtonText(text, name), ()))
+  def setButtonTooltip(name: String, text: String): State[Window, Unit] =
+    State(w => (w.setButtonTooltip(name, text), ()))
   def show(): State[Window, Unit] =
     State(w => (w.show(), ()))
   def clear(): State[Window, Unit] =

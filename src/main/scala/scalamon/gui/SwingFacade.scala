@@ -21,6 +21,7 @@ object SwingFacade:
     def addCenterLabel(text: String, name: String): Frame
     def updateLabel(text: String, name: String): Frame
     def updateButtonText(text: String, name: String): Frame
+    def setButtonTooltip(name: String, text: String): Frame
     def show(): Frame
     def clear(): Frame
     def useMenuCenter(): Frame
@@ -115,6 +116,10 @@ object SwingFacade:
       buttons.get(name).foreach(_.text = text)
       rootPanel.revalidate()
       rootPanel.repaint()
+      this
+
+    def setButtonTooltip(name: String, text: String): Frame =
+      buttons.get(name).foreach(_.tooltip = text)
       this
 
     def addLabel(text: String, labelName: String): Frame =
