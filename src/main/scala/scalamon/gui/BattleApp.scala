@@ -198,18 +198,27 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
           val ((nextBs, nextW), choice) =
             showForcedSwitchMenu("Player1: Pokemon KO, select a substitute [mandatory]:", candidates).run((bs, w))
           val stateAfterSwitch = orchestrator.applyForcedSwitch(nextBs, choice)
+          w.updateTextArea(stateAfterSwitch.logs.getLog, "BattleLog")
+          w.updateLabel(battleStatusString(stateAfterSwitch), "BattleStatus")
+          w.updateLabel(weatherString(stateAfterSwitch), "WeatherStatus")
           ((stateAfterSwitch, nextW), ())
 
         case OpponentForcedSwitch(candidates) =>
           val ((nextBs, nextW), choice) =
             showForcedSwitchMenu("Player2: Pokemon KO, select a substitute [mandatory]:", candidates).run((bs, w))
           val stateAfterSwitch = orchestrator.applyOpponentForcedSwitch(nextBs, choice)
+          w.updateTextArea(stateAfterSwitch.logs.getLog, "BattleLog")
+          w.updateLabel(battleStatusString(stateAfterSwitch), "BattleStatus")
+          w.updateLabel(weatherString(stateAfterSwitch), "WeatherStatus")
           ((stateAfterSwitch, nextW), ())
 
         case BothForcedSwitch(candidates, oppCandidates) =>
           val ((s1, w1), c1) = showForcedSwitchMenu("Player 1, choose replacement:", candidates).run((bs, w))
           val ((s2, w2), c2) = showForcedSwitchMenu("Player 2, choose replacement:", oppCandidates).run((s1, w1))
           val finalState = orchestrator.applyOpponentForcedSwitch(orchestrator.applyForcedSwitch(s2, c1), c2)
+          w.updateTextArea(finalState.logs.getLog, "BattleLog")
+          w.updateLabel(battleStatusString(finalState), "BattleStatus")
+          w.updateLabel(weatherString(finalState), "WeatherStatus")
           ((finalState, w2), ())
 
         case _ => ((bs, w), ())
@@ -225,6 +234,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
     result <- resolveHotSeatTurn(action1, action2)
     _ <- handleTurnResult(result)
+    _ <- refreshMoveButtons
     _ <- result match
       case SelfWins =>
         mv(nop, _ => transitionScreen("PLAYER 1 WINS"))

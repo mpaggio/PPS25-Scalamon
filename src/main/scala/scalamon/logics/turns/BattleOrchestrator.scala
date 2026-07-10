@@ -99,7 +99,6 @@ final class BattleOrchestrator(using DamagePolicy):
   private def executeNonDamageMove(move: Move)(state: BattleState): BattleState =
     val afterMove = MoveAction(move)(state)
     val flipped = switchSelfOpponent(afterMove)
-    println(s"DEBUG: ${flipped.self.getActive.species.name} status = ${flipped.self.getActive.statusCondition}")
     switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flipped))
 
   private def applyTriggerForBoth(trigger: AbilityTrigger)(state: BattleState): BattleState =
