@@ -8,7 +8,7 @@ trait PlayerStateModule extends StateComponent:
   override protected type State = PlayerState
   override protected type InnerState = PokemonState
 
-  def playerInitialState(team: Map[PokemonId, PokemonState], active: PokemonId, items: Items): PlayerState
+  def playerInitialState(name: String, team: Map[PokemonId, PokemonState], active: PokemonId, items: Items): PlayerState
 
   def switchActive(newActive: PokemonId): Op
   def active(f: InnerOp): Op
@@ -18,7 +18,7 @@ trait PlayerStateModule extends StateComponent:
   def items(f: Items => Items): Op
 
 object PlayerStateModuleImpl extends PlayerStateModule:
-  case class Ps(team: Map[String, PokemonState], activeId: String, items: Items):
+  case class Ps(name: String, team: Map[String, PokemonState], activeId: String, items: Items):
     def getActive: PokemonState = team(activeId)
 
   override type PlayerState = Ps
@@ -26,11 +26,11 @@ object PlayerStateModuleImpl extends PlayerStateModule:
   override type PokemonId = String
   override type Items = Set[scalamon.domain.actions.Items.Item]
 
-  def playerInitialState(team: Map[PokemonId, PokemonState], active: PokemonId): PlayerState =
-    playerInitialState(team, active, Set.empty)
+  def playerInitialState(name: String, team: Map[PokemonId, PokemonState], active: PokemonId): PlayerState =
+    playerInitialState(name, team, active, Set.empty)
     
-  override def playerInitialState(team: Map[PokemonId, PokemonState], active: PokemonId, items: Items): PlayerState =
-    Ps(team, active, items)
+  override def playerInitialState(name: String, team: Map[PokemonId, PokemonState], active: PokemonId, items: Items): PlayerState =
+    Ps(name, team, active, items)
 
   private def mapValues[K, V](m: Map[K, V])(f: V => V): Map[K, V] = m.map(e => (e._1, f(e._2)))
 

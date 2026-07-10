@@ -6,6 +6,8 @@ import AbilityTrigger.*
 import Target.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.domain.moves.AlteredStatus.*
+import scalamon.logics.log.BattleLogger
+import scalamon.logics.log.BattleLogger.logUseItem
 
 object Items:
 
@@ -20,9 +22,10 @@ object Items:
       if bs.self.items.contains(this) then
         val addCancel = addPassiveEffect(t => if until.contains(t) then onCancel else identity)
         val consumeItem = self(items(_ - this))
-        (effect andThen addCancel andThen consumeItem)(bs)
+        val logItemUse = updateLogs(logUseItem(bs.self, name))
+        (effect andThen addCancel andThen consumeItem andThen logItemUse)(bs)
       else
-        bs
+        updateLogs(BattleLogger.logError(s"Item $name not founf"))(bs)
 
     override def equals(obj: Any): Boolean = obj match
       case item: Item => this.name == item.name

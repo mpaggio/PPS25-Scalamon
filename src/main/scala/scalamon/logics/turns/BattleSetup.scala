@@ -17,6 +17,6 @@ object BattleSetup:
    * @return
    */
   def setupBattle(player1Builder: TeamBuilder, player2Builder: TeamBuilder): BattleState =
-    val player1: PlayerState = player1Builder.buildTeam()
-    val player2: PlayerState = player2Builder.buildTeam()
+    val player1: PlayerState = player1Builder.buildTeam("Player 1")
+    val player2: PlayerState = player2Builder.buildTeam("Player 2")
     battleState(player1, player2)
