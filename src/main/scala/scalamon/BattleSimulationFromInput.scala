@@ -156,12 +156,10 @@ object BattleSimulationFromInput extends App:
     val player1Action = chooseAction("Player1", state.self)
     val player2Action = chooseAction("Player2", state.opponent)
 
-    val (newState, result) =
-      orchestrator.runTurn(state, TurnChoices(player1Action, player2Action), speedOf)
-    state = newState._1
+    val (newState, result) = orchestrator.runTurn(state, TurnChoices(player1Action, player2Action), speedOf)
+    state = newState
 
-    println(newState._2.getLog)
-    printState(state, turn)
+    println(newState.logs.getLog)
 
     result match
       case Ongoing(_) => ()

@@ -1,11 +1,12 @@
 package scalamon.logics.teambuilder
 
+import scalamon.domain.actions.Items
 import scalamon.domain.moves.Move
 import scalamon.domain.moves.MoveDatabase.allMoves
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex.*
 import scalamon.logics.state.MoveStateModuleImpl.{MoveState, moveInitialState}
-import scalamon.logics.state.PlayerStateModuleImpl.{PlayerState, PokemonState, playerState}
+import scalamon.logics.state.PlayerStateModuleImpl.{PlayerState, PokemonState, playerInitialState}
 import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
 
 /**
@@ -59,14 +60,14 @@ object TeamBuilder:
      * @return A fully initialized [[PlayerState]] ready for battle.
      * @throws IllegalArgumentException if the chosen team size is not exactly 6.
      */
-    final def buildTeam(): PlayerState =
+    final def buildTeam(playerName: String): PlayerState =
       val chosenPokemonTeam: List[Pokemon] = choosePokemonTeam(allPokemons)
       require(
         chosenPokemonTeam.size == numberOfPokemonPerTeam,
         s"Every player team must contain exactly $numberOfPokemonPerTeam Pokemon"
       )
       val team: Map[String, PokemonState] = chosenPokemonTeam.map(p => p.name -> buildPokemonState(p)).toMap
-      playerState(team, chosenPokemonTeam.head.name)
+      playerInitialState(playerName, team, chosenPokemonTeam.head.name, Items.all)      // TODO : item selection
 
     /**
      * Template Method for creating a [[PokemonState]].

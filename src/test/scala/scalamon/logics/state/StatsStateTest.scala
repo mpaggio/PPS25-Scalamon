@@ -3,7 +3,6 @@ package scalamon.logics.state
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import scalamon.logics.state.StatsStateModuleImpl.{decrease, *}
-import scalamon.domain.pokemon.statistics.Stats
 
 class StatsStateTest extends AnyWordSpec with Matchers with StateFixtures:
   

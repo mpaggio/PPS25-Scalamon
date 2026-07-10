@@ -24,13 +24,3 @@ object Speed:
      */
     def value: Int = speed
     def >=(other: Speed): Boolean = speed >= other.value
-
-/**
- * A battle action scheduled together with the speed used to resolve its order.
- *
- * @param action
- *   the battle action to execute
- * @param speed
- *   the speed associated with the action
- */
-final case class ScheduledAction(action: BattleAction, speed: Speed)

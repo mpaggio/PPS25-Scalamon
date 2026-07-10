@@ -11,13 +11,17 @@ trait BattleWindowState:
   def initialWindow: Window
   def setSize(width: Int, height: Int): State[Window, Unit]
   def addButton(text: String, name: String): State[Window, Unit]
+  def addCenterButton(text: String, name: String): State[Window, Unit]
   def addLabel(text: String, name: String): State[Window, Unit]
   def addTextArea(text: String, name: String): State[Window, Unit]
+  def addCenterLabel(text: String, name: String): State[Window, Unit]
   def updateLabel(text: String, name: String): State[Window, Unit]
   def updateButtonText(text: String, name: String): State[Window, Unit]
   def updateTextArea(text: String, name: String): State[Window, Unit]
   def show(): State[Window, Unit]
   def clear(): State[Window, Unit]
+  def useMenuCenter(): State[Window, Unit]
+  def useGridCenter(): State[Window, Unit]
   def nextEvent(): State[Window, String]
 
 /**
@@ -36,10 +40,14 @@ object BattleWindowStateImpl extends BattleWindowState:
     State(w => (w.setSize(width, height), ()))
   def addButton(text: String, name: String): State[Window, Unit] =
     State(w => (w.addButton(text, name), ()))
+  def addCenterButton(text: String, name: String): State[Window, Unit] =
+    State(w => (w.addCenterButton(text, name), ()))
   def addLabel(text: String, name: String): State[Window, Unit] =
     State(w => (w.addLabel(text, name), ()))
   def addTextArea(text: String, name: String): State[Window, Unit] =
     State(w => (w.addTextArea(text, name), ()))
+  def addCenterLabel(text: String, name: String): State[Window, Unit] =
+    State(w => (w.addCenterLabel(text, name), ()))
   def updateLabel(text: String, name: String): State[Window, Unit] =
     State(w => (w.updateLabel(text, name), ()))
   def updateButtonText(text: String, name: String): State[Window, Unit] =
@@ -50,5 +58,9 @@ object BattleWindowStateImpl extends BattleWindowState:
     State(w => (w.show(), ()))
   def clear(): State[Window, Unit] =
     State(w => (w.clear(), ()))
+  def useMenuCenter(): State[Window, Unit] =
+    State(w => (w.useMenuCenter(), ()))
+  def useGridCenter(): State[Window, Unit] =
+    State(w => (w.useGridCenter(), ()))
   def nextEvent(): State[Window, String] =
     State(w => (w, w.nextEvent()))

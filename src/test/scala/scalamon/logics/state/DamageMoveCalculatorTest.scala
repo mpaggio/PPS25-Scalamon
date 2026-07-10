@@ -13,7 +13,7 @@ import scalamon.domain.pokemon.statistics.Stats
 import scalamon.domain.types.Type.*
 import scalamon.logics.state.BattleStateImpl.battleState
 import scalamon.logics.state.DamageMoveCalculatorImpl.getDamage
-import scalamon.logics.state.PlayerStateModuleImpl.playerState
+import scalamon.logics.state.PlayerStateModuleImpl.playerInitialState
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.state.DamagePolicy.Medium.given
@@ -41,11 +41,11 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   val attackerPokemonState: PokemonStateModuleImpl.Pks = pokemonInitialState(attackerSpecies, attackerMoves)
   val defenderPokemonState: PokemonStateModuleImpl.Pks = pokemonInitialState(defenderSpecies, defenderMoves)
 
-  val playerAtk: PlayerStateModuleImpl.Ps = playerState(
+  val playerAtk: PlayerStateModuleImpl.Ps = playerInitialState(
     team = Map("Charmander" -> attackerPokemonState),
     active = "Charmander"
   )
-  val playerDef: PlayerStateModuleImpl.Ps = playerState(
+  val playerDef: PlayerStateModuleImpl.Ps = playerInitialState(
     team = Map("Bulbasaur" -> defenderPokemonState),
     active = "Bulbasaur"
   )
@@ -67,7 +67,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage should increase if attacker's attack stat increases (Physical)"){
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val boostedPlayerAtk = playerState(
+    val boostedPlayerAtk = playerInitialState(
       team = Map("Charmander" -> modifyStats(attack(increase(50)))(attackerPokemonState)),
       active = "Charmander"
     )
@@ -83,7 +83,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage should decrease if defender's defense stat increases (Physical)") {
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val tankPlayerDef = playerState(
+    val tankPlayerDef = playerInitialState(
       team = Map("Bulbasaur" -> modifyStats(defense(increase(50)))(defenderPokemonState)),
       active = "Bulbasaur"
     )
@@ -99,7 +99,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage should increase if attacker's specialAttack stat increases (Special)") {
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val boostedPlayerAtk = playerState(
+    val boostedPlayerAtk = playerInitialState(
       team = Map("Charmander" -> modifyStats(specialAttack(increase(50)))(attackerPokemonState)),
       active = "Charmander"
     )
@@ -115,7 +115,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage should decrease if defender's specialDefense stat increases (Special)") {
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val tankPlayerDef = playerState(
+    val tankPlayerDef = playerInitialState(
       team = Map("Bulbasaur" -> modifyStats(specialDefense(increase(50)))(defenderPokemonState)),
       active = "Bulbasaur"
     )

@@ -52,8 +52,8 @@ final class WeatherEndTurnResolverTest extends AnyFunSuite:
     val opponentPokemon = mkPokemon("opp", opponentType, 160)
     val selfState = mkPokemonState(selfPokemon, selfHp)
     val opponentState = mkPokemonState(opponentPokemon, opponentHp)
-    val selfPlayer = playerState(Map("self" -> selfState), "self")
-    val opponentPlayer = playerState(Map("opp" -> opponentState), "opp")
+    val selfPlayer = playerInitialState(Map("self" -> selfState), "self")
+    val opponentPlayer = playerInitialState(Map("opp" -> opponentState), "opp")
     setWeather(weather)(battleState(selfPlayer, opponentPlayer))
 
   test("Rain damages Fire active pokemon at the end of the turn") {
