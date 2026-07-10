@@ -53,11 +53,11 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     s"$title:\n$teamDetails"
 
   def getInitialSetupLog(mode: String, bs: BattleState): String =
-    s"--- SETUP INIZIALE ---\n" +
-    s"Modalità selezionata: $mode\n\n" +
+    s"--- INITIAL SETUP ---\n" +
+    s"Selected mode: $mode\n\n" +
     teamToString("TEAM PLAYER 1", bs.self) + "\n\n" +
     teamToString("TEAM PLAYER 2", bs.opponent) + "\n\n" +
-    s"Lead iniziale: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}\n" +
+    s"Initial lead: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}\n" +
     s"-----------------------\n\n"
 
   def getStatus: State[BattleState, String] =
@@ -75,7 +75,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
   def windowCreation(initialInfo: String): State[Window, Unit] = for
     _ <- clear()
-    _ <- setSize(500, 400)
+    _ <- setSize(500, 600)
     _ <- addLabel(initialInfo, "BattleStatus")
     _ <- addTextArea("", "BattleLog")
     _ <- addButton("Attack 1", "Move1")
@@ -83,6 +83,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     _ <- addButton("Attack 3", "Move3")
     _ <- addButton("Attack 4", "Move4")
     _ <- addButton("Switch Pokemon", "SwitchMenu")
+    _ <- addButton("Use item", "ItemMenu")
     _ <- show()
   yield ()
 
@@ -115,6 +116,36 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
         ((bs, w), action)
 
+  def showForcedSwitchMenu(message: String, candidates: List[PokemonRef]): State[(BattleState, Window), PokemonRef] = State:
+    case (bs, w) =>
+      val selection = javax.swing.JOptionPane.showInputDialog(
+        null, "Select a Pokemon to switch to [mandatory]:", "MandatorySwitch",
+        javax.swing.JOptionPane.WARNING_MESSAGE, null,
+        candidates.map(_.value).toArray.asInstanceOf[Array[Object]], candidates.head.value
+      )
+      val chosenRef = if (selection != null) PokemonRef(selection.toString) else candidates.head
+      ((bs, w), chosenRef)
+
+  def showItemMenu: State[(BattleState, Window), BattleAction] = State:
+    case (bs, w) =>
+      val available = bs.self.items.map(_.name).toList
+
+      if (available.isEmpty)
+        javax.swing.JOptionPane.showMessageDialog(null, "No available items")
+        ((bs, w), UseMove(MoveRef(firstAvailableMove(bs.self))))
+      else
+        val selection = javax.swing.JOptionPane.showInputDialog(
+          null, "Select an item to use:", "Items",
+          javax.swing.JOptionPane.QUESTION_MESSAGE, null,
+          available.toArray.asInstanceOf[Array[Object]], available.head
+        )
+        val action = if selection != null then
+          UseItem(selection.toString)
+        else
+          UseMove(MoveRef("Skip"))
+
+        ((bs, w), action)
+
   def setupState(selectedMode: String): State[(BattleState, Window), Unit] = for
     _ <- mv(getStatus, windowCreation)
     _ <- State[(BattleState, Window), Unit] :
@@ -128,6 +159,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     event <- mv(nop, _ => nextEvent())
     action <- event match
       case "SwitchMenu" => showSwitchMenu
+      case "ItemMenu" => showItemMenu
       case m if m.startsWith("Move") =>
         State[(BattleState, Window), BattleAction]:
           case (bs, w) =>
@@ -138,7 +170,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
   def resolveHotSeatTurn(a1: BattleAction, a2: BattleAction): State[(BattleState, Window), TurnResult] = State:
     case (bs, w) =>
-      val (newState, result) = orchestrator.runTurn(bs, TurnChoices(a1, a2), speedOf)
+      val (result, newState) = orchestrator.runTurn(bs, TurnChoices(a1, a2), speedOf)
 
       w.updateTextArea(newState.logs.getLog, "BattleLog")
       w.updateLabel(battleStatusString(newState), "BattleStatus")
@@ -162,13 +194,37 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
       a <- getPlayerAction
       _ <- switchPlayerPerspective
     yield a
+
     result <- resolveHotSeatTurn(action1, action2)
     _ <- refreshMoveButtons
 
     _ <- result match
-      case SelfWins(_) =>
+      case ForcedSwitch(candidates) =>
+        for
+          newPokemon <- showForcedSwitchMenu("Player1: Pokemon KO, select a substitute [mandatory]:", candidates)
+          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyForcedSwitch(bs, newPokemon)), _ => State.unit[Window, Unit](()))
+          _ <- gameLoop
+        yield ()
+
+      case OpponentForcedSwitch(candidates) =>
+        for
+          newPokemon <- showForcedSwitchMenu("Player2: Pokemon KO, select a substitute [mandatory]:", candidates)
+          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyOpponentForcedSwitch(bs, newPokemon)), _ => State.unit[Window, Unit](()))
+          _ <- gameLoop
+        yield ()
+
+      case BothForcedSwitch(candidates, oppCandidates) =>
+        for
+          newPokemon <- showForcedSwitchMenu("Player1: Pokemon KO, select a substitute [mandatory]:", candidates)
+          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyForcedSwitch(bs, newPokemon)), _ => State.unit[Window, Unit](()))
+          newOpponentPokemon <- showForcedSwitchMenu("Player2: Pokemon KO, select a substitute [mandatory]:", oppCandidates)
+          _ <- mv(BattleStateAdapter.fromOp(bs => orchestrator.applyOpponentForcedSwitch(bs, newOpponentPokemon)), _ => State.unit[Window, Unit](()))
+          _ <- gameLoop
+        yield ()
+
+      case SelfWins =>
         mv(nop, _ => updateLabel("PLAYER 1 WINS", "BattleStatus"))
-      case SelfLoses(_) =>
+      case SelfLoses =>
         mv(nop, _ => updateLabel("PLAYER 2 WINS", "BattleStatus"))
       case _ =>
         gameLoop

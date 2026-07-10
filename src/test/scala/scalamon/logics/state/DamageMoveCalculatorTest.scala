@@ -63,7 +63,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage should return a positive value with valid inputs"){
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val damage = getDamage(state, physicalMove)
+    val damage = getDamage(state, physicalMove).damage
     assert(damage > 0, s"Expected damage to be positive, but got $damage")
   }
 
@@ -77,8 +77,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     val stateNormal = battleState(playerAtk, playerDef)
     val stateBoosted = battleState(boostedPlayerAtk, playerDef)
 
-    val damageNormal = getDamage(stateNormal, physicalMove)
-    val damageBoosted = getDamage(stateBoosted, physicalMove)
+    val damageNormal = getDamage(stateNormal, physicalMove).damage
+    val damageBoosted = getDamage(stateBoosted, physicalMove).damage
 
     assert(damageBoosted > damageNormal,
       s"Expected boosted damage ($damageBoosted) > normal damage ($damageNormal)")
@@ -94,8 +94,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     val stateNormal = battleState(playerAtk, playerDef)
     val stateTank = battleState(playerAtk, tankPlayerDef)
 
-    val damageNormal = getDamage(stateNormal, physicalMove)
-    val damageTank = getDamage(stateTank, physicalMove)
+    val damageNormal = getDamage(stateNormal, physicalMove).damage
+    val damageTank = getDamage(stateTank, physicalMove).damage
 
     assert(damageTank < damageNormal,
       s"Expected boosted damage ($damageTank) < normal damage ($damageNormal)")
@@ -111,8 +111,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     val stateNormal = battleState(playerAtk, playerDef)
     val stateBoosted = battleState(boostedPlayerAtk, playerDef)
 
-    val damageNormal = getDamage(stateNormal, specialMove)
-    val damageBoosted = getDamage(stateBoosted, specialMove)
+    val damageNormal = getDamage(stateNormal, specialMove).damage
+    val damageBoosted = getDamage(stateBoosted, specialMove).damage
 
     assert(damageBoosted > damageNormal,
       s"Expected boosted damage ($damageBoosted) > normal damage ($damageNormal)")
@@ -128,8 +128,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     val stateNormal = battleState(playerAtk, playerDef)
     val stateTank = battleState(playerAtk, tankPlayerDef)
 
-    val damageNormal = getDamage(stateNormal, specialMove)
-    val damageTank = getDamage(stateTank, specialMove)
+    val damageNormal = getDamage(stateNormal, specialMove).damage
+    val damageTank = getDamage(stateTank, specialMove).damage
 
     assert(damageTank < damageNormal,
       s"Expected tank damage ($damageTank) > normal damage ($damageNormal)")
@@ -137,8 +137,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage should use different stats for Physical and Special move categories") {
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val damagePhysical = getDamage(state, physicalMove)
-    val damageSpecial = getDamage(state, specialMove)
+    val damagePhysical = getDamage(state, physicalMove).damage
+    val damageSpecial = getDamage(state, specialMove).damage
 
     assert(damagePhysical != damageSpecial,
       "Expected different damage values for Physical and Special moves, but got the same value")
@@ -148,8 +148,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     given ProbabilityRoll = () => 100 // Force no critical hit
     val lowPowerMove = move named "Low" withPower 20 withPP 35 withAccuracy 100 withType Normal as Physical
     val highPowerMove = move named "High" withPower 80 withPP 35 withAccuracy 100 withType Normal as Physical
-    val damageLow = getDamage(state, lowPowerMove)
-    val damageHigh = getDamage(state, highPowerMove)
+    val damageLow = getDamage(state, lowPowerMove).damage
+    val damageHigh = getDamage(state, highPowerMove).damage
     assert(damageHigh > damageLow,
       s"Expected higher power move to deal more damage, but got $damageHigh <= $damageLow")
   }
@@ -158,16 +158,16 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     given ProbabilityRoll = () => 100 // Force no critical hit
     val noSTABMove = move named "Tackle" withPower 40 withPP 35 withAccuracy 100 withType Normal as Special
     val stabMove = move named "Ember" withPower 40 withPP 25 withAccuracy 100 withType Fire as Special
-    val damageNoSTAB = getDamage(state, noSTABMove)
-    val damageSTAB = getDamage(state, stabMove)
+    val damageNoSTAB = getDamage(state, noSTABMove).damage
+    val damageSTAB = getDamage(state, stabMove).damage
     assert(damageSTAB > damageNoSTAB,
       s"Expected STAB ($damageSTAB) to be greater than no STAB ($damageNoSTAB), but got $damageSTAB <= $damageNoSTAB")
   }
 
   test("getDamage should apply X2 multiplier when move is SuperEffective"){
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val damageNeutral = getDamage(state, physicalMove)
-    val damageSuperEffective = getDamage(state, specialMove)
+    val damageNeutral = getDamage(state, physicalMove).damage
+    val damageSuperEffective = getDamage(state, specialMove).damage
     assert(damageSuperEffective > damageNeutral,
       s"Expected super effective damage ($damageSuperEffective) to be greater than neutral damage ($damageNeutral)," +
         s" but got $damageSuperEffective <= $damageNeutral")
@@ -175,8 +175,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage should apply 0.5 multiplier when move is NotVeryEffective"){
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val damageNeutral = getDamage(state, physicalMove)
-    val damageNotVeryEffective = getDamage(state, notVeryEffectiveMove)
+    val damageNeutral = getDamage(state, physicalMove).damage
+    val damageNotVeryEffective = getDamage(state, notVeryEffectiveMove).damage
     assert(damageNotVeryEffective < damageNeutral,
       s"Expected not very effective damage ($damageNotVeryEffective) to be less than neutral damage ($damageNeutral)," +
         s" but got $damageNotVeryEffective >= $damageNeutral")
@@ -184,8 +184,8 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
 
   test("getDamage with STAB & SuperEffective should produce higher damage than without STAB and Neutral effectiveness") {
     given ProbabilityRoll = () => 100 // Force no critical hit
-    val NoSTABAndNeutralDamage = getDamage(state, physicalMove)
-    val STABAndSuperEffectiveDamage = getDamage(state, stabMove)
+    val NoSTABAndNeutralDamage = getDamage(state, physicalMove).damage
+    val STABAndSuperEffectiveDamage = getDamage(state, stabMove).damage
 
     assert(STABAndSuperEffectiveDamage > NoSTABAndNeutralDamage,
       s"Expected STAB + Super Effective damage ($STABAndSuperEffectiveDamage) to be greater than no STAB + Neutral damage ($NoSTABAndNeutralDamage), " +
@@ -195,10 +195,10 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage should be lower in Easy Mode than in Medium Mode") {
     given ProbabilityRoll = () => 100 // Force no critical hit
     import scalamon.logics.state.DamagePolicy.Easy.given
-    val easyDamage = getDamage(state, physicalMove)
+    val easyDamage = getDamage(state, physicalMove).damage
     {
       import scalamon.logics.state.DamagePolicy.Medium.given
-      val mediumDamage = getDamage(state, physicalMove)
+      val mediumDamage = getDamage(state, physicalMove).damage
       assert(easyDamage < mediumDamage,
       s"Expected damage in Easy Mode ($easyDamage) to be less than damage in Medium Mode ($mediumDamage)," +
         s" but got $easyDamage >= $mediumDamage")
@@ -208,10 +208,10 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage should be lower in Medium Mode than in Hard Mode") {
     given ProbabilityRoll = () => 100 // Force no critical hit
     import scalamon.logics.state.DamagePolicy.Medium.given
-    val mediumDamage = getDamage(state, physicalMove)
+    val mediumDamage = getDamage(state, physicalMove).damage
     {
       import scalamon.logics.state.DamagePolicy.Hard.given
-      val hardDamage = getDamage(state, physicalMove)
+      val hardDamage = getDamage(state, physicalMove).damage
       assert(mediumDamage < hardDamage,
         s"Expected damage in Medium Mode ($mediumDamage) to be less than damage in Hard Mode ($hardDamage)," +
           s" but got $mediumDamage >= $hardDamage")
@@ -221,10 +221,10 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
   test("getDamage with critical hit should deal 1.5x more damage") {
     val damageCritical = locally: // To separate the scope of the given instance
       given ProbabilityRoll = () => 1 // Force a critical hit
-      getDamage(state, physicalMove)
+      getDamage(state, physicalMove).damage
     val damageNormal = locally:
       given ProbabilityRoll = () => 100 // Force no critical hit
-      getDamage(state, physicalMove)
+      getDamage(state, physicalMove).damage
     assert(damageCritical == (damageNormal * 1.5).toInt || damageCritical == (damageNormal * 1.5).toInt + 1,
       s"Expected critical ($damageCritical) to be circa = normal * 1.5 (${(damageNormal * 1.5).toInt})")
   }
@@ -241,10 +241,10 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     )
     val damageBoosted = locally:
       given ProbabilityRoll = () => 10 // Force a critical hit with boosted chance
-      getDamage(state, highCriticalMove)
+      getDamage(state, highCriticalMove).damage
     val damageNormal = locally:
       given ProbabilityRoll = () => 10 // Force a critical hit with normal chance
-      getDamage(state, physicalMove)
+      getDamage(state, physicalMove).damage
     assert(damageBoosted > damageNormal,
       s"Expected high critical move ($damageBoosted) > normal move ($damageNormal) at roll = 10")
   }

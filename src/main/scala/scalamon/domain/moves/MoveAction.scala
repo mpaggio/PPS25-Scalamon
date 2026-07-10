@@ -45,10 +45,12 @@ case class MoveAction(move: Move, target: Target = Opponent)(using policy: Damag
     val damageStep: StateTransformer = battleState =>
       if isHit then move match
         case damageMove: DamageMove =>
-          val damageActive = active(currentHp(decrease(getDamage(battleState, damageMove))))
+          val damageResult = getDamage(battleState, damageMove)
+          val loggedState = damageResult.logs.foldLeft(battleState)((bs, msg) => updateLogs(BattleLogger.logMessage(msg))(bs))
+          val damageActive = active(currentHp(decrease(damageResult.damage)))
           target match
-            case Self => self(damageActive)(battleState)
-            case Opponent => opponent(damageActive)(battleState)
+            case Self => self(damageActive)(loggedState)
+            case Opponent => opponent(damageActive)(loggedState)
         case statusMove: StatusMove => battleState
       else
         battleState

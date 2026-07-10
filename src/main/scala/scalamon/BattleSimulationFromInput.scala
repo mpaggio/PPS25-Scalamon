@@ -156,15 +156,15 @@ object BattleSimulationFromInput extends App:
     val player1Action = chooseAction("Player1", state.self)
     val player2Action = chooseAction("Player2", state.opponent)
 
-    val (newState, result) = orchestrator.runTurn(state, TurnChoices(player1Action, player2Action), speedOf)
+    val (result, newState) = orchestrator.runTurn(state, TurnChoices(player1Action, player2Action), speedOf)
     state = newState
 
     println(newState.logs.getLog)
 
     result match
-      case Ongoing(_) => ()
+      case Ongoing => ()
 
-      case ForcedSwitch(_, candidates) =>
+      case ForcedSwitch(candidates) =>
         val koName = state.self.getActive.species.name
         println(s"$koName e' andato KO!")
         candidates.headOption match
@@ -175,7 +175,7 @@ object BattleSimulationFromInput extends App:
           case None =>
             running = false
 
-      case OpponentForcedSwitch(_, candidates) =>
+      case OpponentForcedSwitch(candidates) =>
         val koName = state.opponent.getActive.species.name
         println(s"$koName e' andato KO!")
         candidates.headOption match
@@ -186,7 +186,7 @@ object BattleSimulationFromInput extends App:
           case None =>
             running = false
 
-      case BothForcedSwitch(_, selfCandidates, opponentCandidates) =>
+      case BothForcedSwitch(selfCandidates, opponentCandidates) =>
         println(s"${state.self.getActive.species.name} e' andato KO!")
         println(s"${state.opponent.getActive.species.name} e' andato KO!")
 
@@ -206,16 +206,16 @@ object BattleSimulationFromInput extends App:
           case None =>
             running = false
 
-      case SelfWins(finalState) =>
-        if finalState.opponent.getActive.currentHp <= 0 then
-          println(s"${finalState.opponent.getActive.species.name} e' andato KO!")
+      case SelfWins =>
+        if state.opponent.getActive.currentHp <= 0 then
+          println(s"${state.opponent.getActive.species.name} e' andato KO!")
         println("Player2 non ha piu' Pokemon a disposizione!")
         println("PLAYER1 VINCE!")
         running = false
 
-      case SelfLoses(finalState) =>
-        if finalState.self.getActive.currentHp <= 0 then
-          println(s"${finalState.self.getActive.species.name} e' andato KO!")
+      case SelfLoses =>
+        if state.self.getActive.currentHp <= 0 then
+          println(s"${state.self.getActive.species.name} e' andato KO!")
         println("Player1 non ha piu' Pokemon a disposizione!")
         println("PLAYER2 VINCE!")
         running = false

@@ -19,20 +19,12 @@ import scalamon.logics.turns.ActionOrder.*
 
 final class BattleOrchestrator(using DamagePolicy):
   
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (BattleState, TurnResult) =
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (TurnResult, BattleState) =
     val plan = TurnFlow.actionOrdering(state, choices, speedOf)
     val resetState = updateLogs(_ => emptyLogger)(state.updateFlags(_.copy(selfMagicGuardActive = false)))
     val afterTurnStart = applyTriggerForBoth(OnTurnStart)(resetState)
     val afterExecution = orderedActions(plan)(choices).foldLeft(afterTurnStart)((s, f) => f(s))
-    val result = resolveTurn(afterExecution)
-    val finalState = result match
-      case TurnResult.Ongoing(s) => endTurn(s)
-      case TurnResult.ForcedSwitch(s, _) => s
-      case TurnResult.OpponentForcedSwitch(s, _) => s
-      case TurnResult.BothForcedSwitch(s, _, _) => s
-      case TurnResult.SelfWins(s) => s
-      case TurnResult.SelfLoses(s) => s
-    (finalState, result)
+    resolveTurn(afterExecution)
 
   private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[StateTransformer] =
     val turnOrder = List(
@@ -93,7 +85,9 @@ final class BattleOrchestrator(using DamagePolicy):
   private def executeDamageMove(move: DamageMove)(state: BattleState): BattleState =
     val withLastMove = state.updateFlags(_.copy(lastOpponentMove = Some(move)))
     val afterMove = MoveAction(move)(withLastMove)
-    val afterDamageTaken = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
+    val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
+    val flippedDamageDealt = switchSelfOpponent(afterDamageDealt)
+    val afterDamageTaken = switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flippedDamageDealt))
     if isKnockedOut(afterDamageTaken.opponent.getActive) then
       val afterAttackerKO = applyPassiveEffects(OnKOTaken(Opponent))(afterDamageTaken)
       val flipped = switchSelfOpponent(afterAttackerKO)
