@@ -23,6 +23,7 @@ object BattleStateImpl extends BattleStateModule:
   
   import scalamon.logics.log.BattleLogger.*
   import scalamon.domain.moves.DamageMove
+  import scalamon.domain.weather.Weather.ClearSky
   
   case class BattleFlags(
    opponentSwitchBlocked: Boolean = false,
@@ -46,7 +47,7 @@ object BattleStateImpl extends BattleStateModule:
   override type Weather = scalamon.domain.weather.Weather
   override type Trigger = scalamon.domain.pokemon.abilities.AbilityTrigger
   override type Logger = BattleLogger
-  def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState, initialWeather: Weather): BattleState =
+  def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState, initialWeather: Weather = ClearSky): BattleState =
     Bs(userPokemon, enemyPokemon, List(), initialWeather, BattleFlags(), emptyLogger)
 
   case class opponentOp(f: InnerOp):

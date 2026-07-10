@@ -8,7 +8,6 @@ enum Weather:
   case Rain
   case Fog
   case Thunderstorm
-  
+
 object Weather:
   def random: Weather = Weather.fromOrdinal(Random.nextInt(Weather.values.length))
-  

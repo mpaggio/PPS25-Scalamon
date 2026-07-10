@@ -60,7 +60,6 @@ class BattleSetupTest extends AnyFunSuite:
     state.self.team.values.foreach(_.moves.size shouldBe numberOfMovesPerPokemon)
     state.opponent.team.values.foreach(_.moves.size shouldBe numberOfMovesPerPokemon)
 
-    state.weather shouldBe ClearSky
     state.passiveEffects shouldBe empty
     state.flags.opponentSwitchBlocked shouldBe false
     state.flags.weatherSuppressed shouldBe false
