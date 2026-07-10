@@ -1,5 +1,6 @@
 package scalamon.logics.turns
 
+import scalamon.domain.weather.Weather
 import scalamon.logics.state.BattleStateImpl.{BattleState, battleState}
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.teambuilder.TeamBuilder.TeamBuilder
@@ -19,4 +20,4 @@ object BattleSetup:
   def setupBattle(player1Builder: TeamBuilder, player2Builder: TeamBuilder): BattleState =
     val player1: PlayerState = player1Builder.buildTeam("Player 1")
     val player2: PlayerState = player2Builder.buildTeam("Player 2")
-    battleState(player1, player2)
+    battleState(player1, player2, Weather.random)

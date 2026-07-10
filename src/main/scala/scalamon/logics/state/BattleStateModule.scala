@@ -1,19 +1,16 @@
 package scalamon.logics.state
 
-import scalamon.domain.moves.DamageMove
-import scalamon.domain.weather.Weather
-import scalamon.domain.weather.Weather.ClearSky
-
 trait BattleStateModule extends StateComponent:
   type BattleState
   protected type PlayerState
   override protected type State = BattleState
   override protected type InnerState = PlayerState
+  type Weather
   type Trigger
   type Logger
   type PassiveEffect = Trigger => Op
 
-  def battleState(enemyPokemon: PlayerState, userPokemon: PlayerState): BattleState
+  def battleState(enemyPokemon: PlayerState, userPokemon: PlayerState, initialWeather: Weather): BattleState
   
   def self(f: InnerOp): Op
   def opponent(f: InnerOp): Op
@@ -25,6 +22,7 @@ trait BattleStateModule extends StateComponent:
 object BattleStateImpl extends BattleStateModule:
   
   import scalamon.logics.log.BattleLogger.*
+  import scalamon.domain.moves.DamageMove
   
   case class BattleFlags(
    opponentSwitchBlocked: Boolean = false,
@@ -45,10 +43,11 @@ object BattleStateImpl extends BattleStateModule:
 
   override type BattleState = Bs
   override type PlayerState = PlayerStateModuleImpl.PlayerState
+  override type Weather = scalamon.domain.weather.Weather
   override type Trigger = scalamon.domain.pokemon.abilities.AbilityTrigger
   override type Logger = BattleLogger
-  def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState): BattleState =
-    Bs(userPokemon, enemyPokemon, List(), ClearSky, BattleFlags(), emptyLogger)
+  def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState, initialWeather: Weather): BattleState =
+    Bs(userPokemon, enemyPokemon, List(), initialWeather, BattleFlags(), emptyLogger)
 
   case class opponentOp(f: InnerOp):
     def apply: Op = bs => bs.copy(self = bs.self, opponent = f(bs.opponent))
