@@ -46,10 +46,15 @@ object SwingFacade:
     private val panel = new BoxPanel(Orientation.Vertical)  // FOR TEXT AREAS & LOGGER
     private val topPanel = new BoxPanel(Orientation.Vertical)   // TOP PART
     private val statusRowPanel = new BoxPanel(Orientation.Horizontal) // TOP ROW WITH BATTLE AND WEATHER STATUS, HEADERS
-    private val bottomPanel = new BoxPanel(Orientation.Horizontal)  // BOTTOM PART WITH BUTTONS
+    private val bottomPanel = new BoxPanel(Orientation.Vertical)  // BOTTOM PART WITH BUTTONS
+    private val moveRowPanel = new BoxPanel(Orientation.Horizontal)  // FOR THE MOVE BUTTONS
+    private val actionRowPanel = new BoxPanel(Orientation.Horizontal) // FOR THE SWITCH & ITEM BUTTONS
     private val gridPanel = new GridPanel(0, 4)   // FOR THE SELECTION GRIDS
     private val menuPanel = new BoxPanel(Orientation.Vertical)   // FOR MENU & SETUP
+
     topPanel.contents += statusRowPanel
+    bottomPanel.contents += moveRowPanel
+    bottomPanel.contents += actionRowPanel
 
     private var currentCenter: Component = menuPanel
 
@@ -91,11 +96,20 @@ object SwingFacade:
       button.reactions += {
         case ButtonClicked(_) => notifyEvent(name)
       }
-      button.listenTo(button)
       buttons(name) = button
       if name.startsWith("Pick_") || name.startsWith("MovePick_") then
         button.preferredSize = new Dimension(180, 60)
         gridPanel.contents += button
+
+      else if name.startsWith("Move") then
+        button.preferredSize = new Dimension(120, 45)
+        button.maximumSize = new Dimension(120, 45)
+        moveRowPanel.contents += button
+
+      else if name == "SwitchMenu" || name == "ItemMenu" then
+        button.preferredSize = new Dimension(240, 45)
+        button.maximumSize = new Dimension(240, 45)
+        actionRowPanel.contents += button
       else
         bottomPanel.contents += button
       rootPanel.revalidate()
@@ -134,7 +148,7 @@ object SwingFacade:
       labels += (labelName -> lbl)
       if labelName == "BattleStatus" || labelName == "WeatherStatus" then
         if labelName == "WeatherStatus" then
-          statusRowPanel.contents += Swing.HGlue  // spinge il meteo a destra
+          statusRowPanel.contents += Swing.HGlue  // PUTS THE WEATHER TO THE RIGHT SIDE
         statusRowPanel.contents += lbl
       else
          topPanel.contents += lbl
@@ -171,9 +185,14 @@ object SwingFacade:
       statusRowPanel.contents.clear()
       topPanel.contents += statusRowPanel
 
+      moveRowPanel.contents.clear()
+      actionRowPanel.contents.clear()
+      bottomPanel.contents.clear()
+      bottomPanel.contents += moveRowPanel
+      bottomPanel.contents += actionRowPanel
+
       menuPanel.contents.clear()
       gridPanel.contents.clear()
-      bottomPanel.contents.clear()
       panel.contents.clear()
 
       labels = Map()
