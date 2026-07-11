@@ -58,7 +58,7 @@ object MyAbilityBook:
    */
   private def foreWarnLog(state: BattleState): BattleState =
     val opponentMoves = state.opponent.getActive.moves.keys
-    log(s"[Forewarn] The opponent has the following moves: ${opponentMoves.mkString(", ")}")(state)
+    log(s"[Forewarn] The opponent's ${state.opponent.getActive.species.name} has the following moves: ${opponentMoves.mkString(", ")}")(state)
 
   /**
    * Map of abilities to their corresponding definitions and effects, organized by ability type.
@@ -152,8 +152,8 @@ object MyAbilityBook:
         case _ => state
     },
 
-    OnTrigger(OnTurnStart) define Hydration as { state =>
-      if state.weather == Weather.Rain then
+    OnTrigger(OnTurnEnd) define Hydration as { state =>
+      if state.weather == Weather.Rain && state.self.getActive.statusCondition.isDefined then
         val loggedState = log(s"[Hydration] ${state.self.getActive.species.name} with Rain clears status conditions!")(state)
         self(active(clearStatusCondition))(loggedState)
       else state
@@ -262,15 +262,20 @@ object MyAbilityBook:
     // PSICO
 
     OnTrigger(OnDamageTaken(Self)) define Synchronize as { state =>
-      val loggedState = log(s"[Synchronize] if ${state.self.getActive.species.name} obtains a Status condition, it applies it to the opponent too!")(state)
       state.self.getActive.statusCondition match
-        case Some(s) => opponent(active(addStatus(s)))(loggedState)
-        case None => state
+        case Some(s @ (Burned | Paralyzed | Poisoned )) =>
+          val loggedState =
+            log(s"[Synchronize] ${state.self.getActive.species.name} passes $s to ${state.opponent.getActive.species.name}!")(state)
+          opponent(active(addStatus(s)))(loggedState)
+        case _ => state
     },
 
-    OnTrigger(OnTurnStart) define MagicGuard as { state =>
-      val loggedState = log(s"[MagicGuard] ${state.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
-      loggedState.updateFlags(_.copy(selfMagicGuardActive = true))
+    OnTrigger(OnTurnEnd) define MagicGuard as { state =>
+      state.self.getActive.statusCondition match
+        case Some(s @ (Burned | Paralyzed | Poisoned | Frozen | Sleeping(_))) =>
+          val loggedState = log(s"[MagicGuard] ${state.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
+          loggedState.updateFlags(_.copy(selfMagicGuardActive = true))
+        case _ => state
     },
 
     OnTrigger(OnDamageTaken(Self)) define Insomnia as { state =>

@@ -44,9 +44,9 @@ object MyPokedex:
     Category(Psychic)(
       "Alakazam" id 65 stats(55, 50, 45, 135, 95, 120) ability Synchronize withHiddenAbility MagicGuard,
       "Hypno" id 97 stats(85, 73, 70, 73, 115, 67) ability Insomnia withSecondaryAbility Forewarn,
-      "Jynx" id 124 stats(65, 50, 35, 115, 95, 95) ability Forewarn withHiddenAbility DrySkin,
+      "Jynx" id 124 stats(65, 50, 35, 115, 95, 95) ability Forewarn withHiddenAbility CloudNine,
       "Mewtwo" id 150 stats(106, 110, 90, 154, 90, 130) ability Pressure withHiddenAbility MagicGuard,
-      "Psyduck" id 54 stats(50, 52, 48, 65, 50, 55) ability CloudNine withSecondaryAbility SwiftSwim
+      "Psyduck" id 54 stats(50, 52, 48, 65, 50, 55) ability DrySkin withSecondaryAbility SwiftSwim
     ),
 
     Category(Poison)(
