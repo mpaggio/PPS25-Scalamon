@@ -15,12 +15,13 @@ import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.log.BattleLogger.emptyLogger
 import scalamon.logics.turns.ActionOrder.*
+import scalamon.logics.state.BattleStateImpl.{self,opponent}
 
 final class BattleOrchestrator(using DamagePolicy):
   
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (TurnResult, BattleState) =
     val plan = TurnFlow.actionOrdering(state, choices, speedOf)
-    val resetState = updateLogs(_ => emptyLogger)(state.updateFlags(_.copy(selfMagicGuardActive = false)))
+    val resetState = updateLogs(_ => emptyLogger)(self(_.updateFlags(_.copy(magicGuardActive = false)))(state))
     val afterTurnStart = applyTriggerForBoth(OnTurnStart)(resetState)
     val afterExecution = orderedActions(plan)(choices).foldLeft(afterTurnStart)((s, f) => f(s))
     resolveTurn(afterExecution)
@@ -47,7 +48,7 @@ final class BattleOrchestrator(using DamagePolicy):
           executeMove(moveRef)(state)
 
       case SwitchPokemon(to) =>
-        if state.flags.opponentSwitchBlocked then
+        if state.self.flags.isSwitchBlocked then
           updateLogs(BattleLogger.logMessage("Switch is blocked"))(state)
         else
           val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
@@ -86,7 +87,7 @@ final class BattleOrchestrator(using DamagePolicy):
     pokemon.statusCondition.exists(_.isSelfHitting)
 
   private def executeDamageMove(move: DamageMove)(state: BattleState): BattleState =
-    val withLastMove = state.updateFlags(_.copy(lastOpponentMove = Some(move)))
+    val withLastMove = opponent(_.updateFlags(_.copy(lastOpponentMove = Some(move))))(state)
     val afterMove = MoveAction(move)(withLastMove)
     val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
     val flippedDamageDealt = switchSelfOpponent(afterDamageDealt)
@@ -100,7 +101,7 @@ final class BattleOrchestrator(using DamagePolicy):
       afterDamageTaken
 
   private def executeNonDamageMove(move: Move)(state: BattleState): BattleState =
-    val stateWithResetFlag = state.updateFlags(_.copy(lastOpponentMove = None))
+    val stateWithResetFlag = opponent(_.updateFlags(_.copy(lastOpponentMove = None)))(state)
     val afterMove = MoveAction(move)(stateWithResetFlag)
     val flipped = switchSelfOpponent(afterMove)
     switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flipped))

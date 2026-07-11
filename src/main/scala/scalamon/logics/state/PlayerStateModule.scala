@@ -18,7 +18,17 @@ trait PlayerStateModule extends StateComponent:
   def items(f: Items => Items): Op
 
 object PlayerStateModuleImpl extends PlayerStateModule:
-  case class Ps(name: String, team: Map[String, PokemonState], activeId: String, items: Items):
+  import scalamon.domain.moves.DamageMove
+
+  case class BattleFlags(
+    isSwitchBlocked: Boolean = false,
+    weatherSuppressed: Boolean = false,
+    flashFireActive: Boolean = false,
+    magicGuardActive: Boolean = false,
+    lastOpponentMove: Option[DamageMove] = None
+  )
+
+  case class Ps(name: String, team: Map[String, PokemonState], activeId: String, items: Items, flags: BattleFlags):
     def getActive: PokemonState = team(activeId)
 
   override type PlayerState = Ps
@@ -30,7 +40,7 @@ object PlayerStateModuleImpl extends PlayerStateModule:
     playerInitialState(name, team, active, Set.empty)
     
   override def playerInitialState(name: String, team: Map[PokemonId, PokemonState], active: PokemonId, items: Items): PlayerState =
-    Ps(name, team, active, items)
+    Ps(name, team, active, items, BattleFlags())
 
   private def mapValues[K, V](m: Map[K, V])(f: V => V): Map[K, V] = m.map(e => (e._1, f(e._2)))
 
@@ -40,3 +50,6 @@ object PlayerStateModuleImpl extends PlayerStateModule:
   def all(f: InnerOp): Op = ps => ps.copy(team = mapValues(ps.team)(f))
   def allThat(p: PokemonState => Boolean)(f: InnerOp): Op = ps => ps.copy(team = mapValues(ps.team)(s => if p(s) then f(s) else s))
   def items(f: Items => Items): Op = ps => ps.copy(items = f(ps.items))
+
+  extension (ps: PlayerState)
+    def updateFlags(f: BattleFlags => BattleFlags): PlayerState = ps.copy(flags = f(ps.flags))

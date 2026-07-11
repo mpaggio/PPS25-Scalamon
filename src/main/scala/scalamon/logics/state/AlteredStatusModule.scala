@@ -60,7 +60,7 @@ object AlteredStatusModule:
      */
     def applyCondition(using roll: ProbabilityRoll): StateTransformer = battleState => status match
       case Burned | Poisoned =>
-        if battleState.flags.selfMagicGuardActive then battleState
+        if battleState.self.flags.magicGuardActive then battleState
         else
           val a = battleState.self.getActive
           val damageAmount = a.species.baseStats.hp.toInt / statusDamageDivisor

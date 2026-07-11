@@ -5,7 +5,6 @@ import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.moves.Move
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
-import scalamon.domain.weather.Weather.ClearSky
 import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
 import scalamon.logics.teambuilder.TeamBuilder.{numberOfMovesPerPokemon, numberOfPokemonPerTeam}
 
@@ -61,10 +60,10 @@ class BattleSetupTest extends AnyFunSuite:
     state.opponent.team.values.foreach(_.moves.size shouldBe numberOfMovesPerPokemon)
 
     state.passiveEffects shouldBe empty
-    state.flags.opponentSwitchBlocked shouldBe false
-    state.flags.weatherSuppressed shouldBe false
-    state.flags.selfFlashFireActive shouldBe false
-    state.flags.selfMagicGuardActive shouldBe false
-    state.flags.lastOpponentMove shouldBe None
+    state.opponent.flags.isSwitchBlocked shouldBe false
+    state.self.flags.weatherSuppressed shouldBe false
+    state.self.flags.flashFireActive shouldBe false
+    state.self.flags.magicGuardActive shouldBe false
+    state.self.flags.lastOpponentMove shouldBe None
 
   }

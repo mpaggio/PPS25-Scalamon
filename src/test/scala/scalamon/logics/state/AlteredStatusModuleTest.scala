@@ -49,7 +49,7 @@ class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with St
     val afterDamage = Burned.applyCondition(burnedState)
     afterDamage.self.getActive.currentHp shouldBe (hpBefore - expectedDamage)
 
-    val magicGuardState = afterDamage.updateFlags(_.copy(selfMagicGuardActive = true))
+    val magicGuardState = self(_.updateFlags(_.copy(magicGuardActive = true)))(afterDamage)
     Burned.applyCondition(magicGuardState) shouldBe magicGuardState
 
   test("Multi-turn statuses should decrement counter or be removed when turns reach 1"):

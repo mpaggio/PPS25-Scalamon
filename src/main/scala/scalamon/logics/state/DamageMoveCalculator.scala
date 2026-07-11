@@ -78,7 +78,7 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
     val defResult = AbilityDamageModifier.defenderModifier(state, move)
 
     val weatherMulti =
-      if state.flags.weatherSuppressed then 1.0
+      if state.self.flags.weatherSuppressed then 1.0
       else weather.movePowerMultiplier(state.weather, move.moveType)
 
     val finalDamage =

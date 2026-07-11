@@ -15,7 +15,7 @@ trait WeatherEndTurnResolver:
   /**
    * Applies end-of-turn weather effects to the given battle context.
    *
-   * @param context
+   * @param state
    * the current battle context
    * @return
    * an updated battle context after applying weather damage and healing
@@ -33,7 +33,7 @@ object WeatherEndTurnResolver:
   given default(using weatherSystem: WeatherSystem): WeatherEndTurnResolver with
 
     override def apply(state: BattleState): BattleState =
-      if state.flags.weatherSuppressed then state
+      if state.self.flags.weatherSuppressed then state
       else
         val weather = state.weather
         state.copy(

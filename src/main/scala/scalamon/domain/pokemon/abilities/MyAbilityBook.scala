@@ -12,6 +12,7 @@ import scalamon.domain.weather.Weather.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.domain.moves.AlteredStatusUtility.*
 import scalamon.logics.log.BattleLogger
+import scalamon.logics.state.BattleStateImpl.{self, opponent}
 
 import scala.language.postfixOps
 import scala.util.Random
@@ -93,14 +94,14 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define FlashFire as { state =>
-      if !state.flags.selfFlashFireActive &&
-        state.flags.lastOpponentMove.exists(move =>
+      if !state.self.flags.flashFireActive &&
+        state.self.flags.lastOpponentMove.exists(move =>
           move.moveType == Fire &&
             state.opponent.getActive.currentHp > 0
         )
       then
         val loggedState = log(s"[FlashFire] ${state.self.getActive.species.name} is now immune to Fire moves and gains a boost!")(state)
-        loggedState.updateFlags(_.copy(selfFlashFireActive = true))
+        self(_.updateFlags(_.copy(flashFireActive = true)))(loggedState)
       else state
     },
 
@@ -144,7 +145,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define WaterAbsorb as { state =>
-      state.flags.lastOpponentMove match
+      state.self.flags.lastOpponentMove match
         case Some(move) if move.moveType == Water =>
           val maxHp = state.self.getActive.maxHp
           val loggedState = log(s"[WaterAbsorb] ${state.self.getActive.species.name} absorbs Water moves and heals 1/4 of its max HP!")(state)
@@ -176,7 +177,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnStart) define Chlorophyll as { state =>
-      if !state.flags.weatherSuppressed && state.weather == HeavySunlight then
+      if !state.self.flags.weatherSuppressed && state.weather == HeavySunlight then
         val loggedState = log(s"[Chlorophyll] ${state.self.getActive.species.name} doubles its Speed in Heavy Sunlight!")(state)
         self(active(modifyStats(speed(multiply(2.0)))))(loggedState)
       else state
@@ -214,7 +215,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define LightningRodLite as { state =>
-      state.flags.lastOpponentMove match
+      state.self.flags.lastOpponentMove match
         case Some(move) if move.moveType == Electric =>
           val loggedState = log(s"[LightningRodLite] ${state.self.getActive.species.name} is protected from Electric Moves!")(state)
           val maxHp = state.self.getActive.maxHp
@@ -223,7 +224,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define LightningRod as { state =>
-      state.flags.lastOpponentMove match
+      state.self.flags.lastOpponentMove match
         case Some(move) if move.moveType == Electric =>
           val loggedState = log(s"[LightningRod] ${state.self.getActive.species.name} draws Electric moves and boosts Special Attack!")(state)
           self(active(modifyStats(specialAttack(multiply(1.5)))))(loggedState)
@@ -231,7 +232,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnStart) define Ability.SurgeSurfer as { state =>
-      if !state.flags.weatherSuppressed && state.weather == Weather.Thunderstorm then
+      if !state.self.flags.weatherSuppressed && state.weather == Weather.Thunderstorm then
         val loggedState = log(s"[SurgeSurfer] ${state.self.getActive.species.name} doubles its Speed in Thunderstorm!")(state)
         self(active(modifyStats(speed(multiply(2.0)))))(loggedState)
       else state
@@ -243,7 +244,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define VoltAbsorb as { state =>
-      state.flags.lastOpponentMove match
+      state.self.flags.lastOpponentMove match
         case Some(move) if move.moveType == Electric =>
           val maxHp = state.self.getActive.maxHp
           val loggedState = log(s"[VoltAbsorb] ${state.self.getActive.species.name} absorbs Electric moves and heals 1/4 of its max HP!")(state)
@@ -270,7 +271,7 @@ object MyAbilityBook:
 
     OnTrigger(OnTurnStart) define MagicGuard as { state =>
       val loggedState = log(s"[MagicGuard] ${state.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
-      loggedState.updateFlags(_.copy(selfMagicGuardActive = true))
+      self(_.updateFlags(_.copy(magicGuardActive = true)))(loggedState)
     },
 
     OnTrigger(OnDamageTaken(Self)) define Insomnia as { state =>
@@ -293,7 +294,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define Pressure as { state =>
-      state.flags.lastOpponentMove match
+      state.self.flags.lastOpponentMove match
         case Some(move) =>
           val loggedState = log(s"[Pressure] ${state.opponent.getActive.species.name}'s ${move.name} loses 1 additional PP due " +
             s"to ${state.self.getActive.species.name}'s Pressure ability!")(state)
@@ -303,11 +304,12 @@ object MyAbilityBook:
 
     OnTrigger(OnSwitchIn(Self)) define CloudNine as { state =>
       val loggedState = log(s"[CloudNine] ${state.self.getActive.species.name} suppresses weather effects!")(state)
-      loggedState.updateFlags(_.copy(weatherSuppressed = true))
+      val firstUpdated = self(_.updateFlags(_.copy(weatherSuppressed = true)))(loggedState)
+      opponent(_.updateFlags(_.copy(weatherSuppressed = true)))(firstUpdated)
     },
 
     OnTrigger(OnTurnStart) define SwiftSwim as { state =>
-      if !state.flags.weatherSuppressed && state.weather == Weather.Rain then
+      if !state.self.flags.weatherSuppressed && state.weather == Weather.Rain then
         val loggedState = log(s"[SwiftSwim] ${state.self.getActive.species.name} doubles its Speed in Rain!")(state)
         self(active(modifyStats(speed(multiply(2.0)))))(loggedState)
       else state
@@ -315,7 +317,7 @@ object MyAbilityBook:
 
     // POISON
 
-    OnTrigger(OnTurnStart) define ShedSkin as { state =>
+    OnTrigger(OnTurnEnd) define ShedSkin as { state =>
       if Random.nextDouble() < 0.30  && state.self.getActive.statusCondition.isDefined then
         val loggedState = log(s"[ShedSkin] ${state.self.getActive.species.name} recovers from status conditions!")(state)
         self(active(clearStatusCondition))(loggedState)
@@ -335,8 +337,8 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define CursedBody as { state =>
-      if Random.nextDouble() < 0.30 && state.flags.lastOpponentMove.isDefined then
-        val moveName = state.flags.lastOpponentMove.get.name
+      if Random.nextDouble() < 0.30 && state.self.flags.lastOpponentMove.isDefined then
+        val moveName = state.self.flags.lastOpponentMove.get.name
         val loggedState = log(s"[CursedBody] ${state.opponent.getActive.species.name}'s $moveName is disabled!")(state)
         opponent(active(updateMove(moveName)(ms => ms.copy(currentPp = 0))))(loggedState)
       else state
@@ -344,7 +346,7 @@ object MyAbilityBook:
 
     OnTrigger(OnSwitchIn(Self)) define ShadowTag as { state =>
       val loggedState = log(s"[ShadowTag] ${state.self.getActive.species.name} prevents the opponent from switching the active Pokemon!")(state)
-      loggedState.updateFlags(_.copy(opponentSwitchBlocked = true))
+      opponent(_.updateFlags(_.copy(isSwitchBlocked = true)))(loggedState)
     },
 
     OnTrigger(OnDamageTaken(Self)) define LiquidOoze as { state =>

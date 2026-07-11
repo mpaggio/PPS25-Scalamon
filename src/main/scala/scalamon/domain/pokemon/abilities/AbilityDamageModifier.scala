@@ -87,7 +87,7 @@ object AbilityDamageModifier:
         )
 
       case Ability.FlashFire
-        if state.flags.selfFlashFireActive && move.moveType == Fire =>
+        if state.self.flags.flashFireActive && move.moveType == Fire =>
         DamageModifierResult(
           1.3,
           List(s"[FlashFire] ${attacker.species.name}'s Fire moves are boosted due to Flash Fire!")

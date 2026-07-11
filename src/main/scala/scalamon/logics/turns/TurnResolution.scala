@@ -59,20 +59,22 @@ object TurnResolutionImpl extends TurnResolutionModule:
    * @param state The current state of the battle after all actions have been executed.
    * @return  the result of the turn, which can be of the types described in the TurnResult enum.
    */
-  override def resolveTurn(state: BattleState): (TurnResult,BattleState) = state match
-    case state if isDefeated(state.self) && (isDefeated(state.opponent) || needsForcedSwitch(state.opponent)) => 
-      (TurnResult.SelfLoses, state)
-    case state if isDefeated(state.opponent) && needsForcedSwitch(state.self) => 
-      (TurnResult.SelfWins, state)
-    case state if needsForcedSwitch(state.self) && needsForcedSwitch(state.opponent) =>
-      (TurnResult.BothForcedSwitch(aliveBench(state.self), aliveBench(state.opponent)), state)
-    case state if needsForcedSwitch(state.self) =>
-      (TurnResult.ForcedSwitch(aliveBench(state.self)), state)
-    case state if needsForcedSwitch(state.opponent) =>
-      (TurnResult.OpponentForcedSwitch(aliveBench(state.opponent)), state)
-    case state if isDefeated(state.opponent) => (TurnResult.SelfWins, state)
-    case state if isDefeated(state.self) => (TurnResult.SelfLoses, state)
-    case state => (TurnResult.Ongoing, endTurn(state))
+  override def resolveTurn(state: BattleState): (TurnResult,BattleState) =
+    val stateAfterEnd = endTurn(state)
+    stateAfterEnd match
+      case state if isDefeated(state.self) && (isDefeated(state.opponent) || needsForcedSwitch(state.opponent)) =>
+        (TurnResult.SelfLoses, state)
+      case state if isDefeated(state.opponent) && needsForcedSwitch(state.self) =>
+        (TurnResult.SelfWins, state)
+      case state if needsForcedSwitch(state.self) && needsForcedSwitch(state.opponent) =>
+        (TurnResult.BothForcedSwitch(aliveBench(state.self), aliveBench(state.opponent)), state)
+      case state if needsForcedSwitch(state.self) =>
+        (TurnResult.ForcedSwitch(aliveBench(state.self)), state)
+      case state if needsForcedSwitch(state.opponent) =>
+        (TurnResult.OpponentForcedSwitch(aliveBench(state.opponent)), state)
+      case state if isDefeated(state.opponent) => (TurnResult.SelfWins, state)
+      case state if isDefeated(state.self) => (TurnResult.SelfLoses, state)
+      case state => (TurnResult.Ongoing, state)
 
   override def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState =
     if player.team.contains(newActive.value) then switchActive(newActive.value)(player)
@@ -98,11 +100,10 @@ object TurnResolutionImpl extends TurnResolutionModule:
    */
   private def applyEndOfTurnAbilities(state: BattleState) =
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
-      val slot = if isSelf then s.self.getActive.species.abilitySlot
-      else s.opponent.getActive.species.abilitySlot
       val oriented = if isSelf then s else switchSelfOpponent(s)
-      val result = MyAbilityBook.runTrigger(OnTurnEnd, slot)(oriented)
-      if isSelf then result else switchSelfOpponent(result)
+      val pokemon = oriented.self.getActive
+      val updated = MyAbilityBook.runTrigger(OnTurnEnd, pokemon.species.abilitySlot)(oriented)
+      if isSelf then updated else switchSelfOpponent(updated)
     applyForPlayer(applyForPlayer(state, true), false)
 
   /**
