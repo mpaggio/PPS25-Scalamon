@@ -54,11 +54,18 @@ class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with St
 
   test("Multi-turn statuses should decrement counter or be removed when turns reach 1"):
     import scalamon.domain.moves.Accuracy.given
+
     val sleep3 = Sleeping(3)
-    val sleep1 = Sleeping(1)
     val stateWithSleep3 = self(active(addStatus(sleep3)))(battle)
-    val stateAfterTurn = sleep3.applyCondition(stateWithSleep3)
-    stateAfterTurn.self.getActive.statusCondition shouldBe Some(Sleeping(2))
+    val stateAfterTurn3 = sleep3.applyCondition(stateWithSleep3)
+    stateAfterTurn3.self.getActive.statusCondition shouldBe Some(Sleeping(2))
+
+    val sleep1 = Sleeping(1)
     val stateWithSleep1 = self(active(addStatus(sleep1)))(battle)
-    val stateAfterWakingUp = sleep1.applyCondition(stateWithSleep1)
+    val stateAfterTurn1 = sleep1.applyCondition(stateWithSleep1)
+    stateAfterTurn1.self.getActive.statusCondition shouldBe Some(Sleeping(0))
+
+    val sleep0 = Sleeping(0)
+    val stateWithSleep0 = self(active(addStatus(sleep0)))(battle)
+    val stateAfterWakingUp = sleep0.applyCondition(stateWithSleep0)
     stateAfterWakingUp.self.getActive.statusCondition shouldBe None

@@ -6,6 +6,7 @@ import AlteredStatus.*
 import scalamon.domain.pokemon.statistics.StatADT.*
 import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
+import scalamon.logics.log.BattleLogger
 import scalamon.logics.state.StateTransformerModuleImpl.*
 
 /**
@@ -41,12 +42,14 @@ case class ComposableEffect(transformer: StateTransformer) extends MoveEffect:
  * @param probability The [[Accuracy]] value representing the chance of success.
  */
 case class AlteredState(statusFactory: () => AlteredStatus, probability: Accuracy) extends MoveEffect:
-  override def executeEffect: StateTransformer =
+  override def executeEffect: StateTransformer = battleState =>
     if probability.test then
       val statusToApply = statusFactory()
-      opponent(active(addStatus(statusToApply)))
+      val target = battleState.opponent.getActive
+      val updatedState = opponent(active(addStatus(statusToApply)))(battleState)
+      updateLogs(BattleLogger.logStatusInflicted(target, statusToApply))(updatedState)
     else
-      identity
+      battleState
 
 /**
  * Modifies a specific statistic of the target by a number of stages.
@@ -99,7 +102,10 @@ case class Recoil(percentage: Int) extends MoveEffect:
  * @param recharges The number of turns the Pokémon must remain in the Charging state.
  */
 case class Recharge(recharges: Int) extends MoveEffect:
-  override def executeEffect: StateTransformer = self(active(addStatus(Charging(recharges))))
+  override def executeEffect: StateTransformer = battleState =>
+    val user = battleState.self.getActive
+    val updatedState = self(active(addStatus(Charging(recharges))))(battleState)
+    updateLogs(BattleLogger.logStatusInflicted(user, Charging(recharges)))(updatedState)
 
 /**
  * Module providing a Domain Specific Language (DSL) for declarative effect construction.

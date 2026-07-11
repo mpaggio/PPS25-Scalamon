@@ -1,9 +1,8 @@
 package scalamon.logics.log
 
-import scalamon.domain.actions.Items.Item
-import scalamon.domain.moves.Move
+import scalamon.domain.moves.{AlteredStatus, Move}
 import scalamon.logics.state.BattleStateImpl.PlayerState
-import scalamon.logics.state.PokemonStateModuleImpl.{PokemonState, currentHp}
+import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 
 trait BattleLogger:
   type BattleLogger
@@ -18,6 +17,12 @@ trait BattleLogger:
   def logNotEnoughPP(pokemonState: PokemonState, move: Move)(logger: BattleLogger): BattleLogger
   def logCannotMove(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger
   def logSelfHit(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger
+
+  def logStatusInflicted(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger
+  def logStatusDamage(pokemonState: PokemonState, status: AlteredStatus, damage: Int)(logger: BattleLogger): BattleLogger
+  def logStatusPreventsMove(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger
+  def logStatusContinues(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger
+  def logStatusEnded(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger
 
   extension (logger: BattleLogger)
     def getLog: String
@@ -55,3 +60,18 @@ object BattleLogger:
 
   def logSelfHit(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger =
     s"${pokemonState.species.name} si e' colpito da solo" :: logger
+
+  def logStatusInflicted(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} got status [${status.toString}]" :: logger
+
+  def logStatusDamage(pokemonState: PokemonState, status: AlteredStatus, damage: Int)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} is dealt $damage HP damage caused by status [${status.toString}]" :: logger
+
+  def logStatusPreventsMove(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} is unable to move because of status [${status.toString}]" :: logger
+
+  def logStatusContinues(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} is still under the effect of status [${status.toString}]" :: logger
+
+  def logStatusEnded(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} is no more under the effect of status [${status.toString}]" :: logger

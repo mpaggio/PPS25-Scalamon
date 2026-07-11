@@ -4,7 +4,7 @@ import scalamon.domain.moves.AlteredStatus
 import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.moves.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.*
-import scalamon.domain.moves.Accuracy.given
+import scalamon.logics.log.BattleLogger
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
@@ -53,7 +53,7 @@ object AlteredStatusModule:
      * Logic implemented:
      * - [[Burned]] and [[Poisoned]] inflict damage over time (respecting a specific protection).
      * - [[Sleep]], [[Confusion]] and [[Charge]] decrement their internal turn counter. When
-     *   it reaches 1, the condition is removed from the Pokémon's state.
+     *   it reaches 0, the condition is removed from the Pokémon's state at the end of the turn.
      * - [[Burned]] and [[Poisoned]] inflict damage over time (respecting a specific protection).
      *
      * @return A function that transforms a [[BattleState]] into its next version.
@@ -64,19 +64,32 @@ object AlteredStatusModule:
         else
           val a = battleState.self.getActive
           val damageAmount = a.species.baseStats.hp.toInt / statusDamageDivisor
-          self(active(takeDamage(damageAmount)))(battleState)
+          val damageState = self(active(takeDamage(damageAmount)))(battleState)
+          updateLogs(BattleLogger.logStatusDamage(a, status, damageAmount))(damageState)
       case Sleeping(turns) =>
-        if turns > 1 then
-          self(active(addStatus(Sleeping(turns - 1))))(battleState)
-        else removeCondition(Sleeping(turns - 1))(battleState)
+        val a = battleState.self.getActive
+        if turns > 0 then
+          val nextState = self(active(addStatus(Sleeping(turns - 1))))(battleState)
+          updateLogs(BattleLogger.logStatusContinues(a, Sleeping(turns - 1)))(nextState)
+        else
+          val nextState = removeCondition(Sleeping(turns - 1))(battleState)
+          updateLogs(BattleLogger.logStatusEnded(a, Sleeping(turns)))(nextState)
       case Confused(turns) =>
-        if turns > 1 then
-          self(active(addStatus(Confused(turns - 1))))(battleState)
-        else removeCondition(Confused(turns - 1))(battleState)
+        val a = battleState.self.getActive
+        if turns > 0 then
+          val nextState = self(active(addStatus(Confused(turns - 1))))(battleState)
+          updateLogs(BattleLogger.logStatusContinues(a, Confused(turns - 1)))(nextState)
+        else
+          val nextState = removeCondition(Confused(turns - 1))(battleState)
+          updateLogs(BattleLogger.logStatusEnded(a, Confused(turns)))(nextState)
       case Charging(turns) =>
-        if turns > 1 then
-          self(active(addStatus(Charging(turns - 1))))(battleState)
-        else removeCondition(Charging(turns - 1))(battleState)
+        val a = battleState.self.getActive
+        if turns > 0 then
+          val nextState = self(active(addStatus(Charging(turns - 1))))(battleState)
+          updateLogs(BattleLogger.logStatusContinues(a, Charging(turns - 1)))(nextState)
+        else
+          val nextState = removeCondition(Charging(turns - 1))(battleState)
+          updateLogs(BattleLogger.logStatusEnded(a, Charging(turns)))(nextState)
       case _ => battleState
 
   /**

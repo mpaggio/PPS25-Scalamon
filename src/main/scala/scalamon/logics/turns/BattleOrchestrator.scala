@@ -1,12 +1,11 @@
 package scalamon.logics.turns
 
-import scalamon.domain.actions.{Items, SwitchAction}
+import scalamon.domain.actions.SwitchAction
 import scalamon.domain.moves.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.DamagePolicy
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.domain.moves.MoveDatabase.findByName
-import scalamon.logics.turns.TurnResult.BothForcedSwitch
 import scalamon.logics.state.AlteredStatusModule.*
 import scalamon.domain.moves.Accuracy.given
 import scalamon.domain.pokemon.abilities.Target
@@ -63,7 +62,9 @@ final class BattleOrchestrator(using DamagePolicy):
       case Some(move) if !hasPpFor(activePokemon, move) =>
         updateLogs(BattleLogger.logNotEnoughPP(activePokemon, move))(state)
       case Some(move: DamageMove) if !canMove(activePokemon) =>
-        updateLogs(BattleLogger.logCannotMove(activePokemon))(state)
+        activePokemon.statusCondition match
+          case Some(blockingStatus) => updateLogs(BattleLogger.logStatusPreventsMove(activePokemon, blockingStatus))(state)
+          case None => updateLogs(BattleLogger.logCannotMove(activePokemon))(state)
       case Some(move: DamageMove) if isSelfHitting(activePokemon) =>
         updateLogs(BattleLogger.logSelfHit(activePokemon))(state)
       case Some(move: DamageMove) => executeDamageMove(move)(state)
