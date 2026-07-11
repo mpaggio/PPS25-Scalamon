@@ -1,7 +1,6 @@
 package scalamon.logics.state
 
 import scalamon.domain.weather.Weather
-import scalamon.domain.weather.Weather.HeavySunlight
 import scalamon.logics.state.StateTransformerModuleImpl.*
 
 import scala.collection.immutable.ListMap

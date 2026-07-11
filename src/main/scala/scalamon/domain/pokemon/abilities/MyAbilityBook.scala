@@ -25,7 +25,7 @@ object MyAbilityBook:
 
   /**
    * Function to heal the active Pokémon by a fraction of its maximum HP.
-   * @param fraction fraction of max HP to heal (e.g., 16 means heal 1/16 of max HP)
+   * @param fraction fraction of max HP to heal (e.g., 30 means heal 1/30 of max HP)
    * @param state the current battle state
    * @return the new battle state after healing
    */
@@ -74,15 +74,15 @@ object MyAbilityBook:
 
     OnTrigger(OnTurnEnd) define SolarScales as { state =>
       if state.weather == Weather.HeavySunlight then
-        val loggedState = log(s"[SolarScales] ${state.self.getActive.species.name} with Heavy Sunlight heals 1/16 of its max HP and its special moves boosts + 30%!")(state)
-        healSelf(16)(loggedState)
+        val loggedState = log(s"[SolarScales] ${state.self.getActive.species.name} with Heavy Sunlight heals 1/30 of its max HP and its special moves boosts + 30%!")(state)
+        healSelf(30)(loggedState)
       else state
     },
 
     OnTrigger(OnTurnEnd) define SolarPower as { state =>
       if state.weather == Weather.HeavySunlight then
-        val loggedState = log(s"[SolarPower] ${state.self.getActive.species.name} with Heavy Sunlight takes 1/16 of its max HP as damage!")(state)
-        damageSelf(16)(loggedState)
+        val loggedState = log(s"[SolarPower] ${state.self.getActive.species.name} with Heavy Sunlight takes 1/30 of its max HP as damage!")(state)
+        damageSelf(30)(loggedState)
       else state
     },
 
@@ -139,8 +139,8 @@ object MyAbilityBook:
 
     OnTrigger(OnTurnEnd) define RainDish as { state =>
       if state.weather == Weather.Rain then
-        val loggedState = log(s"[RainDish] ${state.self.getActive.species.name} with Rain heals 1/16 of its max HP!")(state)
-        healSelf(16)(loggedState)
+        val loggedState = log(s"[RainDish] ${state.self.getActive.species.name} with Rain heals 1/30 of its max HP!")(state)
+        healSelf(30)(loggedState)
       else state
     },
 
@@ -291,10 +291,10 @@ object MyAbilityBook:
       state.weather match
         case Weather.Rain =>
           val loggedState = log(s"[DrySkin] ${state.self.getActive.species.name}'s stats are affected by the current weather!")(state)
-          healSelf(16)(loggedState)
+          healSelf(30)(loggedState)
         case Weather.HeavySunlight =>
           val loggedState = log(s"[DrySkin] ${state.self.getActive.species.name}'s stats are affected by the current weather!")(state)
-          damageSelf(16)(loggedState)
+          damageSelf(30)(loggedState)
         case _ => state
     },
 

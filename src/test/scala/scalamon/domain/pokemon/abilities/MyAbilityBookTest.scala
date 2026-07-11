@@ -110,18 +110,18 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
       AbilityDamageModifier.attackerMultiplier(battle, fireMove) shouldEqual 1.0
   }
 
-  test("SolarScales heals self by maxHp/16 when weather is HeavySunLight") {
+  test("SolarScales heals self by maxHp/30 when weather is HeavySunLight") {
     val s = withWeatherAndDamage(HeavySunlight)
-    selfHp(run(SolarScales, OnTurnEnd)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 16
+    selfHp(run(SolarScales, OnTurnEnd)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 30
   }
 
   test("SolarScales does not heal when weather is not HeavySunlight") {
     run(SolarScales, OnTurnEnd)(battle).self.getActive.currentHp shouldEqual battle.self.getActive.currentHp
   }
 
-  test("SolarPower damages self by maxHp/16 when weather is HeavySunLight") {
+  test("SolarPower damages self by maxHp/30 when weather is HeavySunLight") {
     val s = withWeather(HeavySunlight)
-    selfHp(run(SolarPower, OnTurnEnd)(s)) shouldEqual (selfHp(s) - maxSelfHp(s) / 16)
+    selfHp(run(SolarPower, OnTurnEnd)(s)) shouldEqual (selfHp(s) - maxSelfHp(s) / 30)
   }
 
   test("SolarPower gives 1.3x multiplier to Special moves in HeavySunlight") {
@@ -219,9 +219,9 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
       AbilityDamageModifier.attackerMultiplier(lowHpState, waterMove) shouldEqual 1.5
   }
 
-  test("RainDish heals self by maxHp/16 when weather is Rain") {
+  test("RainDish heals self by maxHp/30 when weather is Rain") {
     val s = withWeatherAndDamage(Rain)
-    selfHp(run(RainDish, OnTurnEnd)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 16
+    selfHp(run(RainDish, OnTurnEnd)(s)) shouldEqual selfHp(s) + maxSelfHp(s) / 30
   }
 
   test("RainDish does not heal when weather is not Rain") {
@@ -413,14 +413,14 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     result.copy(logs = battle.logs) shouldEqual battle
   }
 
-  test("DrySkin heals self by maxHp/16 when weather is Rain") {
+  test("DrySkin heals self by maxHp/30 when weather is Rain") {
     val damaged = setWeather(Rain)(self(active(takeDamage(20)))(battle))
-    selfHp(run(DrySkin, OnTurnEnd)(damaged)) shouldEqual selfHp(damaged) + maxSelfHp(damaged) / 16
+    selfHp(run(DrySkin, OnTurnEnd)(damaged)) shouldEqual selfHp(damaged) + maxSelfHp(damaged) / 30
   }
 
-  test("DrySkin damages self by maxHp/16 when weather is HeavySunlight") {
+  test("DrySkin damages self by maxHp/30 when weather is HeavySunlight") {
     val s = withWeather(HeavySunlight)
-    selfHp(run(DrySkin, OnTurnEnd)(s)) shouldEqual selfHp(s) - maxSelfHp(s) / 16
+    selfHp(run(DrySkin, OnTurnEnd)(s)) shouldEqual selfHp(s) - maxSelfHp(s) / 30
   }
 
   test("DrySkin does not modify HP in other weather conditions") {
