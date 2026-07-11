@@ -7,7 +7,7 @@ import scalamon.logics.state.DamagePolicy
 import scalamon.logics.turns.*
 import scalamon.logics.turns.TurnResult.*
 import BattleWindowStateImpl.*
-import scalamon.gui.SetupGUI.{GameSetup, buildAutomaticPlayerBuilder, buildOpponentBuilder, chooseGameSetup, damagePolicyFromChoice}
+import scalamon.gui.SetupGUI.{GameSetup, buildAutomaticPlayerBuilder, chooseGameSetup, damagePolicyFromChoice}
 import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
 @main def runScalamonGUI(): Unit =
@@ -259,12 +259,17 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
   def startFullGame(): Unit =
     val selectedMode = gameSetup.selectedMode
 
-    val (windowAfterManualSelection, playerBuilder) =
+    val (windowAfterBuilders, playerBuilder, opponentBuilder) =
       selectedMode match
-        case "Manual" => chooseManualBuilder(windowAfterSetup)
-        case _        => (windowAfterSetup, buildAutomaticPlayerBuilder(selectedMode))
+        case "Manual" =>
+          val (w1, player1Builder) = chooseManualBuilder(windowAfterSetup, "Player 1")
+          val (w2, player2Builder) = chooseManualBuilder(w1, "Player 2")
+          (w2, player1Builder, player2Builder)
+        case _ =>
+          val builder1 = buildAutomaticPlayerBuilder(selectedMode)
+          val builder2 = buildAutomaticPlayerBuilder(selectedMode)
+          (windowAfterSetup, builder1, builder2)
 
-    val opponentBuilder = buildOpponentBuilder()
     val initialBattleState = BattleSetup.setupBattle(playerBuilder, opponentBuilder)
 
     val fullProgram: State[(BattleState, Window), Unit] = for
@@ -272,6 +277,6 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
       _ <- gameLoop
     yield ()
 
-    fullProgram.run((initialBattleState, windowAfterManualSelection))
+    fullProgram.run((initialBattleState, windowAfterBuilders))
 
   startFullGame()

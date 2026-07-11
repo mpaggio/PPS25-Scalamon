@@ -48,22 +48,22 @@ object ManualTeamBuildingGUI:
   private def moveButtonName(move: Move): String =
     s"MovePick_${move.name}"
 
-  private def selectedTeamText(selected: List[Pokemon]): String =
-    if selected.isEmpty then "No Pokemon Selected!"
-    else s"Pokémon selected (${selected.size}/6): " + selected.map(_.name).mkString(", ")
+  private def selectedTeamText(playerLabel: String, selected: List[Pokemon]): String =
+    if selected.isEmpty then s"$playerLabel: No Pokemon selected!"
+    else s"$playerLabel: Pokémon selected (${selected.size}/6): " + selected.map(_.name).mkString(", ")
 
-  private def selectedMovesText(selected: List[Move]): String =
-    if selected.isEmpty then "No moves selected!"
-    else s"Moves selected (${selected.size}/4): " + selected.map(_.name).mkString(", ")
+  private def selectedMovesText(playerLabel: String, selected: List[Move]): String =
+    if selected.isEmpty then s"$playerLabel: No moves selected!"
+    else s"$playerLabel: Moves selected (${selected.size}/4): " + selected.map(_.name).mkString(", ")
 
-  private def manualTeamSelectionScreen: State[Window, Unit] = for
+  private def manualTeamSelectionScreen(playerLabel: String): State[Window, Unit] = for
     _ <- clear()
     _ <- useGridCenter()
     _ <- setSize(900, 700)
-    _ <- addLabel("Select exactly 6 Pokémon for your team:", "ManualSetupTitle")
-    _ <- addLabel("Click on the Pokemon to add it to your team", "ManualSubTitle")
-    _ <- addLabel("No Pokemon selected!", "SelectedTeamLabel")
-    _ <- addLabel("Select 6 Pokémon, then press Confirm.", "ManualInfoLabel")
+    _ <- addLabel(s"$playerLabel: Select exactly 6 Pokémon for your team:", "ManualSetupTitle")
+    _ <- addLabel(s"$playerLabel: Click on the Pokemon to add it to your team", "ManualSubTitle")
+    _ <- addLabel(s"$playerLabel: No Pokemon selected!", "SelectedTeamLabel")
+    _ <- addLabel(s"$playerLabel: Select 6 Pokémon, then press Confirm.", "ManualInfoLabel")
     _ <- allPokemons.foldLeft(State.unit[Window, Unit](())) { (acc, pokemon) =>
       for
         _ <- acc
@@ -77,20 +77,20 @@ object ManualTeamBuildingGUI:
     _ <- show()
   yield ()
 
-  private def chooseManualTeamScreen: State[Window, List[Pokemon]] =
+  private def chooseManualTeamScreen(playerLabel: String): State[Window, List[Pokemon]] =
     State { w =>
-      val (_, _) = manualTeamSelectionScreen.run(w)
+      val (_, _) = manualTeamSelectionScreen(playerLabel).run(w)
 
       @tailrec
       def loop(selected: List[Pokemon]): List[Pokemon] =
-        w.updateLabel(selectedTeamText(selected), "SelectedTeamLabel")
+        w.updateLabel(selectedTeamText(playerLabel, selected), "SelectedTeamLabel")
         val event = w.nextEvent()
 
         event match
           case "ManualConfirm" =>
             if selected.size == 6 then selected
             else
-              w.updateLabel(s"You have to select exactly 6 Pokemon. Now you have ${selected.size}.", "ManualInfoLabel")
+              w.updateLabel(s"$playerLabel: You have to select exactly 6 Pokemon. Now you have ${selected.size}.", "ManualInfoLabel")
               loop(selected)
 
           case buttonName if buttonName.startsWith("Pick_") =>
@@ -103,17 +103,17 @@ object ManualTeamBuildingGUI:
               case Some(pokemon) if selected.size < 6 =>
                 loop(selected :+ pokemon)
               case Some(pokemon) =>
-                w.updateLabel(s"You already selected 6 Pokémon. ${pokemon.name} cannot be added to the team.", "ManualInfoLabel")
+                w.updateLabel(s"$playerLabel: You already selected 6 Pokémon. ${pokemon.name} cannot be added to the team.", "ManualInfoLabel")
                 loop(selected)
               case None =>
-                w.updateLabel("Pokémon not found.", "ManualInfoLabel")
+                w.updateLabel(s"$playerLabel: Pokémon not found.", "ManualInfoLabel")
                 loop(selected)
 
           case "ManualCancelLast" =>
             loop(if selected.nonEmpty then selected.init else selected)
 
           case "ManualReset" =>
-            w.updateLabel("Team Reset.", "ManualInfoLabel")
+            w.updateLabel(s"$playerLabel: Team Reset.", "ManualInfoLabel")
             loop(Nil)
 
           case _ =>
@@ -123,14 +123,14 @@ object ManualTeamBuildingGUI:
       (w, selectedTeam)
     }
 
-  private def manualMoveSelectionScreen(pokemon: Pokemon): State[Window, Unit] = for
+  private def manualMoveSelectionScreen(pokemon: Pokemon, playerLabel: String): State[Window, Unit] = for
     _ <- clear()
     _ <- useGridCenter()
     _ <- setSize(900, 700)
-    _ <- addLabel(s"Select exactly 4 moves for ${pokemon.name}:", "MoveSetupTitle")
-    _ <- addLabel("Click on a move to add/remove it", "MoveSubTitle")
-    _ <- addLabel("No moves selected!", "SelectedMovesLabel")
-    _ <- addLabel("Select 4 moves, then press Confirm.", "MoveInfoLabel")
+    _ <- addLabel(s"$playerLabel: Select exactly 4 moves for ${pokemon.name}:", "MoveSetupTitle")
+    _ <- addLabel(s"$playerLabel: Click on a move to add/remove it", "MoveSubTitle")
+    _ <- addLabel(s"$playerLabel: No moves selected!", "SelectedMovesLabel")
+    _ <- addLabel(s"$playerLabel: Select 4 moves, then press Confirm.", "MoveInfoLabel")
     _ <- allMoves.toList.foldLeft(State.unit[Window, Unit](())) { (acc, move) =>
       for
         _ <- acc
@@ -144,20 +144,20 @@ object ManualTeamBuildingGUI:
     _ <- show()
   yield ()
 
-  private def chooseMovesForPokemonScreen(pokemon: Pokemon): State[Window, List[Move]] =
+  private def chooseMovesForPokemonScreen(pokemon: Pokemon, playerLabel: String): State[Window, List[Move]] =
     State { w =>
-      val (_, _) = manualMoveSelectionScreen(pokemon).run(w)
+      val (_, _) = manualMoveSelectionScreen(pokemon, playerLabel).run(w)
 
       @tailrec
       def loop(selected: List[Move]): List[Move] =
-        w.updateLabel(selectedMovesText(selected), "SelectedMovesLabel")
+        w.updateLabel(selectedMovesText(playerLabel, selected), "SelectedMovesLabel")
         val event = w.nextEvent()
 
         event match
           case "ConfirmManualMoves" =>
             if selected.size == 4 then selected
             else
-              w.updateLabel(s"You have to select exactly 4 moves. Now you have ${selected.size}.", "MoveInfoLabel")
+              w.updateLabel(s"$playerLabel: You have to select exactly 4 moves. Now you have ${selected.size}.", "MoveInfoLabel")
               loop(selected)
 
           case buttonName if buttonName.startsWith("MovePick_") =>
@@ -170,17 +170,17 @@ object ManualTeamBuildingGUI:
               case Some(move) if selected.size < 4 =>
                 loop(selected :+ move)
               case Some(move) =>
-                w.updateLabel(s"You already selected 4 moves. ${move.name} cannot be added.", "MoveInfoLabel")
+                w.updateLabel(s"$playerLabel: You already selected 4 moves. ${move.name} cannot be added.", "MoveInfoLabel")
                 loop(selected)
               case None =>
-                w.updateLabel("Move not found.", "MoveInfoLabel")
+                w.updateLabel(s"$playerLabel: Move not found.", "MoveInfoLabel")
                 loop(selected)
 
           case "CancelLastMoveChoice" =>
             loop(if selected.nonEmpty then selected.init else selected)
 
           case "ResetManualMoves" =>
-            w.updateLabel("Moves reset.", "MoveInfoLabel")
+            w.updateLabel(s"$playerLabel: Moves reset.", "MoveInfoLabel")
             loop(Nil)
 
           case _ =>
@@ -190,10 +190,10 @@ object ManualTeamBuildingGUI:
       (w, selectedMoves)
     }
 
-  private def chooseManualMovesScreen(team: List[Pokemon]): State[Window, ManualMoveSelection] =
+  private def chooseManualMovesScreen(playerLabel: String, team: List[Pokemon]): State[Window, ManualMoveSelection] =
     State { w =>
       team.foldLeft((w, Map.empty[String, List[Move]])) { case ((currentWindow, acc), pokemon) =>
-        val (nextWindow, moves) = chooseMovesForPokemonScreen(pokemon).run(currentWindow)
+        val (nextWindow, moves) = chooseMovesForPokemonScreen(pokemon, playerLabel).run(currentWindow)
         (nextWindow, acc + (pokemon.name -> moves))
       }
     }
@@ -207,7 +207,7 @@ object ManualTeamBuildingGUI:
       moveSelector = (pokemon, _) => selectedMoves.getOrElse(pokemon.name, Nil)
     )
 
-  def chooseManualBuilder(window: Window): (Window, TeamBuilder) =
-    val (w1, selectedTeam) = chooseManualTeamScreen.run(window)
-    val (w2, selectedMoves) = chooseManualMovesScreen(selectedTeam).run(w1)
+  def chooseManualBuilder(window: Window, playerLabel: String): (Window, TeamBuilder) =
+    val (w1, selectedTeam) = chooseManualTeamScreen(playerLabel).run(window)
+    val (w2, selectedMoves) = chooseManualMovesScreen(playerLabel, selectedTeam).run(w1)
     (w2, buildManualBuilderFromSelection(selectedTeam, selectedMoves))
