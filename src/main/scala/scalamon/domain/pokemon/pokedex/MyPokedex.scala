@@ -37,13 +37,13 @@ object MyPokedex:
       "Pikachu" id 25 stats(35, 55, 40, 50, 50, 90) ability Static withHiddenAbility LightningRodLite,
       "Raichu" id 26 stats(60, 90, 55, 90, 80, 110) ability LightningRod withHiddenAbility SurgeSurfer,
       "Voltorb" id 100 stats(40, 30, 50, 55, 55, 100) ability Static withSecondaryAbility Aftermath,
-      "Electabuzz" id 125 stats(65, 83, 57, 95, 85, 105) ability Static withSecondaryAbility Insomnia,
+      "Electabuzz" id 125 stats(65, 83, 57, 95, 85, 105) ability Static withSecondaryAbility LightningRodLite,
       "Jolteon" id 135 stats(65, 65, 60, 110, 95, 130) ability VoltAbsorb withHiddenAbility QuickFeet
     ),
 
     Category(Psychic)(
       "Alakazam" id 65 stats(55, 50, 45, 135, 95, 120) ability Synchronize withHiddenAbility MagicGuard,
-      "Hypno" id 97 stats(85, 73, 70, 73, 115, 67) ability Insomnia withSecondaryAbility Forewarn,
+      "Hypno" id 97 stats(85, 73, 70, 73, 115, 67) ability DrySkin withSecondaryAbility Forewarn,
       "Jynx" id 124 stats(65, 50, 35, 115, 95, 95) ability Forewarn withHiddenAbility CloudNine,
       "Mewtwo" id 150 stats(106, 110, 90, 154, 90, 130) ability Pressure withHiddenAbility MagicGuard,
       "Psyduck" id 54 stats(50, 52, 48, 65, 50, 55) ability DrySkin withSecondaryAbility SwiftSwim

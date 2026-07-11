@@ -25,7 +25,7 @@ object PlayerStateModuleImpl extends PlayerStateModule:
     weatherSuppressed: Boolean = false,
     flashFireActive: Boolean = false,
     magicGuardActive: Boolean = false,
-    lastOpponentMove: Option[DamageMove] = None
+    lastMove: Option[DamageMove] = None
   )
 
   case class Ps(name: String, team: Map[String, PokemonState], activeId: String, items: Items, flags: BattleFlags):

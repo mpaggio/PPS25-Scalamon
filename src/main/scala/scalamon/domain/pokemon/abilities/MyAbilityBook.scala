@@ -95,7 +95,7 @@ object MyAbilityBook:
 
     OnTrigger(OnDamageTaken(Self)) define FlashFire as { state =>
       if !state.self.flags.flashFireActive &&
-        state.self.flags.lastOpponentMove.exists(move =>
+        state.opponent.flags.lastMove.exists(move =>
           move.moveType == Fire &&
             state.opponent.getActive.currentHp > 0
         )
@@ -145,7 +145,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define WaterAbsorb as { state =>
-      state.self.flags.lastOpponentMove match
+      state.opponent.flags.lastMove match
         case Some(move) if move.moveType == Water =>
           val maxHp = state.self.getActive.maxHp
           val loggedState = log(s"[WaterAbsorb] ${state.self.getActive.species.name} absorbs Water moves and heals 1/4 of its max HP!")(state)
@@ -215,7 +215,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define LightningRodLite as { state =>
-      state.self.flags.lastOpponentMove match
+      state.opponent.flags.lastMove match
         case Some(move) if move.moveType == Electric =>
           val loggedState = log(s"[LightningRodLite] ${state.self.getActive.species.name} is protected from Electric Moves!")(state)
           val maxHp = state.self.getActive.maxHp
@@ -224,7 +224,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define LightningRod as { state =>
-      state.self.flags.lastOpponentMove match
+      state.opponent.flags.lastMove match
         case Some(move) if move.moveType == Electric =>
           val loggedState = log(s"[LightningRod] ${state.self.getActive.species.name} draws Electric moves and boosts Special Attack!")(state)
           self(active(modifyStats(specialAttack(multiply(1.5)))))(loggedState)
@@ -244,7 +244,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define VoltAbsorb as { state =>
-      state.self.flags.lastOpponentMove match
+      state.opponent.flags.lastMove match
         case Some(move) if move.moveType == Electric =>
           val maxHp = state.self.getActive.maxHp
           val loggedState = log(s"[VoltAbsorb] ${state.self.getActive.species.name} absorbs Electric moves and heals 1/4 of its max HP!")(state)
@@ -280,10 +280,6 @@ object MyAbilityBook:
         case _ => updatedState
     },
 
-    OnTrigger(OnDamageTaken(Self)) define Insomnia as { state =>
-      state
-    },
-
     OnTrigger(OnSwitchIn(Self)) define Forewarn as { state =>
       foreWarnLog(state)
     },
@@ -300,7 +296,7 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define Pressure as { state =>
-      state.self.flags.lastOpponentMove match
+      state.opponent.flags.lastMove match
         case Some(move) =>
           val loggedState = log(s"[Pressure] ${state.opponent.getActive.species.name}'s ${move.name} loses 1 additional PP due " +
             s"to ${state.self.getActive.species.name}'s Pressure ability!")(state)
@@ -343,8 +339,8 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnDamageTaken(Self)) define CursedBody as { state =>
-      if Random.nextDouble() < 0.30 && state.self.flags.lastOpponentMove.isDefined then
-        val moveName = state.self.flags.lastOpponentMove.get.name
+      if Random.nextDouble() < 0.30 && state.opponent.flags.lastMove.isDefined then
+        val moveName = state.opponent.flags.lastMove.get.name
         val loggedState = log(s"[CursedBody] ${state.opponent.getActive.species.name}'s $moveName is disabled!")(state)
         opponent(active(updateMove(moveName)(ms => ms.copy(currentPp = 0))))(loggedState)
       else state

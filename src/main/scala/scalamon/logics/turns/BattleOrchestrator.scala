@@ -87,7 +87,7 @@ final class BattleOrchestrator(using DamagePolicy):
     pokemon.statusCondition.exists(_.isSelfHitting)
 
   private def executeDamageMove(move: DamageMove)(state: BattleState): BattleState =
-    val withLastMove = opponent(_.updateFlags(_.copy(lastOpponentMove = Some(move))))(state)
+    val withLastMove = self(_.updateFlags(_.copy(lastMove = Some(move))))(state)
     val afterMove = MoveAction(move)(withLastMove)
     val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
     val flippedDamageDealt = switchSelfOpponent(afterDamageDealt)
@@ -101,7 +101,7 @@ final class BattleOrchestrator(using DamagePolicy):
       afterDamageTaken
 
   private def executeNonDamageMove(move: Move)(state: BattleState): BattleState =
-    val stateWithResetFlag = opponent(_.updateFlags(_.copy(lastOpponentMove = None)))(state)
+    val stateWithResetFlag = self(_.updateFlags(_.copy(lastMove = None)))(state)
     val afterMove = MoveAction(move)(stateWithResetFlag)
     val flipped = switchSelfOpponent(afterMove)
     switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flipped))

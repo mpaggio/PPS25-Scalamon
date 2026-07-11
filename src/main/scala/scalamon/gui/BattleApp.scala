@@ -249,9 +249,15 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     _ <- refreshMoveButtons
     _ <- result match
       case SelfWins =>
-        mv(nop, _ => transitionScreen("PLAYER 1 WINS"))
+        for
+          _ <- mv(nop, _ => transitionScreen("PLAYER 1 WINS"))
+          _ <- mv(nop, _ => close())
+        yield ()
       case SelfLoses =>
-        mv(nop, _ => transitionScreen("PLAYER 2 WINS"))
+        for
+          _ <- mv(nop, _ => transitionScreen("PLAYER 2 WINS"))
+          _ <- mv(nop, _ => close())
+        yield ()
       case _ =>
         gameLoop
   yield ()

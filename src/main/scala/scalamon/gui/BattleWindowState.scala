@@ -24,6 +24,7 @@ trait BattleWindowState:
   def useMenuCenter(): State[Window, Unit]
   def useGridCenter(): State[Window, Unit]
   def nextEvent(): State[Window, String]
+  def close(): State[Window, Unit]
 
 /**
  * An implementation of the BattleWindowState trait using a Swing-based GUI.
@@ -67,3 +68,5 @@ object BattleWindowStateImpl extends BattleWindowState:
     State(w => (w.useGridCenter(), ()))
   def nextEvent(): State[Window, String] =
     State(w => (w, w.nextEvent()))
+  def close(): State[Window, Unit] =
+    State(w => (w.close, ()))
