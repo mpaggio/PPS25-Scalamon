@@ -28,6 +28,9 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
   def activeMoveNames(ps: PlayerState): List[String] =
     ps.getActive.moves.toList.map(_._1).take(4)
 
+  def activeMoveInfo(ps: PlayerState): List[String] =
+    ps.getActive.moves.take(4).map((name, move) => s"<html>$name<br>(PP = ${move.currentPp}/${move.move.pp})</html>").toList
+
   def moveNameFromButton(buttonName: String, ps: PlayerState): String =
     val moves = activeMoveNames(ps)
     val idx = buttonName.stripPrefix("Move").toInt - 1
@@ -35,7 +38,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
   def refreshMoveButtons: State[(BattleState, Window), Unit] =
     State { case (bs, w) =>
-      val moves = activeMoveNames(bs.self)
+      val moves = activeMoveInfo(bs.self)
       w.updateButtonText(moves.headOption.getOrElse("-"), "Move1")
       w.updateButtonText(moves.lift(1).getOrElse("-"), "Move2")
       w.updateButtonText(moves.lift(2).getOrElse("-"), "Move3")
@@ -44,7 +47,10 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     }
 
   def battleStatusString(bs: BattleState): String =
-    s"${bs.self.getActive.species.name} HP:${bs.self.getActive.currentHp} vs ${bs.opponent.getActive.species.name} HP:${bs.opponent.getActive.currentHp}"
+    s"${bs.self.getActive.species.name}" +
+    s" HP:${bs.self.getActive.currentHp}/${bs.self.getActive.species.baseStats.hp}" +
+    s" vs ${bs.opponent.getActive.species.name}" +
+    s" HP:${bs.opponent.getActive.currentHp}/${bs.opponent.getActive.species.baseStats.hp}"
 
   def teamToString(title: String, ps: PlayerState): String =
     val teamDetails = ps.team.map{
