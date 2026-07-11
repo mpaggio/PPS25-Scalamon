@@ -25,7 +25,7 @@ object Items:
         val logItemUse = updateLogs(logUseItem(bs.self, name))
         (effect andThen addCancel andThen consumeItem andThen logItemUse)(bs)
       else
-        updateLogs(BattleLogger.logError(s"Item $name not founf"))(bs)
+        updateLogs(BattleLogger.logError(s"Item $name not found"))(bs)
 
     override def equals(obj: Any): Boolean = obj match
       case item: Item => this.name == item.name

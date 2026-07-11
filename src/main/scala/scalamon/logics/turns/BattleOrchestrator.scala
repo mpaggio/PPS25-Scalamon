@@ -47,10 +47,12 @@ final class BattleOrchestrator(using DamagePolicy):
           executeMove(moveRef)(state)
 
       case SwitchPokemon(to) =>
-        val previousActive = state.self.getActive
-        val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
-        val switched = SwitchAction(to.value)(beforeSwitchOut)
-        applyPassiveEffects(OnSwitchIn(Self))(switched)
+        if state.flags.opponentSwitchBlocked then
+          updateLogs(BattleLogger.logMessage("Switch is blocked"))(state)
+        else
+          val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
+          val switched = SwitchAction(to.value)(beforeSwitchOut)
+          applyPassiveEffects(OnSwitchIn(Self))(switched)
 
       case UseItem(name) => state.self.items.find(_.name == name)
         .getOrElse(updateLogs(BattleLogger.logError(s"Item $name not found")))(state)
@@ -98,7 +100,8 @@ final class BattleOrchestrator(using DamagePolicy):
       afterDamageTaken
 
   private def executeNonDamageMove(move: Move)(state: BattleState): BattleState =
-    val afterMove = MoveAction(move)(state)
+    val stateWithResetFlag = state.updateFlags(_.copy(lastOpponentMove = None))
+    val afterMove = MoveAction(move)(stateWithResetFlag)
     val flipped = switchSelfOpponent(afterMove)
     switchSelfOpponent(applyPassiveEffects(OnDamageTaken(Self))(flipped))
 

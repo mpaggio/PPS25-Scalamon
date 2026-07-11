@@ -21,10 +21,6 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
   def speedOf(ps: PlayerState): Speed =
     Speed(ps.getActive.modifiedStats.speed)
 
-  def firstAvailableMove(ps: PlayerState): String =
-    ps.getActive.moves.find((_, ms) => ms.currentPp > 0).map(_._1)
-      .getOrElse(throw RuntimeException("No available move!"))
-
   def activeMoveNames(ps: PlayerState): List[String] =
     ps.getActive.moves.toList.map(_._1).take(4)
 
@@ -106,25 +102,23 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
     )
     (w, ())
 
-  def showSwitchMenu: State[(BattleState, Window), BattleAction] = State:
+  def showSwitchMenu: State[(BattleState, Window), Option[BattleAction]] = State:
     case (bs, w) =>
       val available = bs.self.team.filter((id, p) => id != bs.self.activeId && p.currentHp > 0).keys.toList
 
       if (available.isEmpty)
         javax.swing.JOptionPane.showMessageDialog(null, "No available Pokemon")
-        ((bs, w), UseMove(MoveRef(firstAvailableMove(bs.self))))
+        ((bs, w), None)
       else
         val selection = javax.swing.JOptionPane.showInputDialog(
           null, "Select a Pokemon to switch to:", "Switch",
           javax.swing.JOptionPane.QUESTION_MESSAGE, null,
           available.toArray.asInstanceOf[Array[Object]], available.head
         )
-        val action = if selection != null then
-          SwitchPokemon(PokemonRef(selection.toString))
+        if selection != null then
+          ((bs, w), Some(SwitchPokemon(PokemonRef(selection.toString))))
         else
-          UseMove(MoveRef("Skip"))
-
-        ((bs, w), action)
+          ((bs, w), None)
 
   def showForcedSwitchMenu(message: String, candidates: List[PokemonRef]): State[(BattleState, Window), PokemonRef] = State:
     case (bs, w) =>
@@ -136,25 +130,23 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
       val chosenRef = if (selection != null) PokemonRef(selection.toString) else candidates.head
       ((bs, w), chosenRef)
 
-  def showItemMenu: State[(BattleState, Window), BattleAction] = State:
+  def showItemMenu: State[(BattleState, Window), Option[BattleAction]] = State:
     case (bs, w) =>
       val available = bs.self.items.map(_.name).toList
 
       if (available.isEmpty)
         javax.swing.JOptionPane.showMessageDialog(null, "No available items")
-        ((bs, w), UseMove(MoveRef(firstAvailableMove(bs.self))))
+        ((bs, w), None)
       else
         val selection = javax.swing.JOptionPane.showInputDialog(
           null, "Select an item to use:", "Items",
           javax.swing.JOptionPane.QUESTION_MESSAGE, null,
           available.toArray.asInstanceOf[Array[Object]], available.head
         )
-        val action = if selection != null then
-          UseItem(selection.toString)
+        if selection != null then
+          ((bs, w), Some(UseItem(selection.toString)))
         else
-          UseMove(MoveRef("Skip"))
-
-        ((bs, w), action)
+          ((bs, w), None)
 
   def setupState(selectedMode: String): State[(BattleState, Window), Unit] = for
     _ <- mv(getStatus, windowCreation)
@@ -169,8 +161,22 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
   def getPlayerAction: State[(BattleState, Window), BattleAction] = for
     event <- mv(nop, _ => nextEvent())
     action <- event match
-      case "SwitchMenu" => showSwitchMenu
-      case "ItemMenu" => showItemMenu
+      case "SwitchMenu" =>
+        for
+          result <- showSwitchMenu
+          action <- result match
+            case Some(a) => State.unit[(BattleState, Window), BattleAction](a)
+            case None => getPlayerAction
+        yield action
+
+      case "ItemMenu" =>
+        for
+          result <- showItemMenu
+          action <- result match
+            case Some(a) => State.unit[(BattleState, Window), BattleAction](a)
+            case None => getPlayerAction
+        yield action
+
       case m if m.startsWith("Move") =>
         State[(BattleState, Window), BattleAction]:
           case (bs, w) =>
