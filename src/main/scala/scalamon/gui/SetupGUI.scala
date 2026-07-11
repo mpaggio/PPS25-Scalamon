@@ -60,6 +60,3 @@ object SetupGUI:
     case "Random" => RandomTeamBuilder()
     case "Affine" => AffineTeamBuilder()
     case _ => RandomTeamBuilder()
-
-  def buildOpponentBuilder(): TeamBuilder =
-    RandomTeamBuilder()
