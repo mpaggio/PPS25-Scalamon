@@ -29,6 +29,7 @@ object SwingFacade:
     def useMenuCenter(): Frame
     def useGridCenter(): Frame
     def nextEvent(): String
+    def close: Frame
 
   def createFrame(): Frame = new FrameImpl()
 
@@ -237,4 +238,8 @@ object SwingFacade:
         ta.caret.position = ta.text.length
       panel.revalidate()
       panel.repaint()
+      this
+
+    override def close: Frame =
+      frame.dispose()
       this

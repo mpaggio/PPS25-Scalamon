@@ -10,7 +10,7 @@ enum Ability:
   // Electric-Type
   case Static, LightningRodLite, LightningRod, SurgeSurfer, Aftermath, VoltAbsorb, QuickFeet
   // Psychic-Type
-  case Synchronize, MagicGuard, Insomnia, Forewarn, DrySkin, Pressure, CloudNine, SwiftSwim
+  case Synchronize, MagicGuard, Forewarn, DrySkin, Pressure, CloudNine, SwiftSwim
   // Poison-Type
   case ShedSkin, PoisonTouch, Levitate, CursedBody, ShadowTag, LiquidOoze
   

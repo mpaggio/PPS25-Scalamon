@@ -64,6 +64,6 @@ class BattleSetupTest extends AnyFunSuite:
     state.self.flags.weatherSuppressed shouldBe false
     state.self.flags.flashFireActive shouldBe false
     state.self.flags.magicGuardActive shouldBe false
-    state.self.flags.lastOpponentMove shouldBe None
+    state.self.flags.lastMove shouldBe None
 
   }
