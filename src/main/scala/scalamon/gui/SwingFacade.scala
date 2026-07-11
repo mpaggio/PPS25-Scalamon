@@ -49,12 +49,14 @@ object SwingFacade:
     private val bottomPanel = new BoxPanel(Orientation.Vertical)  // BOTTOM PART WITH BUTTONS
     private val moveRowPanel = new BoxPanel(Orientation.Horizontal)  // FOR THE MOVE BUTTONS
     private val actionRowPanel = new BoxPanel(Orientation.Horizontal) // FOR THE SWITCH & ITEM BUTTONS
+    private val manualActionRowPanel = new BoxPanel(Orientation.Horizontal) // FOR THE MANUAL ACTION BUTTONS
     private val gridPanel = new GridPanel(0, 4)   // FOR THE SELECTION GRIDS
     private val menuPanel = new BoxPanel(Orientation.Vertical)   // FOR MENU & SETUP
 
     topPanel.contents += statusRowPanel
     bottomPanel.contents += moveRowPanel
     bottomPanel.contents += actionRowPanel
+    bottomPanel.contents += manualActionRowPanel
 
     private var currentCenter: Component = menuPanel
 
@@ -110,6 +112,13 @@ object SwingFacade:
         button.preferredSize = new Dimension(240, 45)
         button.maximumSize = new Dimension(240, 45)
         actionRowPanel.contents += button
+
+      else if name == "ManualCancelLast" || name == "ManualConfirm" || name == "ManualReset" ||
+        name == "CancelLastMoveChoice" || name == "ConfirmManualMoves" || name == "ResetManualMoves" then
+        button.preferredSize = new Dimension(200, 45)
+        button.maximumSize = new Dimension(200, 45)
+        manualActionRowPanel.contents += button
+
       else
         bottomPanel.contents += button
       rootPanel.revalidate()
@@ -187,9 +196,11 @@ object SwingFacade:
 
       moveRowPanel.contents.clear()
       actionRowPanel.contents.clear()
+      manualActionRowPanel.contents.clear()
       bottomPanel.contents.clear()
       bottomPanel.contents += moveRowPanel
       bottomPanel.contents += actionRowPanel
+      bottomPanel.contents += manualActionRowPanel
 
       menuPanel.contents.clear()
       gridPanel.contents.clear()

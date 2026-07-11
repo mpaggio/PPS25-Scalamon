@@ -71,9 +71,9 @@ object ManualTeamBuildingGUI:
         _ <- setButtonTooltip(pokemonButtonName(pokemon), pokemonTooltipText(pokemon))
       yield ()
     }
-    _ <- addButton("Cancel last choice", "CancelLastChoice")
-    _ <- addButton("Reset the team", "ResetManualTeam")
-    _ <- addButton("Confirm", "ConfirmManualTeam")
+    _ <- addButton("Cancel last choice", "ManualCancelLast")
+    _ <- addButton("Reset the team", "ManualReset")
+    _ <- addButton("Confirm", "ManualConfirm")
     _ <- show()
   yield ()
 
@@ -87,7 +87,7 @@ object ManualTeamBuildingGUI:
         val event = w.nextEvent()
 
         event match
-          case "ConfirmManualTeam" =>
+          case "ManualConfirm" =>
             if selected.size == 6 then selected
             else
               w.updateLabel(s"You have to select exactly 6 Pokemon. Now you have ${selected.size}.", "ManualInfoLabel")
@@ -109,10 +109,10 @@ object ManualTeamBuildingGUI:
                 w.updateLabel("Pokémon not found.", "ManualInfoLabel")
                 loop(selected)
 
-          case "CancelLastChoice" =>
+          case "ManualCancelLast" =>
             loop(if selected.nonEmpty then selected.init else selected)
 
-          case "ResetManualTeam" =>
+          case "ManualReset" =>
             w.updateLabel("Team Reset.", "ManualInfoLabel")
             loop(Nil)
 
