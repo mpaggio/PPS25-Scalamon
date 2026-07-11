@@ -264,17 +264,20 @@ object MyAbilityBook:
 
     OnTrigger(OnDamageTaken(Self)) define Synchronize as { state =>
       state.self.getActive.statusCondition match
-        case Some(s @ (Burned | Paralyzed | Poisoned )) =>
-          val loggedState =
-            log(s"[Synchronize] ${state.self.getActive.species.name} passes $s to ${state.opponent.getActive.species.name}!")(state)
-          opponent(active(addStatus(s)))(loggedState)
-        case _ => state
+        case Some(s) =>
+          s match
+            case Burned | Paralyzed | Poisoned =>
+              val loggedState =
+                log(s"[Synchronize] ${state.self.getActive.species.name} passes $s to ${state.opponent.getActive.species.name}!")(state)
+              opponent(active(addStatus(s)))(loggedState)
+            case _ => state
+        case None => state
     },
 
     OnTrigger(OnTurnEnd) define MagicGuard as { state =>
       val updatedState = self(_.updateFlags(_.copy(magicGuardActive = true)))(state)
       updatedState.self.getActive.statusCondition match
-        case Some(s @ (Burned | Paralyzed | Poisoned | Frozen | Sleeping(_))) =>
+        case Some(Burned | Paralyzed | Poisoned | Frozen | Sleeping(_)) =>
           val loggedState = log(s"[MagicGuard] ${updatedState.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
           self(_.updateFlags(_.copy(magicGuardActive = true)))(loggedState)
         case _ => updatedState
