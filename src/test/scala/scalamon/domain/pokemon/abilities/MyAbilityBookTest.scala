@@ -398,12 +398,12 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   }
 
   test("MagicGuard sets selfMagicGuardActive flag to true") {
-    run(MagicGuard, OnTurnStart)(battle).self.flags.magicGuardActive shouldBe true
+    run(MagicGuard, OnTurnEnd)(battle).self.flags.magicGuardActive shouldBe true
   }
 
   test("MagicGuard prevents self from taking indirect damage (e.g., weather, status)") {
     val s = withWeatherAndDamage(Rain, 20)
-    val result = run(MagicGuard, OnTurnStart)(s)
+    val result = run(MagicGuard, OnTurnEnd)(s)
     result.self.getActive.currentHp shouldEqual s.self.getActive.currentHp
   }
 

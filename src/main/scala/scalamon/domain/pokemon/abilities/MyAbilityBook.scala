@@ -153,7 +153,7 @@ object MyAbilityBook:
         case _ => state
     },
 
-    OnTrigger(OnTurnEnd) define Hydration as { state =>
+    OnTrigger(OnTurnStart) define Hydration as { state =>
       if state.weather == Weather.Rain && state.self.getActive.statusCondition.isDefined then
         val loggedState = log(s"[Hydration] ${state.self.getActive.species.name} with Rain clears status conditions!")(state)
         self(active(clearStatusCondition))(loggedState)
@@ -275,9 +275,9 @@ object MyAbilityBook:
       val updatedState = self(_.updateFlags(_.copy(magicGuardActive = true)))(state)
       updatedState.self.getActive.statusCondition match
         case Some(s @ (Burned | Paralyzed | Poisoned | Frozen | Sleeping(_))) =>
-          val loggedState = log(s"[MagicGuard] ${state.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
+          val loggedState = log(s"[MagicGuard] ${updatedState.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
           self(_.updateFlags(_.copy(magicGuardActive = true)))(loggedState)
-        case _ => state
+        case _ => updatedState
     },
 
     OnTrigger(OnDamageTaken(Self)) define Insomnia as { state =>
