@@ -87,13 +87,18 @@ object MyAbilityBook:
 
     OnTrigger(OnSwitchIn(Self)) define Drought as { state =>
       if state.weather == Weather.ClearSky then
-        val loggedState = log(s"[Drought] ${state.self.getActive.species.name} sets Heavy Sunlight!")(state)
+        val loggedState = log(s"[Drought] ${state.self.getActive.species.name} changes ClearSky with Heavy Sunlight!")(state)
         setWeather(Weather.HeavySunlight)(loggedState)
       else state
     },
 
     OnTrigger(OnDamageTaken(Self)) define FlashFire as { state =>
-      if state.flags.lastOpponentMove.exists(_.moveType == Fire) then
+      if !state.flags.selfFlashFireActive &&
+        state.flags.lastOpponentMove.exists(move =>
+          move.moveType == Fire &&
+            state.opponent.getActive.currentHp > 0
+        )
+      then
         val loggedState = log(s"[FlashFire] ${state.self.getActive.species.name} is now immune to Fire moves and gains a boost!")(state)
         loggedState.updateFlags(_.copy(selfFlashFireActive = true))
       else state
@@ -105,7 +110,8 @@ object MyAbilityBook:
 
     OnTrigger(OnDamageTaken(Self)) define FlameBody as{ state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
-        val loggedState = log(s"[FlameBody] ${state.opponent.getActive.species.name} is burned!")(state)
+        val loggedState = log(s"[FlameBody] ${state.opponent.getActive.species.name} is burned " +
+          s"by ${state.self.getActive.species.name}'s FlameBody ability!")(state)
         opponent(active(addStatus(Burned)))(loggedState)
       else state
     },
@@ -186,7 +192,7 @@ object MyAbilityBook:
           case 0 => Paralyzed
           case 1 => Poisoned
           case _ => Sleeping(getSleepTurns)
-        val loggedState = log(s"[EffectSpore]) ${state.opponent.getActive.species.name} is ${status.toString}!")(state)
+        val loggedState = log(s"[${state.self.getActive.species.name}'s EffectSpore] :${state.opponent.getActive.species.name} is ${status.toString}!")(state)
         opponent(active(addStatus(status)))(loggedState)
       else state
     },
@@ -201,7 +207,8 @@ object MyAbilityBook:
 
     OnTrigger(OnDamageTaken(Opponent)) define Static as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
-        val loggedState = log(s"[Static] ${state.opponent.getActive.species.name} is paralyzed!")(state)
+        val loggedState = log(s"[Static] ${state.opponent.getActive.species.name} is paralyzed " +
+          s"due to ${state.self.getActive.species.name} Static ability!")(state)
         opponent(active(addStatus(Paralyzed)))(loggedState)
       else state
     },
@@ -288,7 +295,8 @@ object MyAbilityBook:
     OnTrigger(OnDamageTaken(Self)) define Pressure as { state =>
       state.flags.lastOpponentMove match
         case Some(move) =>
-          val loggedState = log(s"[Pressure] ${state.opponent.getActive.species.name}'s ${move.name} loses 1 additional PP due to Pressure!")(state)
+          val loggedState = log(s"[Pressure] ${state.opponent.getActive.species.name}'s ${move.name} loses 1 additional PP due " +
+            s"to ${state.self.getActive.species.name}'s Pressure ability!")(state)
           opponent(active(updateMove(move.name)(decreasePpBy(1))))(loggedState)
         case None => state
     },
@@ -308,7 +316,7 @@ object MyAbilityBook:
     // POISON
 
     OnTrigger(OnTurnStart) define ShedSkin as { state =>
-      if Random.nextDouble() < 0.30 then
+      if Random.nextDouble() < 0.30  && state.self.getActive.statusCondition.isDefined then
         val loggedState = log(s"[ShedSkin] ${state.self.getActive.species.name} recovers from status conditions!")(state)
         self(active(clearStatusCondition))(loggedState)
       else state
@@ -316,7 +324,8 @@ object MyAbilityBook:
 
     OnTrigger(OnDamageTaken(Opponent)) define PoisonTouch as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
-        val loggedState = log(s"[PoisonTouch] ${state.opponent.getActive.species.name} is poisoned!")(state)
+        val loggedState = log(s"[PoisonTouch] ${state.opponent.getActive.species.name} is poisoned " +
+          s"by ${state.self.getActive.species.name}'s PoisonTouch ability!")(state)
         opponent(active(addStatus(Poisoned)))(loggedState)
       else state
     },
