@@ -20,7 +20,7 @@ object ManualTeamBuilder:
   case class ManualTeamBuilder(
     pokemonSelector: List[Pokemon] => List[Pokemon],
     moveSelector: (Pokemon, List[Move]) => List[Move]
-  )extends TeamBuilder:
+  ) extends TeamBuilder:
 
     /**
      * Selects a team of Pokémon based on the provided `pokemonSelector` function.

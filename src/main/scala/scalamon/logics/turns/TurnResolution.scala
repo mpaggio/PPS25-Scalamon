@@ -39,15 +39,35 @@ trait TurnResolutionModule:
 
 object TurnResolutionImpl extends TurnResolutionModule:
 
+  /**
+   * Checks if a Pokémon is knocked out based on its current HP.
+   * @param pokemon The Pokémon state to check.
+   * @return true if the Pokémon is knocked out (current HP <= 0), false otherwise.
+   */
   override def isKnockedOut(pokemon: PokemonState): Boolean =
     pokemon.currentHp <= 0
 
+  /**
+   * Checks if a player is defeated by verifying if all Pokémon in their team are knocked out.
+   * @param player The player state to check.
+   * @return true if all Pokémon in the player's team are knocked out, false otherwise.
+   */
   override def isDefeated(player: PlayerState): Boolean =
     player.team.values.forall(isKnockedOut)
 
+  /**
+   * Determines if a player needs to perform a forced switch based on the state of their active Pokémon.
+   * @param player The player state to check.
+   * @return true if the player's active Pokémon is knocked out, and they are not defeated, false otherwise.
+   */
   override def needsForcedSwitch(player: PlayerState): Boolean =
     isKnockedOut(player.getActive) && !isDefeated(player)
 
+  /**
+   * Returns a list of Pokémon references for the player's bench that are still alive (not knocked out).
+   * @param player The player state to check.
+   * @return a list with the Pokémon still alive in the player's bench (not knocked out and not the active Pokémon).
+   */
   private def aliveBench(player: PlayerState): List[PokemonRef] =
     player.team.collect({
       case(id, pokemon) if id != player.activeId && !isKnockedOut(pokemon) => PokemonRef(id) }
@@ -76,14 +96,20 @@ object TurnResolutionImpl extends TurnResolutionModule:
       case state if isDefeated(state.self) => (TurnResult.SelfLoses, state)
       case state => (TurnResult.Ongoing, state)
 
+  /**
+   * Applies a forced switch for a player to a new active Pokémon if the new active Pokémon is in the player's team.
+   * @param player The player state to update.
+   * @param newActive The reference to the new active Pokémon to switch to.
+   * @return the updated player state after applying the forced switch.
+   */
   override def applyForcedSwitch(player: PlayerState, newActive: PokemonRef): PlayerState =
     if player.team.contains(newActive.value) then switchActive(newActive.value)(player)
     else player
 
   /**
-   * Applies status damage to both players' active Pokémon at the end of the turn (if necessary).
+   * Applies status damage to the active Pokémon at the end of the turn (if necessary).
    * @param state The current state of the battle.
-   * @return The updated state of the battle after applying status damage to both players' active Pokémon.
+   * @return The updated state of the battle after applying status damage to the active Pokémon.
    */
   private def applyStatusDamage(state: BattleState) =
     def applyForPlayer(s: BattleState, isSelf: Boolean): BattleState =
@@ -115,7 +141,7 @@ object TurnResolutionImpl extends TurnResolutionModule:
     summon[WeatherEndTurnResolver].apply(state)
 
   /**
-   * Resolves the end-of-turn effects for the battle, including status damage, weather effects, and end-of-turn abilities.
+   * Resolves the end-of-turn effects (altered status damage, weather effects, and end-of-turn abilities) of the battle.
    * @param state the current state of the battle after all actions have been executed.
    * @return the updated state of the battle after applying all end-of-turn effects.
    */
