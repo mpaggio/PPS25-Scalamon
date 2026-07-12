@@ -15,23 +15,41 @@ import scalamon.logics.state.BattleStateImpl.BattleState
  */
 object AbilityDamageModifier:
 
+  /**
+   * The result of a damage modifier calculation, including the multiplier and any logs generated during the calculation.
+   * @param multiplier the damage multiplier
+   * @param logs the logs generated during the calculation
+   */
   final case class DamageModifierResult(multiplier: Double, logs: List[String])
 
+  /**
+   * Combines multiple DamageModifierResults into a single result by multiplying the multipliers and concatenating the logs.
+   * @param results the list of damage modifier results to combine
+   * @return the combined damage modifier result
+   */
   private def combine(results: List[DamageModifierResult]): DamageModifierResult =
     DamageModifierResult(
       multiplier = results.map(_.multiplier).product,
       logs = results.flatMap(_.logs)
     )
 
+  /**
+   * List of all abilities of a Pokémon, including primary, secondary, and hidden abilities.
+   * @param slot the ability slot of the Pokémon
+   * @return a list of all abilities of the Pokémon
+   */
   private def allAbilities(slot: AbilitySlot):
     List[Ability] = List(Some(slot.primary), slot.secondary, slot.hidden).flatten
 
+  /**
+   * DamageModifierResult representing no effect (multiplier of 1.0 and no logs).
+   * @return a DamageModifierResult with no effect
+   */
   private def noEffect: DamageModifierResult =
     DamageModifierResult(1.0, Nil)
 
   /**
-   * Calculates the damage multiplier based on the defender's ability.
-   *
+   * Calculates the damage multiplier based on a defender's ability.
    * @param state   the current battle state
    * @param move    the move being used by the attacking Pokémon
    * @param ability the ability of the defending Pokémon
@@ -52,7 +70,7 @@ object AbilityDamageModifier:
       case _ => noEffect
 
   /**
-   * Calculates the damage multiplier based on the attacker's ability.
+   * Calculates the damage multiplier based on an attacker's ability.
    * @param state the current battle state
    * @param move the move being used by the attacking Pokémon
    * @param ability the ability of the attacking Pokémon
@@ -107,19 +125,43 @@ object AbilityDamageModifier:
       case _ => noEffect
   }
 
+  /**
+   * Calculates the damage modifier for the attacker based on its abilities.
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @return the combined damage modifier result for the attacker
+   */
   def attackerModifier(state: BattleState, move: DamageMove): DamageModifierResult =
     val attacker = state.self.getActive
     val abilities = allAbilities(attacker.species.abilitySlot)
     combine(abilities.map(abilityAttackModifier(state, move, _)))
 
+  /**
+   * Calculates the damage modifier for the defender based on its abilities.
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @return the combined damage modifier result for the defender
+   */
   def defenderModifier(state: BattleState, move: DamageMove): DamageModifierResult =
     val defender = state.opponent.getActive
     val abilities = allAbilities(defender.species.abilitySlot)
     combine(abilities.map(abilityDefenseModifier(state, move, _)))
 
+  /**
+   * Returns the damage multiplier for the attacker as a Double value
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @return the damage multiplier for the attacker
+   */
   def attackerMultiplier(state: BattleState, move: DamageMove): Double =
     attackerModifier(state, move).multiplier
 
+  /**
+   * Returns the damage multiplier for the defender as a Double value
+   * @param state the current battle state
+   * @param move the move being used by the attacking Pokémon
+   * @return the damage multiplier for the defender
+   */
   def defenderMultiplier(state: BattleState, move: DamageMove): Double =
     defenderModifier(state, move).multiplier
     

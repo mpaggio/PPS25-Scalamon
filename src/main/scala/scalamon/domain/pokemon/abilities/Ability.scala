@@ -1,5 +1,9 @@
 package scalamon.domain.pokemon.abilities
 
+/**
+ * Represents the different abilities that a Pokémon can have.
+ * Each ability has a unique effect on the battle state, which is defined in the AbilityDSL.
+ */
 enum Ability:
   // Fire-Type
   case Blaze, SolarScales, SolarPower, Drought, FlashFire, DroughtAura, FlameBody, RunAway, Guts

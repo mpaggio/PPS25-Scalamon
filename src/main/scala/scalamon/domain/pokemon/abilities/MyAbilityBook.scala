@@ -53,7 +53,7 @@ object MyAbilityBook:
     opponent(active(modifyStats(attack(multiply(1 - fraction)))))(state)
 
   /**
-   * Function to log the opponent's moves when the Forewarn ability is triggered.
+   * Function to log the opponent's moves for when the Forewarn ability is triggered.
    * @param state the current battle state
    * @return the same battle state, unchanged
    */
@@ -62,11 +62,11 @@ object MyAbilityBook:
     log(s"[Forewarn] The opponent's ${state.opponent.getActive.species.name} has the following moves: ${opponentMoves.mkString(", ")}")(state)
 
   /**
-   * Map of abilities to their corresponding definitions and effects, organized by ability type.
+   * Map of the abilities to their corresponding definitions and effects, organized by ability type.
    */
   private val book: Map[Ability, List[AbilityDefinition]] = AbilityBook(
 
-    // FIRE
+    // FIRE ABILITIES
 
     OnTrigger(OnDamageTaken(Opponent)) define Blaze as { state =>
       state
@@ -131,7 +131,7 @@ object MyAbilityBook:
       state
     },
 
-    // WATER
+    // WATER ABILITIES
 
     OnTrigger(OnDamageTaken(Opponent)) define Torrent as { state =>
       state
@@ -170,7 +170,7 @@ object MyAbilityBook:
       self(active(modifyStats(attack(multiply(1.1)))))(loggedState)
     },
 
-    // GRASS
+    // GRASS ABILITIES
 
     OnTrigger(OnDamageTaken(Opponent)) define Overgrow as { state =>
       state
@@ -204,7 +204,7 @@ object MyAbilityBook:
       self(active(heal(maxHp / 3)))(loggedState)
     },
 
-    // ELECTRIC
+    // ELECTRIC ABILITIES
 
     OnTrigger(OnDamageTaken(Opponent)) define Static as { state =>
       if Random.nextDouble() < 0.30 && state.opponent.getActive.statusCondition.isEmpty then
@@ -260,7 +260,7 @@ object MyAbilityBook:
       else state
     },
 
-    // PSICO
+    // PSYCHIC ABILITIES
 
     OnTrigger(OnDamageTaken(Self)) define Synchronize as { state =>
       state.self.getActive.statusCondition match
@@ -320,7 +320,7 @@ object MyAbilityBook:
       else state
     },
 
-    // POISON
+    // POISON ABILITIES
 
     OnTrigger(OnTurnEnd) define ShedSkin as { state =>
       if Random.nextDouble() < 0.30  && state.self.getActive.statusCondition.isDefined then
@@ -364,8 +364,6 @@ object MyAbilityBook:
     },
   )
 
-  // PUBLIC API
-
   /**
    * Returns all the definitions of a given ability, filtered by the trigger.
    * @param ability the ability to look up
@@ -382,8 +380,14 @@ object MyAbilityBook:
    */
   private def allSlots(slot: AbilitySlot): List[Ability] =
     List(Some(slot.primary), slot.secondary, slot.hidden).flatten
-    
+
+  /**
+   * Logs a message to the battle log and updates the state accordingly.
+   * @param message the message to log
+   * @return the updated state transformer
+   */
   private def log(message: String): StateTransformer = updateLogs(BattleLogger.logMessage(message))
+
   /**
    * Executes all the effects of a triggered ability for a given Pokémon on the state.
    * The caller is responsible for the orientation self/opponent before invoking this function.

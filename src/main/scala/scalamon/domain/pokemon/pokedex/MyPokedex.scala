@@ -5,6 +5,9 @@ import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.pokedex.PokedexDSL.*
 import scalamon.domain.types.Type.*
 
+/**
+ * Module providing a predefined list of Pokémon categorized by their types.
+ */
 object MyPokedex:
 
   val allPokemons: List[Pokemon] = Pokedex(
