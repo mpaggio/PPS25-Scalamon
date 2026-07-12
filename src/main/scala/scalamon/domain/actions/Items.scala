@@ -22,7 +22,7 @@ object Items:
       if bs.self.items.contains(this) then
         val addCancel = addPassiveEffect(t => if until.contains(t) then onCancel else identity)
         val consumeItem = self(items(_ - this))
-        val logItemUse = updateLogs(logUseItem(bs.self, name))
+        val logItemUse = updateLogs(logUseItem(bs.self, this))
         (effect andThen addCancel andThen consumeItem andThen logItemUse)(bs)
       else
         updateLogs(BattleLogger.logError(s"Item $name not found"))(bs)
@@ -84,3 +84,26 @@ object Items:
 
     Item("carbos", self(active(modifyStats(speed(increase(1))))))
   )
+
+  extension (item: Item)
+    def shortDescription: String = item.name match
+      case "potion" => "Heal 20 HP"
+      case "fresh_water" => "Heal 50 HP"
+      case "soda_pop" => "Heal 60 HP"
+      case "lemonade" => "Heal 80 HP"
+      case "hyper_potion" => "Heal 200 HP"
+      case "max_potion" => "Heal to full HP"
+      case "antidote" => "Cure poison"
+      case "burn_heal" => "Cure burn"
+      case "paralyze_heal" => "Cure paralysis"
+      case "awakening" => "Wake up a sleeping pokemon"
+      case "revive" => "Revive a KO Pokémon at half HP"
+      case "max_revive" => "Revive a KO Pokémon at full HP"
+      case "elixir" => "Restore 10 PP to active moves"
+      case "x_attack" => "Raise Attack until switch out or KO"
+      case "x_defense" => "Raise Defense until switch out or KO"
+      case "x_speed" => "Raise Speed until switch out or KO"
+      case "x_precision" => "Raise move accuracy until switch out or KO"
+      case "calcium" => "Raise Special Attack and Special Defense"
+      case "carbos" => "Raise Speed"
+      case other => other

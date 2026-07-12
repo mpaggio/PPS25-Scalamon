@@ -1,5 +1,6 @@
 package scalamon.logics.log
 
+import scalamon.domain.actions.Items.Item
 import scalamon.domain.moves.{AlteredStatus, Move}
 import scalamon.logics.state.BattleStateImpl.PlayerState
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
@@ -40,8 +41,8 @@ object BattleLogger:
   def logMessage(message: String)(logger: BattleLogger): BattleLogger = s"$message" :: logger
   def logError(message: String)(logger: BattleLogger): BattleLogger = s"ERROR: $message" :: logger
 
-  def logUseItem(player: PlayerState, item: String)(logger: BattleLogger): BattleLogger =
-    s"${player.getActive.species.name} ha usato l'oggetto ${item}" :: logger
+  def logUseItem(player: PlayerState, item: Item)(logger: BattleLogger): BattleLogger =
+    s"${player.getActive.species.name} ha usato l'oggetto ${item.name} - ${item.shortDescription}" :: logger
 
   def logCannotMoveIsKo(pokemonState: PokemonState)(logger: BattleLogger): BattleLogger =
     s"${pokemonState.species.name} e' KO e non puo' attaccare" :: logger

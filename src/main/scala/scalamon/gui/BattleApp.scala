@@ -132,21 +132,28 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
 
   def showItemMenu: State[(BattleState, Window), Option[BattleAction]] = State:
     case (bs, w) =>
-      val available = bs.self.items.map(_.name).toList
+      val availableItems = bs.self.items.toList
+      val labels = availableItems.map(item => s"${item.name} - ${item.shortDescription}")
 
-      if (available.isEmpty)
+      if (availableItems.isEmpty)
         javax.swing.JOptionPane.showMessageDialog(null, "No available items")
         ((bs, w), None)
       else
         val selection = javax.swing.JOptionPane.showInputDialog(
           null, "Select an item to use:", "Items",
           javax.swing.JOptionPane.QUESTION_MESSAGE, null,
-          available.toArray.asInstanceOf[Array[Object]], available.head
+          labels.toArray.asInstanceOf[Array[Object]], labels.head
         )
-        if selection != null then
-          ((bs, w), Some(UseItem(selection.toString)))
-        else
-          ((bs, w), None)
+        
+        val selectedAction =
+          Option(selection).flatMap { raw =>
+            val chosenLabel = raw.toString
+            availableItems
+              .find(item => chosenLabel.startsWith(item.name))
+              .map(item => UseItem(item.name))
+          }
+
+        ((bs, w), selectedAction)
 
   def setupState(selectedMode: String): State[(BattleState, Window), Unit] = for
     _ <- mv(getStatus, windowCreation)
