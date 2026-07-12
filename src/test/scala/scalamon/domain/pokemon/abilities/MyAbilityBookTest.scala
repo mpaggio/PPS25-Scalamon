@@ -16,7 +16,6 @@ import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.StateFixtures
 
 class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
-  // HELPERS
 
   /**
    * Runs the given ability trigger on the provided battle state.
@@ -97,7 +96,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
   private val electricMoveOpt = allMoves.collectFirst { case m: DamageMove if m.moveType == Electric => m }
   private val physMoveOpt = allMoves.collectFirst { case m: DamageMove if m.category == Physical => m }
 
-  // FIRE
+  // FIRE ABILITIES
 
   test("Blaze gives 1.5x multiplier to Fire type moves when self HP <= 1/3") {
     val lowHpState = self(active(takeDamage(30)))(battle)
@@ -211,7 +210,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     run(RunAway, OnTurnStart)(battle).self.getActive.modifiedStats.speed shouldEqual before
   }
 
-  // WATER
+  // WATER ABILITIES
 
   test("Torrent gives 1.5x multiplier to Water type moves when self HP <= 1/3") {
     val lowHpState = self(active(takeDamage(30)))(withSelfAbility(Torrent))
@@ -265,7 +264,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     after shouldEqual (before * 1.1).toInt
   }
 
-  // GRASS
+  // GRASS ABILITIES
 
   test("Overgrow gives 1.5x multiplier to Grass type moves when self HP <= 1/3") {
     val lowHpState = self(active(takeDamage(30)))(withSelfAbility(Overgrow))
@@ -306,7 +305,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     results.exists(_.opponent.getActive.statusCondition.isEmpty) shouldBe true
   }
 
-  // ELECTRIC
+  // ELECTRIC ABILITIES
 
   test("Static may paralyze opponent when hit (10 probabilistic trials)") {
     val results = (1 to 50).map(_ => run(Static, OnDamageTaken(Opponent))(battle))
@@ -386,7 +385,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     run(QuickFeet, OnTurnStart)(battle).self.getActive.modifiedStats.speed shouldEqual before
   }
 
-  // PSYCHIC
+  // PSYCHIC ABILITIES
 
   test("Synchronize copies self status condition to opponent when self has a status condition") {
     val s = self(active(addStatus(Paralyzed)))(battle)
@@ -407,7 +406,6 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     result.self.getActive.currentHp shouldEqual s.self.getActive.currentHp
   }
 
-  // ONLY LOG ABILITY
   test("Forewarn does not modify battle state on switch in") {
     val result = run(Forewarn, OnSwitchIn(Self))(battle)
     result.copy(logs = battle.logs) shouldEqual battle
@@ -460,7 +458,7 @@ class MyAbilityBookTest extends AnyFunSuite with StateFixtures:
     run(SwiftSwim, OnTurnStart)(s).self.getActive.modifiedStats.speed shouldEqual before
   }
 
-  // POISON
+  // POISON ABILITIES
 
   test("ShedSkin may clear self status condition (10 probabilistic trials)") {
     val s = self(active(addStatus(Poisoned)))(battle)

@@ -36,7 +36,7 @@ class PokedexTest extends AnyFunSuite:
     charmander.abilitySlot.hidden shouldBe Some(SolarScales)
   }
 
-  test("The DSL's extension methods should correctly assign secondary and hidden abilities to a Pokemon") {
+  test("The DSL's extension methods should correctly assign one between secondary and hidden abilities to a Pokemon") {
     val squirtle = MyPokedex.allPokemons.find(_.name == "Squirtle").get
 
     squirtle.pokemonType shouldBe Water
