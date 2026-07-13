@@ -192,7 +192,7 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   test("endTurn applies burn damage to the active burned Pokemon") {
     import scalamon.logics.state.AlteredStatusModule.applyCondition
     import scalamon.domain.moves.AlteredStatus.Burned
-    val burned = self(active(_.setStatus(Burned)))(battle)
+    val burned = self(active(addStatus(Burned)))(battle)
     val hpBefore = burned.self.getActive.currentHp
     val afterBurn = Burned.applyCondition(burned)
     val expectedDamage = burned.self.getActive.maxHp / 8

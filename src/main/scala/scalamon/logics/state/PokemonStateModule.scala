@@ -65,17 +65,3 @@ object PokemonStateModuleImpl extends PokemonStateModule:
     def maxHp: Int = pks.species.baseStats.hp.toInt
     def statusCondition: Option[AlteredStatus] = pks.status.headOption
     def clearStatusCondition: PokemonState = pks.copy(status = Set.empty)
-
-    def setStatus(status: AlteredStatus): PokemonState =
-      val allAbilities = List(
-        Some(pks.species.abilitySlot.primary),
-        pks.species.abilitySlot.secondary,
-        pks.species.abilitySlot.hidden
-      ).flatten
-      addStatus(status)(pks)
-
-
-
-
-
-

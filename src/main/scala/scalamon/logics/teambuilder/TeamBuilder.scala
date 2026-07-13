@@ -67,7 +67,7 @@ object TeamBuilder:
         s"Every player team must contain exactly $numberOfPokemonPerTeam Pokemon"
       )
       val team: Map[String, PokemonState] = chosenPokemonTeam.map(p => p.name -> buildPokemonState(p)).toMap
-      playerInitialState(playerName, team, chosenPokemonTeam.head.name, Items.all)      // TODO : item selection
+      playerInitialState(playerName, team, chosenPokemonTeam.head.name, Items.all)
 
     /**
      * Template Method for creating a [[PokemonState]].
