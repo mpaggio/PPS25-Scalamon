@@ -12,10 +12,11 @@ import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
+import scalamon.domain.types.Type
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.log.BattleLogger.emptyLogger
 import scalamon.logics.turns.ActionOrder.*
-import scalamon.logics.state.BattleStateImpl.{self, opponent}
+import scalamon.logics.state.BattleStateImpl.{opponent, self}
 
 /**
  * Coordinates the execution of a battle turn.
@@ -157,7 +158,7 @@ final class BattleOrchestrator(using DamagePolicy):
     findMove(moveRef) match
       case Some(move) if !hasPpFor(activePokemon, move) =>
         updateLogs(BattleLogger.logNotEnoughPP(activePokemon, move))(state)
-      case Some(move: DamageMove) if !canMove(activePokemon) =>
+      case Some(move: DamageMove) if !canMove(activePokemon, move.moveType, state.weather) =>
         activePokemon.statusCondition match
           case Some(blockingStatus) => updateLogs(BattleLogger.logStatusPreventsMove(activePokemon, blockingStatus))(state)
           case None => updateLogs(BattleLogger.logCannotMove(activePokemon))(state)
@@ -173,8 +174,8 @@ final class BattleOrchestrator(using DamagePolicy):
   private def hasPpFor(pokemon: PokemonState, move: Move): Boolean =
     pokemon.moveState(move.name).currentPp > 0
 
-  private def canMove(pokemon: PokemonState): Boolean =
-    pokemon.statusCondition.forall(_.canMove)
+  private def canMove(pokemon: PokemonState, moveType: Type, currentWeather: Weather): Boolean =
+    pokemon.statusCondition.forall(_.canMove(moveType, currentWeather))
 
   private def isSelfHitting(pokemon: PokemonState): Boolean =
     pokemon.statusCondition.exists(_.isSelfHitting)

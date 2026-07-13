@@ -4,32 +4,36 @@ import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.moves.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.ProbabilityRoll
+import scalamon.domain.types.Type.*
 import scalamon.logics.state.AlteredStatusModule.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
+import scalamon.domain.weather.Weather.*
+import scalamon.logics.weather.WeatherSystem.given
 
 class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with StateFixtures:
 
   test("Sleeping and Charging Pokemon should not be able to move"):
     import scalamon.domain.moves.Accuracy.given
-    Sleeping(3).canMove shouldBe false
-    Charging(2).canMove shouldBe false
+    import scalamon.logics.weather.WeatherSystem.given
+    Sleeping(3).canMove(Grass, ClearSky) shouldBe false
+    Charging(2).canMove(Grass, ClearSky) shouldBe false
 
   test("Paralyzed Pokemon should fail to move when the roll is withing failure chance"):
     given ProbabilityRoll = () => 10
-    Paralyzed.canMove shouldBe false
+    Paralyzed.canMove(Grass, ClearSky) shouldBe false
 
   test("Paralyzed Pokemon should move when the roll is outside failure chance"):
     given ProbabilityRoll = () => 50
-    Paralyzed.canMove shouldBe true
+    Paralyzed.canMove(Grass, ClearSky) shouldBe true
 
   test(s"Frozen Pokemon should move only if it thaws (roll <= $freezeThawingChance)"):
     locally:
       given ProbabilityRoll = () => 5
-      Frozen.canMove shouldBe true
+      Frozen.canMove(Grass, ClearSky) shouldBe true
 
     locally:
       given ProbabilityRoll = () => 20
-      Frozen.canMove shouldBe false
+      Frozen.canMove(Grass, ClearSky) shouldBe false
 
   test(s"Confused Pokemon should hit itself based on $confusionSelfHitChance"):
     locally:

@@ -9,6 +9,7 @@ import scalamon.logics.state.DamageMoveCalculatorImpl.getDamage
 import scalamon.logics.state.DamagePolicy
 import scalamon.domain.actions.Action
 import scalamon.logics.log.BattleLogger
+import scalamon.logics.weather.WeatherSystem
 
 /**
  * A concrete [[Action]] representing the execution logic of a Pokémon move during battle.
@@ -22,8 +23,10 @@ import scalamon.logics.log.BattleLogger
  * @param target The intended target of the move (defaults to Opponent).
  * @param policy The contextual [[DamagePolicy]] used to determine damage intensity.
  * @param roll The contextual [[ProbabilityRoll]] used for accuracy and effect checks.
+ * @param weather The contextual [[WeatherSystem]] used for alterations.
  */
-case class MoveAction(move: Move, target: Target = Opponent)(using policy: DamagePolicy, roll: ProbabilityRoll) extends Action:
+case class MoveAction(move: Move, target: Target = Opponent)
+   (using policy: DamagePolicy, roll: ProbabilityRoll, weather: WeatherSystem) extends Action:
   /**
    * Transforms the current battle state by executing the move's logic.
    *
@@ -36,7 +39,10 @@ case class MoveAction(move: Move, target: Target = Opponent)(using policy: Damag
    * @return A new [[BattleState]] reflecting all changes.
    */
   override def apply(bs: BattleState): BattleState =
-    val isHit = move.accuracy.test
+    val effectiveAccuracy = if weather.ignoresAccuracy(bs.weather, move.moveType) then move.accuracy
+      else move.accuracy * weather.accuracyMultiplier(bs.weather)
+
+    val isHit = effectiveAccuracy.test
 
     val logStep = updateLogs(BattleLogger.logMoveRoll(move, isHit))
 

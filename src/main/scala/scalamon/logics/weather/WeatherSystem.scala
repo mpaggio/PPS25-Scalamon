@@ -1,5 +1,7 @@
 package scalamon.logics.weather
 
+import scalamon.domain.moves.AlteredStatus
+import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.types.Type
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
@@ -94,12 +96,12 @@ trait WeatherSystem:
    *
    * @param weather
    * the active weather condition
-   * @param moveType
-   * the type of the move or residual effect being evaluated
+   * @param status
+   * the type of the altered status being evaluated
    * @return
    * the residual damage multiplier to apply
    */
-  def residualDamageMultiplier(weather: Weather, moveType: Type): Double
+  def residualDamageMultiplier(weather: Weather, status: AlteredStatus): Double
 
   /**
    * Returns the fraction of max HP dealt as end-of-turn damage.
@@ -157,8 +159,8 @@ object WeatherSystem:
       case (Thunderstorm, Electric) => Some(0.7)
       case _ => None
 
-    override def residualDamageMultiplier(weather: Weather, moveType: Type): Double = (weather, moveType) match
-      case (HeavySunlight, Poison) => 1.2
+    override def residualDamageMultiplier(weather: Weather, status: AlteredStatus): Double = (weather, status) match
+      case (HeavySunlight, Poisoned) => 1.2
       case _ => 1.0
 
     override def endTurnDamageFraction(weather: Weather, pokemonType: Type): Double = (weather, pokemonType) match

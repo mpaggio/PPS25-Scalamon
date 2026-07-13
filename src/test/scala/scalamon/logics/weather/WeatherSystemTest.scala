@@ -1,6 +1,7 @@
 package scalamon.logics.weather
 
 import org.scalatest.funsuite.AnyFunSuite
+import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather.*
 import scalamon.logics.weather.WeatherSystem.given
@@ -84,12 +85,12 @@ final class WeatherSystemTest extends AnyFunSuite:
   }
 
   test("HeavySunlight increases Poison residual damage") {
-    assert(weatherSystem.residualDamageMultiplier(HeavySunlight, Poison) == 1.2)
+    assert(weatherSystem.residualDamageMultiplier(HeavySunlight, Poisoned) == 1.2)
   }
 
   test("other move-weather combinations keep neutral residual damage") {
-    assert(weatherSystem.residualDamageMultiplier(HeavySunlight, Fire) == 1.0)
-    assert(weatherSystem.residualDamageMultiplier(ClearSky, Poison) == 1.0)
+    assert(weatherSystem.residualDamageMultiplier(HeavySunlight, Burned) == 1.0)
+    assert(weatherSystem.residualDamageMultiplier(ClearSky, Poisoned) == 1.0)
   }
 
   test("Rain damages Fire types at end of turn") {
@@ -120,7 +121,7 @@ final class WeatherSystemTest extends AnyFunSuite:
     assert(!weatherSystem.blocksFreeze(ClearSky))
     assert(weatherSystem.sleepChanceMultiplier(ClearSky, Psychic) == 1.0)
     assert(weatherSystem.paralysisChanceOverride(ClearSky, Electric).isEmpty)
-    assert(weatherSystem.residualDamageMultiplier(ClearSky, Poison) == 1.0)
+    assert(weatherSystem.residualDamageMultiplier(ClearSky, Poisoned) == 1.0)
     assert(weatherSystem.endTurnDamageFraction(ClearSky, Fire) == 0.0)
     assert(weatherSystem.endTurnHealFraction(ClearSky, Psychic) == 0.0)
   }

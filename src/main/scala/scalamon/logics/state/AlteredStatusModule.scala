@@ -4,11 +4,13 @@ import scalamon.domain.moves.AlteredStatus
 import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.moves.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.*
+import scalamon.domain.types.Type
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
+import scalamon.logics.weather.WeatherSystem
 
 /**
  * Logic module responsible for the lifecycle and combat effects of [[AlteredStatus]].
@@ -30,10 +32,17 @@ object AlteredStatusModule:
      *
      * @return True if the Pokémon can act, false otherwise.
      */
-    def canMove(using roll: ProbabilityRoll): Boolean = status match
+    def canMove(moveType: Type, currentWeather: Weather)(using roll: ProbabilityRoll, weather: WeatherSystem): Boolean = status match
       case Sleeping(_) | Charging(_) => false
-      case Frozen => accuracyFromPercent(freezeThawingChance).test
-      case Paralyzed => !accuracyFromPercent(paralysisFailureChance).test
+      case Frozen =>
+        if weather.blocksFreeze(currentWeather) then false
+        else accuracyFromPercent(freezeThawingChance).test
+      case Paralyzed =>
+        val failChance = weather
+          .paralysisChanceOverride(currentWeather, moveType)
+          .map(pct => (pct*100).toInt)
+          .getOrElse(paralysisFailureChance)
+        !accuracyFromPercent(failChance).test
       case _ => true
 
     /**
@@ -58,12 +67,13 @@ object AlteredStatusModule:
      *
      * @return A function that transforms a [[BattleState]] into its next version.
      */
-    def applyCondition(using roll: ProbabilityRoll): StateTransformer = battleState => status match
+    def applyCondition(using roll: ProbabilityRoll, weather: WeatherSystem): StateTransformer = battleState => status match
       case Burned | Poisoned =>
         if battleState.self.flags.magicGuardActive then battleState
         else
           val a = battleState.self.getActive
-          val damageAmount = a.species.baseStats.hp.toInt / statusDamageDivisor
+          val baseDamage = a.species.baseStats.hp.toInt / statusDamageDivisor
+          val damageAmount = (baseDamage * weather.residualDamageMultiplier(battleState.weather, status)).toInt
           val damageState = self(active(takeDamage(damageAmount)))(battleState)
           updateLogs(BattleLogger.logStatusDamage(a, status, damageAmount))(damageState)
       case Sleeping(turns) =>
