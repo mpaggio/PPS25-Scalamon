@@ -133,7 +133,7 @@ import scalamon.gui.ManualTeamBuildingGUI.chooseManualBuilder
   def showItemMenu: State[(BattleState, Window), Option[BattleAction]] = State:
     case (bs, w) =>
       val availableItems = bs.self.items.toList
-      val labels = availableItems.map(item => s"${item.name} - ${item.shortDescription}")
+      val labels = availableItems.map(item => s"${item.name} (${item.description})")
 
       if (availableItems.isEmpty)
         javax.swing.JOptionPane.showMessageDialog(null, "No available items")
