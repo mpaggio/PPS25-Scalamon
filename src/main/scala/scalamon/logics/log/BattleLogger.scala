@@ -296,7 +296,7 @@ object BattleLogger:
    *   the updated logger
    */
   def logUseItem(player: PlayerState, item: Item)(logger: BattleLogger): BattleLogger =
-    s"${player.getActive.species.name} used the item ${item.name} - ${item.shortDescription}" :: logger
+    s"${player.getActive.species.name} used the item ${item.name} - ${item.description}" :: logger
 
   /**
    * Logs that a Pokémon cannot act because it is knocked out.
