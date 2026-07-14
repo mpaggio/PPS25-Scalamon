@@ -7,7 +7,7 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.19" % Test
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "3.0.0"
 
-Compile / mainClass := Some("scalamon.gui.BattleApp")
+Compile / mainClass := Some("scalamon.runScalamonGUI")
 Compile / run / fork := true
 
 inThisBuild(
