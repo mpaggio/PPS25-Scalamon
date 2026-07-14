@@ -11,6 +11,7 @@ import scalamon.logics.turns.PokemonRef
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.logics.turns.TurnResult.*
 import scalamon.domain.moves.Accuracy.given
+import scalamon.logics.turns.Side.{Opponent, Self}
 
 class TurnResolutionTest extends AnyFunSuite with StateFixtures:
 
@@ -103,17 +104,17 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   
   test("resolveTurn SelfWins is triggered when all opponent's Pokemon are knocked out"){
     val opponentAllKO = opponent( all( currentHp( decrease( 999)))) (battle)
-    resolveTurn(opponentAllKO)._1 shouldBe SelfWins
+    resolveTurn(opponentAllKO)._1 shouldBe Victory(Self)
   }
 
   test("resolveTurn SelfWins takes priority over ForcedSwitch on a simultaneous KO"){
     val simultaneousKO = self(active(currentHp(decrease(1))))(opponent(all(currentHp(decrease(999))))(battleActiveLowHP))
-    resolveTurn(simultaneousKO)._1 shouldBe SelfWins
+    resolveTurn(simultaneousKO)._1 shouldBe Victory(Self)
   }
 
   test("resolveTurn SelfLoses is triggered when all self's Pokemon are knocked out"){
     val selfAllKO = self(active(currentHp(decrease(1))))(battleOnlyLowHP)
-    resolveTurn(selfAllKO)._1 shouldBe SelfLoses
+    resolveTurn(selfAllKO)._1 shouldBe Victory(Opponent)
   }
 
   test("resolveTurn returns ForcedSwitch when self's active Pokemon is KO but bench is alive") {
@@ -124,9 +125,9 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   test("resolveTurn ForcedSwitch candidates contain only alive bench Pokemon"){
     val activeKO = self ( active ( currentHp ( decrease(1))))(battleActiveLowHP)
     resolveTurn(activeKO)._1 match
-      case ForcedSwitch(candidates) =>
-        assert(candidates.nonEmpty)
-        assert(candidates.forall(ref => !isKnockedOut(player1.team(ref.value))))
+      case ForcedSwitch(switchRequests) =>
+        assert(switchRequests.nonEmpty)
+        assert(switchRequests.head.candidates.forall(ref => !isKnockedOut(player1.team(ref.value))))
       case _ => fail("Expected ForcedSwitch result")
   }
 
@@ -139,7 +140,11 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
     )
     val battleWithBench = battleState(player1, opponentWithBench)
     val opponentActiveKO = opponent( active ( currentHp( decrease(999))))(battleWithBench)
-    resolveTurn(opponentActiveKO)._1 shouldBe a [OpponentForcedSwitch]
+    resolveTurn(opponentActiveKO)._1 shouldBe a [ForcedSwitch]
+    resolveTurn(opponentActiveKO)._1 match
+      case ForcedSwitch(switchRequests) =>
+        assert(switchRequests.nonEmpty)
+        assert(switchRequests.head.side == Opponent)
   }
 
   test("resolveTurn returns BothForcedSwitch when both active Pokemon are KO but both sides have alive bench Pokemon") {
@@ -150,7 +155,13 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
     )
     val battleWithBench = battleState(player1, opponentWithBench)
     val bothActiveKO = self(active(currentHp(decrease(999))))(opponent(active(currentHp(decrease(999))))(battleWithBench))
-    resolveTurn(bothActiveKO)._1 shouldBe a [BothForcedSwitch]
+    resolveTurn(bothActiveKO)._1 shouldBe a [ForcedSwitch]
+    resolveTurn(bothActiveKO)._1 match
+      case ForcedSwitch(switchRequests) =>
+        assert(switchRequests.size == 2)
+        assert(switchRequests.exists(_.side == Self))
+        assert(switchRequests.exists(_.side == Opponent))
+      case _ => fail("Expected ForcedSwitch result")
   }
 
   test("applyForcedSwitch changes the active Pokemon with the requested one"){

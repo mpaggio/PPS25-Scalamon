@@ -6,7 +6,7 @@ import scalamon.domain.moves.Move
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
 import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
-import scalamon.logics.teambuilder.TeamBuilder.{numberOfMovesPerPokemon, numberOfPokemonPerTeam}
+import scalamon.app.GameConfig.*
 
 class BattleSetupTest extends AnyFunSuite:
 
@@ -36,19 +36,21 @@ class BattleSetupTest extends AnyFunSuite:
     )
 
     val builder1 = ManualTeamBuilder(
-      pokemonSelector = _ => team1,
-      moveSelector = (_, _) => List(moveNamed("Body slam"), moveNamed("Hyper beam"), moveNamed("Double edge"), moveNamed("Slash"))
+      choosePokemonTeam = (_, _) => team1,
+      chooseMoves = (_, _, _) => List(moveNamed("Body slam"), moveNamed("Hyper beam"), moveNamed("Double edge"), moveNamed("Slash")),
+      chooseItems = (_, _) => Set.empty
     )
 
     val builder2 = ManualTeamBuilder(
-      pokemonSelector = _ => team2,
-      moveSelector = (_, _) => List(moveNamed("Swift"), moveNamed("Strength"), moveNamed("Recover"), moveNamed("Ember"))
+      choosePokemonTeam = (_, _) => team2,
+      chooseMoves = (_, _, _) => List(moveNamed("Swift"), moveNamed("Strength"), moveNamed("Recover"), moveNamed("Ember")),
+      chooseItems = (_, _) => Set.empty
     )
 
     val state = BattleSetup.setupBattle(builder1, builder2)
 
-    state.self.team.size shouldBe numberOfPokemonPerTeam
-    state.opponent.team.size shouldBe numberOfPokemonPerTeam
+    state.self.team.size shouldBe TeamSize
+    state.opponent.team.size shouldBe TeamSize
 
     state.self.team.keySet shouldBe team1.map(_.name).toSet
     state.opponent.team.keySet shouldBe team2.map(_.name).toSet
@@ -56,8 +58,8 @@ class BattleSetupTest extends AnyFunSuite:
     state.self.activeId shouldBe team1.head.name
     state.opponent.activeId shouldBe team2.head.name
 
-    state.self.team.values.foreach(_.moves.size shouldBe numberOfMovesPerPokemon)
-    state.opponent.team.values.foreach(_.moves.size shouldBe numberOfMovesPerPokemon)
+    state.self.team.values.foreach(_.moves.size shouldBe MovesPerPokemon)
+    state.opponent.team.values.foreach(_.moves.size shouldBe MovesPerPokemon)
 
     state.passiveEffects shouldBe empty
     state.opponent.flags.isSwitchBlocked shouldBe false
