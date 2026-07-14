@@ -39,10 +39,9 @@ case class MoveAction(move: Move, target: Target = Opponent)
    * @return A new [[BattleState]] reflecting all changes.
    */
   override def apply(bs: BattleState): BattleState =
-    val effectiveAccuracy = if weather.ignoresAccuracy(bs.weather, move.moveType) then move.accuracy
-      else move.accuracy * weather.accuracyMultiplier(bs.weather)
-
-    val isHit = effectiveAccuracy.test
+    val isHit =
+      if weather.ignoresAccuracy(bs.weather, move.moveType) then true
+      else (move.accuracy * weather.accuracyMultiplier(bs.weather)).test
 
     val logStep = updateLogs(BattleLogger.logMoveRoll(move, isHit))
 

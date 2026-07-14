@@ -85,7 +85,7 @@ final class WeatherSystemTest extends AnyFunSuite:
   }
 
   test("HeavySunlight increases Poison residual damage") {
-    assert(weatherSystem.residualDamageMultiplier(HeavySunlight, Poisoned) == 1.2)
+    assert(weatherSystem.residualDamageMultiplier(HeavySunlight, Poisoned) == 1.5)
   }
 
   test("other move-weather combinations keep neutral residual damage") {

@@ -26,6 +26,15 @@ class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with St
     given ProbabilityRoll = () => 50
     Paralyzed.canMove(Grass, ClearSky) shouldBe true
 
+  test("Thunderstorm should override paralysis failure chance for Electric type"):
+    locally:
+      given ProbabilityRoll = () => 60
+      Paralyzed.canMove(Electric, Thunderstorm) shouldBe false
+
+      locally:
+        given ProbabilityRoll = () => 80
+        Paralyzed.canMove(Electric, Thunderstorm) shouldBe true
+
   test(s"Frozen Pokemon should move only if it thaws (roll <= $freezeThawingChance)"):
     locally:
       given ProbabilityRoll = () => 5
@@ -34,6 +43,10 @@ class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with St
     locally:
       given ProbabilityRoll = () => 20
       Frozen.canMove(Grass, ClearSky) shouldBe false
+
+  test("Heavy sunlight should prevent frozen pokemon from thawing"):
+    given ProbabilityRoll = () => 1
+    Frozen.canMove(Grass, HeavySunlight) shouldBe false
 
   test(s"Confused Pokemon should hit itself based on $confusionSelfHitChance"):
     locally:
@@ -73,3 +86,17 @@ class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with St
     val stateWithSleep0 = self(active(addStatus(sleep0)))(battle)
     val stateAfterWakingUp = sleep0.applyCondition(stateWithSleep0)
     stateAfterWakingUp.self.getActive.statusCondition shouldBe None
+
+  test("Heavy sunlight should increase poison residual damage"):
+    import scalamon.domain.moves.Accuracy.given
+
+    val poisonedState = self(active(addStatus(Poisoned)))(battle)
+    val hpBefore = poisonedState.self.getActive.currentHp
+    val baseDamage = poisonedState.self.getActive.maxHp / statusDamageDivisor
+    val normalDamageState = Poisoned.applyCondition(poisonedState.copy(weather = ClearSky))
+    val weatherDamageState = Poisoned.applyCondition(poisonedState.copy(weather = HeavySunlight))
+    val normalLoss = hpBefore - normalDamageState.self.getActive.currentHp
+    val weatherLoss = hpBefore - weatherDamageState.self.getActive.currentHp
+    normalLoss shouldBe baseDamage
+    weatherLoss shouldBe (baseDamage * 1.5).toInt
+    weatherLoss should be > normalLoss

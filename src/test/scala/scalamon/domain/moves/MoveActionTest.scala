@@ -15,6 +15,8 @@ import scalamon.domain.pokemon.pokedex.MyPokedex.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.StatsStateModuleImpl.*
 import Accuracy.*
+import scalamon.domain.weather.Weather.*
+import scalamon.logics.weather.WeatherSystem.given
 
 class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
 
@@ -131,3 +133,20 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleFinalState.opponent.team.filterNot(_._1 == battleFinalState.opponent.activeId).values.foreach(pS => pS.currentHp shouldBe (100 - 10))
     battleFinalState.opponent.getActive.modifiedStats.speed shouldBe (battleFinalState.opponent.getActive.species.baseStats.speed.toInt - 2)
     battleFinalState.self.getActive.currentHp shouldBe math.min(100, battleFinalState.self.getActive.species.baseStats.hp.toInt)
+
+  test("Fog should reduce move accuracy"):
+    import scalamon.logics.state.DamagePolicy.Easy.given
+    given ProbabilityRoll = () => 90
+
+    val fogBattle = battleStartingState.copy(weather = Fog)
+    val battleEndingState = MoveAction(swift)(fogBattle)
+    battleEndingState.opponent.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
+
+  test("Rain should make Electric moves ignore accuracy"):
+    import scalamon.logics.state.DamagePolicy.Easy.given
+    given ProbabilityRoll = () => 100
+
+    val thunder = move named "Thunder" withPower 120 withPP 16 withAccuracy 70 withType Electric as Special
+    val rainBattle = createBattleState(thunder).copy(weather = Rain)
+    val battleEndingState = MoveAction(thunder)(rainBattle)
+    battleEndingState.opponent.team(pokemon.name).currentHp should be < pokemon.baseStats.hp.toInt

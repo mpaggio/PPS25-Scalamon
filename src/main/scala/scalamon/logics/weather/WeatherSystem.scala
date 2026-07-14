@@ -160,7 +160,7 @@ object WeatherSystem:
       case _ => None
 
     override def residualDamageMultiplier(weather: Weather, status: AlteredStatus): Double = (weather, status) match
-      case (HeavySunlight, Poisoned) => 1.2
+      case (HeavySunlight, Poisoned) => 1.5
       case _ => 1.0
 
     override def endTurnDamageFraction(weather: Weather, pokemonType: Type): Double = (weather, pokemonType) match
