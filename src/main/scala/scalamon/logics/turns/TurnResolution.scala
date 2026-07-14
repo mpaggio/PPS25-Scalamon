@@ -96,15 +96,6 @@ object TurnResolutionImpl extends TurnResolutionModule:
     if player.team.contains(newActive.value) then switchActive(newActive.value)(player)
     else player
 
-  // ---------------------------------------------------------------------
-  // End-of-turn effects
-  //
-  // The two "applyForPlayer(state, isSelf)" helpers are replaced by a
-  // single generic combinator. Ideally `onSide` / `forBothSides` should
-  // live in StateTransformerModuleImpl next to switchSelfOpponent, so
-  // that BattleOrchestrator can reuse them too (see notes).
-  // ---------------------------------------------------------------------
-
   /** Runs f from the perspective of the given side, restoring orientation. */
   private def onSide(side: Side)(f: BattleState => BattleState): BattleState => BattleState =
     side match
