@@ -50,6 +50,4 @@ object PlayerStateModuleImpl extends PlayerStateModule:
   def all(f: InnerOp): Op = ps => ps.copy(team = mapValues(ps.team)(f))
   def allThat(p: PokemonState => Boolean)(f: InnerOp): Op = ps => ps.copy(team = mapValues(ps.team)(s => if p(s) then f(s) else s))
   def items(f: Items => Items): Op = ps => ps.copy(items = f(ps.items))
-
-  extension (ps: PlayerState)
-    def updateFlags(f: BattleFlags => BattleFlags): PlayerState = ps.copy(flags = f(ps.flags))
+  def updateFlags(f: BattleFlags => BattleFlags): Op = ps => ps.copy(flags = f(ps.flags))

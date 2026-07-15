@@ -1,6 +1,6 @@
 package scalamon.app
 
-import scalamon.util.State
+import scalamon.util.StateMonad
 import scalamon.logics.teambuilder.TeamBuilder.*
 
 /** A move as shown to the player (name and PP), free of any UI markup. */
@@ -46,31 +46,31 @@ trait GameView:
   /** The initial, empty view. */
   def initial: V
 
-  def chooseDifficulty: State[V, Difficulty]
-  def chooseMode: State[V, Mode]
+  def chooseDifficulty: StateMonad[V, Difficulty]
+  def chooseMode: StateMonad[V, Mode]
 
   /** A selector that interactively lets the player pick the team. */
-  def chooseTeam(player: String): State[V, PokemonSelector]
+  def chooseTeam(player: String): StateMonad[V, PokemonSelector]
 
   /** A selector that interactively lets the player pick the moves of a Pokémon. */
-  def chooseMoves(player: String): State[V, MoveSelector]
+  def chooseMoves(player: String): StateMonad[V, MoveSelector]
 
   /** A selector that interactively lets the player pick the items. */
-  def chooseItems(player: String): State[V, ItemSelector]
+  def chooseItems(player: String): StateMonad[V, ItemSelector]
 
   /** Builds the battle screen and shows the initial setup log. */
-  def showBattleScreen(vm: BattleViewModel, setupLog: String): State[V, Unit]
+  def showBattleScreen(vm: BattleViewModel, setupLog: String): StateMonad[V, Unit]
 
   /** Refreshes status, weather and appends `vm.log` to the battle log. */
-  def renderBattle(vm: BattleViewModel): State[V, Unit]
+  def renderBattle(vm: BattleViewModel): StateMonad[V, Unit]
 
   /** Asks the current player for an action; retries internally until a valid choice is made. */
-  def askAction(prompt: ActionPrompt): State[V, PlayerIntent]
+  def askAction(prompt: ActionPrompt): StateMonad[V, PlayerIntent]
 
   /** Asks for a mandatory switch; always returns one of the candidates. */
-  def askForcedSwitch(message: String, candidates: List[String]): State[V, String]
+  def askForcedSwitch(message: String, candidates: List[String]): StateMonad[V, String]
 
   /** Shows a blocking message to the players (hot-seat transitions, victory, ...). */
-  def announce(message: String): State[V, Unit]
+  def announce(message: String): StateMonad[V, Unit]
 
-  def close: State[V, Unit]
+  def close: StateMonad[V, Unit]

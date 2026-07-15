@@ -5,8 +5,8 @@ import scalamon.domain.actions.Items.Item
 import scalamon.domain.moves.{DamageMove, Move, StatusMove}
 import scalamon.domain.pokemon.Pokemon
 import scalamon.logics.teambuilder.TeamBuilder.*
-import scalamon.util.State
-import scalamon.util.State.*
+import scalamon.util.StateMonad
+import scalamon.util.StateMonad.*
 import scalamon.view.SwingFacade.*
 import scalamon.view.Widgets.*
 
@@ -30,12 +30,12 @@ object SwingGameView extends GameView:
   private val BattleSize = (500, 600)
 
   /** Lifts a fluent Frame operation into the State monad. */
-  private def io(f: Frame => Frame): State[Frame, Unit] =
-    State(w => (f(w), ()))
+  private def io(f: Frame => Frame): StateMonad[Frame, Unit] =
+    StateMonad(w => (f(w), ()))
 
   /** Blocks until an event accepted by the predicate arrives. */
-  private def waitEvent(accept: String => Boolean): State[Frame, String] =
-    State { w =>
+  private def waitEvent(accept: String => Boolean): StateMonad[Frame, String] =
+    StateMonad { w =>
       @tailrec def loop(): String =
         val event = w.nextEvent()
         if accept(event) then event else loop()
@@ -65,20 +65,20 @@ object SwingGameView extends GameView:
 
   // ---------- setup menus ----------
 
-  private def menuScreen(subtitle: String, options: List[String]): State[Frame, String] = for
+  private def menuScreen(subtitle: String, options: List[String]): StateMonad[Frame, String] = for
     _ <- io(_.clear().useMenuCenter().setSize(MenuSize._1, MenuSize._2))
     _ <- io(_.addCenterLabel("SCALAMON", "MenuTitle"))
     _ <- io(_.addCenterLabel(subtitle, "MenuSubtitle"))
-    _ <- State.traverse(options)(option => io(_.addCenterButton(option, option)))
+    _ <- StateMonad.traverse(options)(option => io(_.addCenterButton(option, option)))
     _ <- io(_.show())
     event <- waitEvent(options.contains)
   yield event
 
-  def chooseDifficulty: State[Frame, Difficulty] =
+  def chooseDifficulty: StateMonad[Frame, Difficulty] =
     menuScreen("Select the difficulty:", Difficulty.values.toList.map(_.toString))
       .map(Difficulty.valueOf)
 
-  def chooseMode: State[Frame, Mode] =
+  def chooseMode: StateMonad[Frame, Mode] =
     menuScreen("Select the team building mode:", Mode.values.toList.map(_.toString))
       .map(Mode.valueOf)
 
@@ -94,13 +94,13 @@ object SwingGameView extends GameView:
     tooltip: A => String
   )
 
-  private def pickerScreen[A](p: Picker[A], title: String): State[Frame, Unit] = for
+  private def pickerScreen[A](p: Picker[A], title: String): StateMonad[Frame, Unit] = for
     _ <- io(_.clear().useGridCenter().setSize(PickerSize._1, PickerSize._2))
     _ <- io(_.addLabel(s"${p.player}: $title", "PickTitle"))
     _ <- io(_.addLabel(s"${p.player}: Click on an option to add/remove it", "PickSubtitle"))
     _ <- io(_.addLabel(s"${p.player}: No ${p.itemLabel} selected!", "PickSelectedLabel"))
     _ <- io(_.addLabel(s"${p.player}: Select ${p.size} ${p.itemLabel}, then press Confirm.", "PickInfoLabel"))
-    _ <- State.traverse(p.items)(item =>
+    _ <- StateMonad.traverse(p.items)(item =>
       io(_.addButton(p.name(item), PickPrefix + p.name(item))
           .setButtonTooltip(PickPrefix + p.name(item), p.tooltip(item))))
     _ <- io(_.addButton("Cancel last choice", PickCancelLast))
@@ -115,9 +115,9 @@ object SwingGameView extends GameView:
       selected.map(p.name).mkString(", ")
 
   /** Toggle-based selection loop: confirm succeeds only with exactly `p.size` items. */
-  private def pickExactly[A](p: Picker[A], title: String): State[Frame, List[A]] = for
+  private def pickExactly[A](p: Picker[A], title: String): StateMonad[Frame, List[A]] = for
     _ <- pickerScreen(p, title)
-    selected <- State { (w: Frame) =>
+    selected <- StateMonad { (w: Frame) =>
       @tailrec def loop(selected: List[A]): List[A] =
         w.updateLabel(selectionText(p, selected), "PickSelectedLabel")
         w.nextEvent() match
@@ -189,24 +189,24 @@ object SwingGameView extends GameView:
    * invokes it. This steps outside the State threading on purpose — it is
    * sound because the Swing Frame mutates in place.
    */
-  private def deferred[F](make: Frame => F): State[Frame, F] =
-    State(w => (w, make(w)))
+  private def deferred[F](make: Frame => F): StateMonad[Frame, F] =
+    StateMonad(w => (w, make(w)))
   
-  def chooseTeam(player: String): State[Frame, PokemonSelector] =
+  def chooseTeam(player: String): StateMonad[Frame, PokemonSelector] =
     deferred(w => (available, size) =>
       pickExactly(
         Picker(player, "Pokémon", size, available, _.name, pokemonTooltip),
         s"Select exactly $size Pokémon for your team:"
       ).run(w)._2)
 
-  def chooseMoves(player: String): State[Frame, MoveSelector] =
+  def chooseMoves(player: String): StateMonad[Frame, MoveSelector] =
     deferred(w => (pokemon, available, size) =>
       pickExactly(
         Picker(player, "moves", size, available, _.name, moveTooltip),
         s"Select exactly $size moves for ${pokemon.name}:"
       ).run(w)._2)
 
-  def chooseItems(player: String): State[Frame, ItemSelector] =
+  def chooseItems(player: String): StateMonad[Frame, ItemSelector] =
     deferred(w => (available, size) =>
       pickExactly(
         Picker(player, "items", size, available.toList, _.name, itemTooltip),
@@ -225,12 +225,12 @@ object SwingGameView extends GameView:
     (0 until GameConfig.MovesPerPokemon).toList
       .map(i => moves.lift(i).fold("-")(moveButtonText))
 
-  def showBattleScreen(vm: BattleViewModel, setupLog: String): State[Frame, Unit] = for
+  def showBattleScreen(vm: BattleViewModel, setupLog: String): StateMonad[Frame, Unit] = for
     _ <- io(_.clear().setSize(BattleSize._1, BattleSize._2))
     _ <- io(_.addLabel(vm.status, BattleStatus))
     _ <- io(_.addLabel(vm.weather, WeatherStatus))
     _ <- io(_.addTextArea("", BattleLog))
-    _ <- State.traverse(moveButtonTexts(vm.moves).zipWithIndex)((text, i) =>
+    _ <- StateMonad.traverse(moveButtonTexts(vm.moves).zipWithIndex)((text, i) =>
       io(_.addButton(text, moveButtonName(i))))
     _ <- io(_.addButton("Switch Pokemon", SwitchMenu))
     _ <- io(_.addButton("Use item", ItemMenu))
@@ -238,13 +238,13 @@ object SwingGameView extends GameView:
     _ <- io(_.updateTextArea(setupLog, BattleLog))
   yield ()
 
-  def renderBattle(vm: BattleViewModel): State[Frame, Unit] =
+  def renderBattle(vm: BattleViewModel): StateMonad[Frame, Unit] =
     io(_.updateTextArea(vm.log, BattleLog)
         .updateLabel(vm.status, BattleStatus)
         .updateLabel(vm.weather, WeatherStatus))
 
-  def askAction(prompt: ActionPrompt): State[Frame, PlayerIntent] =
-    State { w =>
+  def askAction(prompt: ActionPrompt): StateMonad[Frame, PlayerIntent] =
+    StateMonad { w =>
       moveButtonTexts(prompt.moves).zipWithIndex
         .foreach((text, i) => w.updateButtonText(text, moveButtonName(i)))
 
@@ -278,17 +278,17 @@ object SwingGameView extends GameView:
       (w, loop())
     }
 
-  def askForcedSwitch(msg: String, candidates: List[String]): State[Frame, String] =
-    State { w =>
+  def askForcedSwitch(msg: String, candidates: List[String]): StateMonad[Frame, String] =
+    StateMonad { w =>
       val chosen = choiceDialog(msg, "MandatorySwitch", candidates, identity, JOptionPane.WARNING_MESSAGE)
         .getOrElse(candidates.head)
       (w, chosen)
     }
 
-  def announce(text: String): State[Frame, Unit] =
-    State { w =>
+  def announce(text: String): StateMonad[Frame, Unit] =
+    StateMonad { w =>
       announceDialog(text)
       (w, ())
     }
 
-  def close: State[Frame, Unit] = io(_.close())
+  def close: StateMonad[Frame, Unit] = io(_.close())

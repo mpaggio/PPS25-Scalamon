@@ -69,7 +69,6 @@ object TurnFlow:
    *   the resolved action execution order
    */
   def actionOrdering(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): ActionOrder =
-
     if choices.player1Action.priority > choices.player2Action.priority then
       ActionOrder.Player1First
     else if choices.player1Action.priority < choices.player2Action.priority then

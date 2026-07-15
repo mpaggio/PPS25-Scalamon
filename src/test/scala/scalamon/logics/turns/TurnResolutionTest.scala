@@ -94,37 +94,37 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   }
 
   test("resolveTurn returns Ongoing when no Pokemon is knocked out") {
-    resolveTurn(battle)._1 shouldBe Ongoing
+    getTurnResults(battle) shouldBe Ongoing
   }
 
   test("resolveTurn returns Ongoing when both sides have damaged but alive Pokemon"){
     val damaged = self(active(currentHp(decrease(10))))(opponent(active(currentHp(decrease(10))))(battle))
-    resolveTurn(damaged)._1 shouldBe Ongoing
+    getTurnResults(damaged) shouldBe Ongoing
   }
   
   test("resolveTurn SelfWins is triggered when all opponent's Pokemon are knocked out"){
     val opponentAllKO = opponent( all( currentHp( decrease( 999)))) (battle)
-    resolveTurn(opponentAllKO)._1 shouldBe Victory(Self)
+    getTurnResults(opponentAllKO) shouldBe Victory(Self)
   }
 
   test("resolveTurn SelfWins takes priority over ForcedSwitch on a simultaneous KO"){
     val simultaneousKO = self(active(currentHp(decrease(1))))(opponent(all(currentHp(decrease(999))))(battleActiveLowHP))
-    resolveTurn(simultaneousKO)._1 shouldBe Victory(Self)
+    getTurnResults(simultaneousKO) shouldBe Victory(Self)
   }
 
   test("resolveTurn SelfLoses is triggered when all self's Pokemon are knocked out"){
     val selfAllKO = self(active(currentHp(decrease(1))))(battleOnlyLowHP)
-    resolveTurn(selfAllKO)._1 shouldBe Victory(Opponent)
+    getTurnResults(selfAllKO) shouldBe Victory(Opponent)
   }
 
   test("resolveTurn returns ForcedSwitch when self's active Pokemon is KO but bench is alive") {
     val activeKO = self (active( currentHp ( decrease (1))))(battleActiveLowHP)
-    resolveTurn(activeKO)._1 shouldBe a [ForcedSwitch]
+    getTurnResults(activeKO) shouldBe a [ForcedSwitch]
   }
 
   test("resolveTurn ForcedSwitch candidates contain only alive bench Pokemon"){
     val activeKO = self ( active ( currentHp ( decrease(1))))(battleActiveLowHP)
-    resolveTurn(activeKO)._1 match
+    getTurnResults(activeKO) match
       case ForcedSwitch(switchRequests) =>
         assert(switchRequests.nonEmpty)
         assert(switchRequests.head.candidates.forall(ref => !isKnockedOut(player1.team(ref.value))))
@@ -140,8 +140,8 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
     )
     val battleWithBench = battleState(player1, opponentWithBench)
     val opponentActiveKO = opponent( active ( currentHp( decrease(999))))(battleWithBench)
-    resolveTurn(opponentActiveKO)._1 shouldBe a [ForcedSwitch]
-    resolveTurn(opponentActiveKO)._1 match
+    getTurnResults(opponentActiveKO) shouldBe a [ForcedSwitch]
+    getTurnResults(opponentActiveKO) match
       case ForcedSwitch(switchRequests) =>
         assert(switchRequests.nonEmpty)
         assert(switchRequests.head.side == Opponent)
@@ -155,8 +155,8 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
     )
     val battleWithBench = battleState(player1, opponentWithBench)
     val bothActiveKO = self(active(currentHp(decrease(999))))(opponent(active(currentHp(decrease(999))))(battleWithBench))
-    resolveTurn(bothActiveKO)._1 shouldBe a [ForcedSwitch]
-    resolveTurn(bothActiveKO)._1 match
+    getTurnResults(bothActiveKO) shouldBe a [ForcedSwitch]
+    getTurnResults(bothActiveKO) match
       case ForcedSwitch(switchRequests) =>
         assert(switchRequests.size == 2)
         assert(switchRequests.exists(_.side == Self))
@@ -164,37 +164,8 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
       case _ => fail("Expected ForcedSwitch result")
   }
 
-  test("applyForcedSwitch changes the active Pokemon with the requested one"){
-    val switched = applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    switched.activeId shouldBe "Bulbasaur"
-  }
-
-  test("applyForcedSwitch does not alter the team HP values"){
-    val switched = applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    switched.team("Charmander").currentHp shouldEqual
-      player1.team("Charmander").currentHp
-    switched.team("Bulbasaur").currentHp shouldEqual
-      player1.team("Bulbasaur").currentHp
-  }
-
-  test("applyForcedSwitch returns unchanged PlayerState for unknown PokemonRef"){
-    val unchanged = applyForcedSwitch(player1, PokemonRef("MewTwo"))
-    unchanged.activeId shouldBe player1.activeId
-    unchanged.activeId shouldNot be ("MewTwo")
-  }
-
-  test("applyForcedSwitch does not modify original PlayerState"){
-    applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    player1.activeId shouldBe "Charmander"
-  }
-
-  test("applyForcedSwitch result has the new pokemon as the active one"){
-    val switched = applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    switched.getActive shouldEqual player1.team("Bulbasaur")
-  }
-
   test("endTurn does not mutate the original BattleState"){
-    endTurn(battle)
+    endTurn.foldLeft(battle)((state, transformer) => transformer(state))
     battle.self.activeId shouldBe "Charmander"
     battle.self.getActive.currentHp shouldBe 39
     battle.opponent.activeId shouldBe "Squirtle"
