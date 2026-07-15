@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 # Specifica dei requisiti
 
 ## 1) Requisiti di business:
@@ -109,43 +113,23 @@ Gli stati alterati devono essere rappresentati come parte dello stato dinamico c
 
 #### FR-12) Gestione del calcolo del danno
 Il sistema deve implementare un meccanismo di calcolo del danno prodotto da una mossa offensiva, che tenga conto dei diversi fattori che possono influenzarne l'esito. Quando un Pokémon utilizza una mossa offensiva, il sistema deve determinare il danno prodotto attraverso la seguente formula:
-
-$$
-D = 
-\left(
-Base \cdot STAB \cdot TypeEff \cdot PolicyMult \cdot WeatherMult \cdot CriticalMult \cdot AttModifier \cdot DefModifier
-\right)
-$$
+![Formula del danno completo](resources/Formula_danno.png)
 
 Dove il valore di base del danno viene ottenuto tramite:
-
-$$
-Base =
-\left(
-\frac{
-\left(\frac{2 \cdot L}{5}+2\right)
-\cdot P
-\cdot
-\frac{A}{D}
-}{
-50
-}
-+2
-\right)
-$$
+![Formula del danno base](resources/Formula_danno_base.png)
 
 Dove:
-- $L$ rapresenta il livello del Pokémon attaccante (nel sistema impostato a 50).
-- $P$ rappresenta la potenza della mossa utilizzata.
-- $A$ rappresenta la statistica offensiva del Pokémon attaccante.
-- $D$ rappresenta la statistica difensiva del Pokémon bersaglio.
-- $STAB$ rappresenta il bonus "Same Type Attack Bonus" (pari a 1.5 quando il tipo della mossa coincide con il tipo del Pokémon attaccante, altrimenti pari a 1).
-- $TypeEff$ rappresenta il moltiplicatore dell'efficacia del tipo della mossa contro il tipo del Pokémon avversario.
-- $PolicyMult$ rappresenta il moltiplicatore globale definito dalla difficoltà selezionata.
-- $WeatherMult$ rappresenta il moltiplicatore derivante dalle condizioni atmosferiche presenti nella battaglia.
-- $CriticalMult$ rappresenta il moltiplicatore relativo ai colpi critici, pari a 1.5 in caso di colpo critico e 1 altrimenti.
-- $AttModifier$ rappresenta il modificatore applicato dalle abilità del Pokémon attaccante.
-- $DefModifier$ rappresenta il modificatore applicato dalle abilità del Pokémon difensore.
+- *L* rapresenta il livello del Pokémon attaccante (nel sistema impostato a 50).
+- *P* rappresenta la potenza della mossa utilizzata.
+- *A* rappresenta la statistica offensiva del Pokémon attaccante.
+- *D* rappresenta la statistica difensiva del Pokémon bersaglio.
+- *STAB* rappresenta il bonus "Same Type Attack Bonus" (pari a 1.5 quando il tipo della mossa coincide con il tipo del Pokémon attaccante, altrimenti pari a 1).
+- *TypeEff* rappresenta il moltiplicatore dell'efficacia del tipo della mossa contro il tipo del Pokémon avversario.
+- *PolicyMult* rappresenta il moltiplicatore globale definito dalla difficoltà selezionata.
+- *WeatherMult* rappresenta il moltiplicatore derivante dalle condizioni atmosferiche presenti nella battaglia.
+- *CriticalMult* rappresenta il moltiplicatore relativo ai colpi critici, pari a 1.5 in caso di colpo critico e 1 altrimenti.
+- *AttModifier* rappresenta il modificatore applicato dalle abilità del Pokémon attaccante.
+- *DefModifier* rappresenta il modificatore applicato dalle abilità del Pokémon difensore.
 
 La statistica offensiva e quella difensiva utilizzate nella formula dipendono dalla categoria della mossa:
 - Nel caso di una mossa fisica devono essere utilizzate la statistica di attacco del Pokémon attaccante e la difesa del Pokémon bersaglio.

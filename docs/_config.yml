@@ -1,7 +1,0 @@
-theme: minima
-
-kramdown:
-  math_engine: mathjax
-
-include:
-  - _includes
