@@ -18,3 +18,75 @@ Durante gli sprint, ogni membro del team ha sviluppato autonomamente la propria 
 Tra gli strumenti utilizzati durante il progetto, il team ha scelto di utilizzare GitHub per la gestione del codice sorgente e la collaborazione tra i membri del team. Per il testing, sono stati utilizzati strumenti come ScalaTest (AnyFunSuite, Matchers) per garantire la qualità del codice (Quality Assurance), ScalaFix e Wartremover per il linting e l'individuazione automatica di pattern di codice pericolosi, e SBT come build system per la gestione delle dipendenze e la compilazione del progetto. Per la documentazione del codice, il team ha utilizzato ScalaDoc, che permette di generare automaticamente la documentazione a partire dai commenti presenti nel codice sorgente.
 
 Non è stato implementato un sistema di Continuous Integration, ma il team ha comunque seguito una strategia di build e test manuale per garantire la qualità del codice, controllando sempre di avere codice funzionante, testato (con una coverage minima del 50%, verificata lanciando il comando "sbt coverage test coverageReport" e ispezionando il file index.html generato) e documentato tramite ScalaDoc.
+
+
+
+
+
+
+
+
+
+## Product Backlog
+
+| Priority | ID   | Item                                                                                          | Initial size estimate |
+|----------|------|-----------------------------------------------------------------------------------------------|-----------------------|
+| 1        | PB01 | Come giocatore, devo poter creare una squadra manualmente                                     | 8                     |
+| 2        | PB02 | Come giocatore, devo poter generare casualmente una squadra                                   | 5                     |
+| 3        | PB03 | Come giocatore, voglio che ogni Pokémon abbia statistiche, tipi e abilità proprie             | 13                    |
+| 4        | PB04 | Come giocatore, voglio che i Pokémon utilizzino mosse che abbiano PP e accuracy               | 13                    |
+| 5        | PB05 | Come giocatore, voglio che il danno venga gestito correttamente con tutte le sue dipendenze.  | 13                    |
+| 6        | PB06 | Come giocatore, voglio che l'ordine del turno sia risolto automaticamente                     | 8                     |
+| 7        | PB07 | Come giocatore, voglio che lo status dei Pokémon possa essere alterato                        | 13                    |
+| 8        | PB08 | Come giocatore, voglio che le condizioni meteo influiscano sulla battaglia                    | 8                     |
+| 9        | PB09 | Come giocatore, voglio che un Pokémon KO venga automaticamente scambiato                      | 5                     |
+| 10       | PB10 | Come giocatore, devo poter visualizzare i log della battaglia                                 | 5                     |
+| 11       | PB11 | Come giocatore, devo avere condizioni di vittoria e di sconfitta                              | 3                     |
+| 12       | PB12 | Come giocatore, voglio avere un loop completo della battaglia                                 | 13                    |
+| 13       | PB13 | Come giocatore, voglio che le abilità dei Pokémon influenzino la battaglia in maniera passiva | 13                    |
+| 14       | PB14 | Come giocatore, voglio che gli strumenti modifichino le statistiche o le mosse dei Pokémon    | 8                     |
+| 15       | PB15 | Come giocatore, voglio poter interagire con un interfaccia grafica                            | 13                    |
+
+---
+
+## Sprint 1 
+
+| Product Backlog Item | Sprint Task                                                                          | Volunteer |
+|----------------------|--------------------------------------------------------------------------------------|-----------|
+| PB03                 | Definire il modello Pokémon (Pokemon, Stats, AbilitySlot) e DSL del Pokédex          | Brighi    |
+| PB04, PB05           | Definire il modello delle mosse (DamageMove, StatusMove) solo dati, senza esecuzione | Paggetti  |
+| PB05                 | Definire le relazioni tra i diversi tipi di Pokemon                                  | Saponaro  |
+| PB03, PB04, PB05     | Stato dinamico delle componenti di dominio                                           | Pasini    |
+
+---
+
+## Sprint 2 
+
+| Product Backlog Item   | Sprint Task                                                                                                                                                           | Volunteer |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| PB04, PB05, PB06, PB10 | Definire l'ordine delle azioni (velocità + priorità) e struttura del flusso del turno (inizio, ordinamento, passaggio all'esecuzione, no fine) + log basici di turno  | Saponaro  |
+| PB09, PB10, PB11       | Verifica KO, vittoria/sconfitta, switch forzati e fine turno. Definire formula del calcolo del danno  conmodificatore per livello di difficoltà + log basici di turno | Brighi    |
+| PB04, PB05             | Implementare tutto ciò che consegue l'utilizzo di una mossa (consumazione PP + esecuzione della mossa e relative conseguenze)                                         | Paggetti  |
+| PB04, PB06, PB14       | Inizializzare il sistema di strumenti e gestire le interfacce comuni condivise dai vari componenti del dominio                                                        | Pasini    |
+
+---
+
+## Sprint 3
+
+| Product Backlog Item | Sprint Task                                                                                                                                 | Volunteer |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-----------|
+| PB13, PB05           | Implementare abilità passive (Ability) con DSL, eseguire nel turn resolution gli effetti di fine turno relativi a abilità, status e weather | Brighi    |
+| PB07                 | Implementare stati alterati e loro controlli e conseguenze                                                                                  | Paggetti  |
+| PB08, PB05           | Definire sistema meteo e relativi modificatori, integrarando i suoi effetti anche nel calcolo del danno (con Brighi)                        | Saponaro  |
+| PB14                 | Implementare strumenti e relativi effetti su statistiche e mosse                                                                            | Pasini    |
+
+---
+
+## Sprint 4
+
+| Product Backlog Item | Sprint Task                                                                                | Volunteer |
+|----------------------|--------------------------------------------------------------------------------------------|-----------|
+| PB01, PB12, PB15     | Implementare la creazione manuale della squadra (selezione Pokémon + mosse) + sviluppo GUI | Brighi    |
+| PB02, PB12, PB15     | Implementare la generazione casuale/affine della squadra + sviluppo GUI                    | Paggetti  |
+| PB10, PB12, PB15     | Gestione del Logger cronologico di tutti gli eventi della battaglia                        | Saponaro  |
+| PB10, PB12, PB06     | Gestione del Logger + sviluppo GUI + refactor e riorganizzazione MVC del progetto          | Pasini    |
