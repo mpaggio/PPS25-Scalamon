@@ -26,9 +26,9 @@ Il sistema deve rappresentare ogni Pokémon attraverso un modello che distingua 
 - Le informazioni dinamiche devono comprendere i punti salute correnti, gli eventuali stati alterati attivi, i modificatori applicati alle statistiche e le mosse disponibili.
 
 #### FR-02) Gestione delle mosse
-Ogni Pokémon deve possedere un insieme di quattro mosse, utilizzabili durante il combattimento. Le mosse devono essere rappresentate da un modello comune che permetta di gestire sia attacchi offensivi, sia mosse con effetto di supporto o modifica dello stato della battaglia (*mosse status*).
-- Le mosse dannose devono contenere tutte le informazioni necessarie per il calcolo del danno, tra cui il tipo della mossa, la potenza base, la categoria dell'attacco (*fisico* o *speciale*), il valore di precisione (valore probabilistico percentuale di riuscita della mossa), il numero massimo di utilizzi disponibili (*PP*) e un possibile effetto collaterale (opzionale).
-- Le mosse di tipo status devono invece permettere di applicare effetti che non causano danno diretto. Attraverso queste mosse deve essere possibile modificare le statistiche o applicare stati alterati. Le mosse di tipo status non presentano alcuna potenza base, ma presentano un effetto collaterale obbligatorio (in questo caso l'unico effetto ottenuto dalla mossa).
+Ogni Pokémon deve possedere un insieme di quattro mosse, utilizzabili durante il combattimento. Le mosse devono essere rappresentate attraverso un modello che distingua le informazioni statiche (che definiscono le caratteristiche intrinseche della mossa) dalle informazioni dinamiche (che possono variare durante lo svolgimento della battaglia). Le mosse devono prevedere inoltre una base comune che permetta di gestire sia attacchi offensivi, sia mosse con effetto di supporto o modifica dello stato della battaglia (*mosse status*), che non causano danno diretto.
+- Le informazioni statiche devono comprendere il nome della mossa, il tipo di appartenenza, la categoria (*fisico*, *speciale* oppure *status*), il numero massimo di utilizzi disponibili (*PP*), il valore della precisione (valore probabilistico percentuale di riuscita della mossa), l'eventuale potenza base (presente solo nelle mosse offensive) e l'eventuale effetto associato alla mossa. Per le mosse che infliggono danno l'effetto rappresenta un possibile effetto collaterale opzionale, mentre per le mosse di tipo status costituisce l'effetto principale della mossa (quindi obbligatorio). Tali informazioni rappresentano la definizione della mossa e non devono essere modificate durante il combattimento. 
+- Le informazioni dinamiche devono rappresentare lo stato corrente della mossa in utilizzo durante la battaglia. In particolare, il sistema deve mantenere il numero di PP rimanenti, aggiornandolo continuamente dopo ogni utilizzo, e un riferimento alla corrispondente definizione statica della mossa. Inoltre il sistema deve consentire la modifica temporanea di alcune caratteristiche della mossa durante il combattimento, come ad esempio la precisione, quando previsto da eventuali abilità, mosse o altre meccaniche di gioco, mantenendo comunque inalterata la definizione originale.
 
 Il sistema deve considerare la possibilità che una mossa fallisca sulla base del proprio valore di precisione. Inoltre, il sistema deve impedire l'utilizzo di una mossa quando questa non dispone più di PP disponibili, comunicando opportunamente al giocatore il motivo per cui l'azione non può essere eseguita.
 
@@ -36,15 +36,34 @@ Il sistema deve considerare la possibilità che una mossa fallisca sulla base de
 Il sistema deve fornire a ogni giocatore un insieme iniziale di strumenti utilizzabili durante la battaglia. Gli strumenti devono essere generati casualmente all'inizio della partita e devono rappresentare una risorsa limitata che il giocatore può utilizzare strategicamente durante lo scontro. Durante il proprio turno, il giocatore deve poter scegliere di utilizzare uno strumento disponibile invece di eseguire una mossa o invece di scambiare il proprio Pokémon. Ogni strumento deve avere un effetto specifico sullo stato della partita, come il recupero dei punti salute, la modifica temporanea di statistiche oppure la rimozione di determinati effetti negativi. Dopo essere stato utilizzato, uno strumento deve consumarsi e non deve quindi più essere disponibile nei turni successivi.
 
 #### FR-04) Gestione delle abilità del Pokémon
-Il sistema deve supportare abilità associate ai Pokémon, che possono modificare il comportamento standard della battaglia. Le abilità devono poter essere attivate in seguito a specifici eventi del gioco, come l'ingresso in campo di un Pokémon, la ricezione di un danno, la fine del turno oppure il verificarsi di condizioni particolari. Gli effetti prodotti da un'abilità possono riguardare diversi aspetti della battaglia, come la modifica del danno inflitto o ricevuto, la cura dei punti salute, l'applicazione o rimozione di stati alterati, la modifica delle condizioni atmosferiche oppure la creazione di immunità rispetto a determinati effetti.
+Il sistema deve supportare abilità passive associate ai Pokémon, che possono modificare il comportamento standard della battaglia. Le abilità devono poter essere attivate automaticamente in seguito a specifici eventi del gioco. In particolare, il sistema deve supportare le seguenti modalità di attivazione: 
+- All'inizio o alla fine del turno.
+- All'ingresso in campo di un Pokémon (proprio o avversario).
+- All'uscita dal campo di un Pokémon (proprio o avversario).
+- Quando un Pokémon subisce un danno (proprio o avversario).
+- Quando un Pokémon viene mandato KO (proprio o avversario).
+
+Gli effetti prodotti da un'abilità possono riguardare diversi aspetti della battaglia, come la modifica del danno inflitto o ricevuto, il recupero dei punti salute, l'applicazione o la rimozione di stati alterati, la modifica delle condizioni atmosferiche oppure la concessione di immunità rispetto a determinati effetti. Il sistema deve garantire che l'attivazione delle abilità avvenga automaticamente nel momento corretto della battaglia, aggiornando coerentemente lo stato del combattimento e registrando gli effetti prodotti nel log della partita.
 
 #### FR-05) Gestione dell'ambiente
-All'inizio di ogni partita il sistema deve generare una condizione ambientale iniziale casuale, che rimane condivisa tra entrambi i giocatori. L'ambiente deve rappresentare un elemento strategico della battaglia e deve poter modificare il comportamento di alcune mosse o degli effetti applicati durante il combattimento. Il sistema deve prevedere diverse condizioni atmosferiche, tra cui cielo sereno, sole intenso, pioggia, nebbia e tempesta di fulmini. Ogni condizione ambientale può influenzare diversi aspetti della battaglia, come la potenza delle mosse di determinati tipi, la precisione degli attacchi, la possibilità di applicare alcuni stati alterati, il danno residuo prodotto a fine turno oppure la capacità di alcuni Pokémon di recuperare punti salute. Le condizioni ambientali devono poter essere modificate durante la partita, attraverso specifiche abilità.
+All'inizio di ogni partita il sistema deve generare una condizione ambientale iniziale casuale, che rimane condivisa tra entrambi i giocatori. L'ambiente deve rappresentare un elemento strategico della battaglia e deve poter modificare il comportamento di alcune mosse o degli effetti applicati durante il combattimento. Il sistema deve prevedere le seguenti condizioni atmosferiche con i relativi effetti: 
+- Cielo sereno: rappresenta la condizione atmosferica neutrale. Non applica modificatori, non altera la precisione e non produce alcun effetto.
+- Sole intenso: le mosse di tipo fuoco infliggono il 70% di danno in più, le mosse di tipo acqua infliggono il 30% di danno in meno, lo stato Congelamento non può essere applicato e il danno residuo del veleno viene aumentato del 50%.
+- Pioggia: le mosse di tipo acqua infliggono il 30% di danno in più, le mosse di tipo fuoco infliggono il 30% di danno in meno, le mosse di tipo elettro ignorano il controllo di precisione e i Pokémon di tipo fuoco subiscono un danno residuo pari a 1/16 degli HP massimi alla fine di ogni turno.
+- Nebbia: la precisione di tutte le mosse viene ridotta all'80% del valore normale, le mosse di tipo psico che possono causare sonno hanno una probabilità aumentata del 10% e i Pokémon di tipo psico recuperano 1/16 degli HP massimi alla fine di ogni turno.
+- Tempesta di fulmini: le mosse di tipo elettro infliggono il 30% di danno in più, le mosse di tipo erba infliggono il 30% di danno in meno, le mosse di tipo elettro che possono causare paralisi hanno una probabilità fissa del 70% e tutti i Pokémon che non sono di tipo elettro subiscono un danno residuo pari a 1/16 degli HP massimi alla fine di ogni turno.
+
+Ogni condizione ambientale può influenzare diversi aspetti della battaglia, come la potenza delle mosse di determinati tipi, la precisione degli attacchi, la possibilità di applicare alcuni stati alterati, il danno residuo prodotto a fine turno oppure la capacità di alcuni Pokémon di recuperare punti salute. Le condizioni ambientali devono poter essere modificate durante la partita, attraverso specifiche abilità.
 
 ### 2.2) Gestione della partita:
 
 #### FR-06) Gestione della difficoltà della partita
-Il sistema deve permettere al giocatore di selezionare il livello di difficoltà della partita, prima dell'inizio del combattimento. La difficoltà deve rappresentare un parametro generale che permette di modificare il comportamento del sistema di combattimento, influenzando il calcolo del danno prodotto durante gli attacchi, applicando un opportuno modificatore che rende gli scontri più o meno aggressivi. La scelta della difficoltà deve essere effettuata durante la fase di configurazione iniziale della partita e deve rimanere invariata per tutta la durata dello scontro. Il sistema deve garantire che il valore selezionato venga utilizzato automaticamente durante tutte le operazioni di combattimento interessate.
+Il sistema deve permettere al giocatore di selezionare il livello di difficoltà della partita, prima dell'inizio del combattimento. La difficoltà deve rappresentare un parametro generale che permette di modificare il comportamento del sistema di combattimento, influenzando il calcolo del danno prodotto durante gli attacchi, applicando un opportuno modificatore che consente di ottenere combattimenti con livelli di sfida differenti. Il sistema deve supportare i seguenti livelli di difficoltà:
+- Facile: il danno inflitto dalle mosse deve essere calcolato applicando un moltiplicatore pari a 0.1.
+- Medio: il danno inflitto dalle mosse deve essere calcolato applicando un moltiplicatore pari a 0.2.
+- Difficile: il danno inflitto dalle mosse deve essere calcolato applicando un moltiplicatore pari a 0.3.
+
+La scelta della difficoltà deve essere effettuata durante la fase di configurazione iniziale della partita e deve rimanere invariata per tutta la durata dello scontro. Il sistema deve garantire che il valore selezionato venga utilizzato automaticamente durante tutte le operazioni di combattimento interessate.
 
 #### FR-07) Creazione della squadra
 Prima dell'inizio della battaglia, il sistema deve permettere ai giocatori di creare la propria squadra. Ogni squadra deve essere composta esattamente da 6 Pokémon differenti. Non devono essere consentiti duplicati all'interno dello stesso team, mentre lo stesso Pokémon può eventualmente essere scelto da giocatori differenti. Ogni Pokémon selezionato deve possedere 4 mosse configurate prima dell'inizio dello scontro.
@@ -77,27 +96,91 @@ Il motore di combattimento deve essere responsabile della gestione completa dell
 Nel caso in cui entrambi i giocatori scelgano di utilizzare una mossa, l'ordine deve essere determinato confrontando la velocità dei Pokémon coinvolti: il Pokémon con velocità maggiore deve agire per primo. Nel caso in cui entrambi i giocatori effettuino azioni non basate sulle mosse (strumenti o sostituzioni), deve essere utilizzato come criterio di risoluzione l'ordine di scelta, eseguendo prima l'azione del giocatore 1 e successivamente quella del giocatore 2. Ogni evento significativo generato durante la risoluzione deve aggiornare correttamente lo stato della battaglia e produrre un messaggio nei log.
 
 #### FR-11) Gestione degli stati alterati
-Il sistema deve supportare la gestione degli stati alterati che possono modificare lo stato o il comportamento dei Pokémon durante il combattimento. Gli stati alterati rappresentano condizioni che possono influenzare negativamente il Pokémon coinvolto. Ogni stato alterato deve possedere una propria logica di funzionamento. Alcuni stati possono modificare direttamente le statistiche del Pokémon, mentre altri possono impedire temporaneamente determinate azioni oppure applicare effetti periodici alla fine di ogni turno. Devono essere supportati i seguenti stati: 
-- Bruciatura: riduce l'efficacia degli attacchi fisici del Pokémon coinvolto e causa una perdita progressiva di punti salute a fine turno. 
-- Veleno: applica un danno residuo che viene calcolato durante la fase di fine turno.
-- Paralisi: riduce la capacità di un Pokémon di agire normalmente, introducendo la possibilità che l'azione scelta non venga eseguita.
-- Sonno: impedisce temporaneamente l'utilizzo di mosse, fino al verificarsi delle condizioni necessarie per la loro rimozioni (dopo un certo numero di turni o grazie agli strumenti).
-- Congelamento: impedisce temporaneamente l'utilizzo di mosse, fino al verificarsi delle condizioni necessarie per la loro rimozioni (dopo un certo numero di turni o grazie agli strumenti).
+Il sistema deve supportare la gestione degli stati alterati che possono modificare lo stato o il comportamento dei Pokémon durante il combattimento. Gli stati alterati rappresentano condizioni che influenzano temporaneamente o permanentemente il Pokémon coinvolto. Il sistema deve prevedere stati alterati che rimangono attivi fino alla loro rimozione e stati temporanei che possiedono una durata limitata (espressa in numero di turni) e vengono rimossi automaticamente al termine della loro durata. Devono essere supportati i seguenti stati: 
+- Bruciatura: causa una perdita progressiva di punti salute al termine di ogni turno, pari a 1/8 degli HP massimi del Pokémon affetto. 
+- Veleno: applica un danno residuo pari a 1/8 degli HP massimi del Pokémon affetto durante la fase di fine turno.
+- Paralisi: introduce una probabilità (25%) che il Pokémon non riesca a eseguire l'azione selezionata durante il turno.
+- Congelamento: impedisce al Pokémon di utilizzare le proprie mosse fino allo scongelamento, che avviene in maniera probabilistica (10% di probabilità) o quando particolari condizioni della battaglia lo consentono.
+- Sonno: impedisce temporaneamente al Pokémon di utilizzare le proprie mosse. Lo stato permane per un numero casuale di turni e viene rimosso automaticamente al termine della sua durata (da 1 a 4 turni) oppure mediante l'utilizzo di specifici strumenti.
+- Confusione: introduce una probabilità (50%) che il Pokémon colpisca sè stesso con mosse dannose, invece dell'avversario. Lo stato permane per un numero limitato di turni (da 2 a 5) e viene rimosso automaticamente allo scadere della sua durata.
+- Ricarica: rappresenta uno stato temporaneo utilizzato dalle mosse che richiedono dei turni di ripresa dopo la propria esecuzione. Durante questo stato il Pokémon non può effettuare azioni e la condizione viene rimossa automaticamente al termine delle fasi necessarie.
 
 Gli stati alterati devono essere rappresentati come parte dello stato dinamico corrente del Pokémon e devono essere aggiornati automaticamente dal motore di combattimento durante le diverse fasi del turno. Il sistema deve inoltre gestire correttamente la loro eventuale rimozione tramite strumenti, abilità o effetti specifici. Ogni cambiamento relativo agli stati alterati deve essere comunicato attraverso i log della battaglia, indicandone l'applicazione, l'effetto e la rimozione.
 
 #### FR-12) Gestione del calcolo del danno
-Il sistema deve implementare un meccanismo di calcolo del danno che tenga conto dei diversi elementi che influenzano il risultato di un attacco. Quando un Pokémon utilizza una mossa offensiva, il sistema deve determinare il danno prodotto, valutando innanzitutto il tipo di mossa utilizzata e la relativa categoria, distinguendo tra attacchi fisici e speciali.
+Il sistema deve implementare un meccanismo di calcolo del danno prodotto da una mossa offensiva, che tenga conto dei diversi fattori che possono influenzarne l'esito. Quando un Pokémon utilizza una mossa offensiva, il sistema deve determinare il danno prodotto attraverso la seguente formula:
+
+$$
+D = 
+\left(
+Base \cdot STAB \cdot TypeEff \cdot PolicyMult \cdot WeatherMult \cdot CriticalMult \cdot AttModifier \cdot DefModifier
+\right)
+$$
+
+Dove il valore di base del danno viene ottenuto tramite:
+
+$$
+Base =
+\left(
+\frac{
+\left(\frac{2 \cdot L}{5}+2\right)
+\cdot P
+\cdot
+\frac{A}{D}
+}{
+50
+}
++2
+\right)
+$$
+
+Dove:
+- $L$ rapresenta il livello del Pokémon attaccante (nel sistema impostato a 50).
+- $P$ rappresenta la potenza della mossa utilizzata.
+- $A$ rappresenta la statistica offensiva del Pokémon attaccante.
+- $D$ rappresenta la statistica difensiva del Pokémon bersaglio.
+- $STAB$ rappresenta il bonus "Same Type Attack Bonus" (pari a 1.5 quando il tipo della mossa coincide con il tipo del Pokémon attaccante, altrimenti pari a 1).
+- $TypeEff$ rappresenta il moltiplicatore dell'efficacia del tipo della mossa contro il tipo del Pokémon avversario.
+- $PolicyMult$ rappresenta il moltiplicatore globale definito dalla difficoltà selezionata.
+- $WeatherMult$ rappresenta il moltiplicatore derivante dalle condizioni atmosferiche presenti nella battaglia.
+- $CriticalMult$ rappresenta il moltiplicatore relativo ai colpi critici, pari a 1.5 in caso di colpo critico e 1 altrimenti.
+- $AttModifier$ rappresenta il modificatore applicato dalle abilità del Pokémon attaccante.
+- $DefModifier$ rappresenta il modificatore applicato dalle abilità del Pokémon difensore.
+
+La statistica offensiva e quella difensiva utilizzate nella formula dipendono dalla categoria della mossa:
 - Nel caso di una mossa fisica devono essere utilizzate la statistica di attacco del Pokémon attaccante e la difesa del Pokémon bersaglio.
 - Nel caso di una mossa speciale devono invece essere considerate la statistica di attacco speciale dell'attaccante e la difesa speciale del difensore.
 
-Il calcolo deve inoltre considerare la potenza base della mossa, eventuali modificatori applicati alle statistiche, il bonus STAB quando il tipo della mossa coincide con uno dei tipi dei Pokémon utilizzatore, l'efficacia della combinazione tra tipo della mossa e tipo del Pokémon avversario, eventuali condizioni ambientali, eventuali abilità dei Pokémon coinvolti e possibili effetti temporanei applicati durante la battaglia.
+Nel caso di un colpo critico, il sistema modifica inoltre le statistiche considerate nel calcolo:
+- La statistica offensiva dell'attaccante non può essere inferiore al valore base della specie.
+- La statistica difensiva del difensore non può essere superiore al valore base della specie.
+
+Il sistema deve determinare casualmente se un attacco risulta critico, utilizzando la probabilità base del 6.25%, eventualmente modificata da effetti specifici della mossa o da altri effetti.
 
 #### FR-13) Gestione dell'efficacia dei tipi
-Il sistema deve implementare il sistema di relazioni tra i diversi tipi di Pokémon, attraverso una matrice di efficacia. Ogni combinazione tra il tipo della mossa utilizzata e il tipo di Pokémon bersaglio deve produrre un determinato modificatore che rappresenta l'efficacia dell'attacco. Devono essere gestiti i seguenti casi:
-- Danno super efficace.
-- Danno poco efficace.
-- Danno con efficacia normale.
+Il sistema deve implementare un meccanismo per determinare l'efficacia di una mossa offensiva in base alla relazione tra il tipo della mossa utilizzata e il tipo del Pokémon bersaglio. Le relazioni tra i tipi sono definite attraverso una tabella di efficacia che associa ogni coppia composta dal tipo della mossa e dal tipo del Pokémon difensore a un valore di efficacia. L'efficacia di una combinazione tra tipo della mossa e tipo del bersaglio può assumere uno dei seguenti valori:
+
+| Efficacia | Moltiplicatore del danno | Descrizione|
+|-----------|--------------------------|------------|
+| Nessun effetto | 0.0 | Il danno viene annullato. |
+| Poco efficace | 0.5 | Il danno prodotto viene dimezzato. |
+| Normale | 1.0 | Il danno non viene modificato. |
+| Super efficace | 2.0 | Il danno prodotto viene raddoppiato. |
+
+Durante il calcolo del danno, il moltiplicatore ottenuto viene quindi applicato alla formula del danno finale, insieme agli altri modificatori previsti. 
+
+La tabella delle relazioni non neutrali tra tipi è la seguente:
+
+| Attacco/difesa | Fuoco | Acqua | Erba | Elettro | Psico | Veleno |
+|----------------|-------|-------|------|---------|-------|--------|
+| Fuoco          | 0.5   | 0.5   | 2.0  | 1.0     | 1.0   | 1.0    |
+| Acqua          | 2.0   | 0.5   | 0.5  | 1.0     | 1.0   | 1.0    |
+| Erba           | 0.5   | 2.0   | 0.5  | 1.0     | 1.0   | 0.5    |
+| Elettro        | 1.0   | 2.0   | 0.5  | 0.5     | 1.0   | 1.0    |
+| Psico          | 1.0   | 1.0   | 1.0  | 1.0     | 0.5   | 1.0    |
+| Veleno         | 1.0   | 1.0   | 2.0  | 1.0     | 1.0   | 1.0    |
+
+Per tutte le combinazioni non esplicitamente definite nella tabella delle relazioni, il sistema deve considerare l'efficacia come normale.
 
 #### FR-14) Gestione delle modifiche alle statistiche
 Il sistema deve permettere alle mosse e agli effetti speciali di modificare temporaneamente le statistiche dei Pokémon durante la battaglia (informazioni dinamiche del Pokèmon). Ogni Pokémon deve poter mantenere informazioni relative ai modificatori applicati alle proprie caratteristiche principali. Gli effetti possono riguardare statistiche offensive, difensive o relative alla velocità, aumentando o diminuendo temporaneamente il valore utilizzato nei calcoli del combattimento. Durante il calcolo del danno o dell'ordine di esecuzione, il sistema deve utilizzare il valore aggiornato della statistica, considerando tutti i modificatori attualmente attivi.
