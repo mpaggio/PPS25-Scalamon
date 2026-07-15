@@ -43,18 +43,21 @@ All'inizio di ogni partita il sistema deve generare una condizione ambientale in
 
 ### 2.2) Gestione della partita:
 
-#### FR-06) Creazione della squadra
+#### FR-06) Gestione della difficoltà della partita
+Il sistema deve permettere al giocatore di selezionare il livello di difficoltà della partita, prima dell'inizio del combattimento. La difficoltà deve rappresentare un parametro generale che permette di modificare il comportamento del sistema di combattimento, influenzando il calcolo del danno prodotto durante gli attacchi, applicando un opportuno modificatore che rende gli scontri più o meno aggressivi. La scelta della difficoltà deve essere effettuata durante la fase di configurazione iniziale della partita e deve rimanere invariata per tutta la durata dello scontro. Il sistema deve garantire che il valore selezionato venga utilizzato automaticamente durante tutte le operazioni di combattimento interessate.
+
+#### FR-07) Creazione della squadra
 Prima dell'inizio della battaglia, il sistema deve permettere ai giocatori di creare la propria squadra. Ogni squadra deve essere composta esattamente da 6 Pokémon differenti. Non devono essere consentiti duplicati all'interno dello stesso team, mentre lo stesso Pokémon può eventualmente essere scelto da giocatori differenti. Ogni Pokémon selezionato deve possedere 4 mosse configurate prima dell'inizio dello scontro.
 
-#### FR-07) Generazione automatica del team
+#### FR-08) Generazione automatica del team
 Il sistema deve permettere la generazione automatica della squadra per consentire agli utenti di iniziare rapidamente una partita senza dover configurare manualmente ogni elemento. Devono essere disponibili due modalità differenti:
 - La prima modalità deve effettuare una generazione completamente casuale, selezionando 6 Pokémon dal database disponibile e assegnando casualmente 4 mosse a ciascuno di essi. Questa modalità non deve effettuare valutazioni strategiche relative alla composizione del team, ma deve semplicemente produrre una squadra valida.
 - La seconda modalità deve invece utilizzare una logica più evoluta, definita "generazione affine". In questo caso, la selezione delle mosse deve cercare di creare una maggiore coerenza tra il Pokémon scelto e il suo set di mosse. In particolare, devono essere assegnate alcune mosse dello stesso tipo del Pokémon (così da sfruttare il bonus STAB), mentre le altre devono cercare di aumentare la copertura offensiva, permettendo di colpire efficacemente tipologie di avversari contro cui il Pokémon avrebbe normalmente difficoltà.
 
-#### FR-08) Creazione manuale del team
+#### FR-09) Creazione manuale del team
 Il sistema deve consentire al giocatore di configurare manualmente la propria squadra. Durante questa fase, l'utente deve poter consultare l'elenco dei Pokémon disponibili e selezionarli uno alla volta, fino al completamento della squadra. Per ogni Pokémon devono essere visualizzabili le informazioni principali, rilevanti per la scelta. Successivamente, il giocatore deve poter selezionare manualmente quattro mosse tra quelle disponibili per ogni Pokémon scelto precedentemente. Anche questa selezione deve avvenire singolarmente, permettendo all'utente di costruire un set di mosse coerente con la strategia desiderata. Il sistema deve impedire configurazioni non valide (ad esempio squadre con meno di sei Pokémon o un Pokémon con un numero di mosse non valido).
 
-#### FR-09) Gestione del turno
+#### FR-10) Gestione del turno
 Durante ogni turno entrambi i giocatori devono poter scegliere una sola azione relativa al proprio Pokémon attivo. Le azioni disponibili devono essere:
 - Utilizzare una delle mosse disponibili del Pokémon in campo.
 - Sostituire il Pokémon attivo con uno vivo presente in panchina.
@@ -62,7 +65,7 @@ Durante ogni turno entrambi i giocatori devono poter scegliere una sola azione r
 
 Il sistema deve raccogliere entrambe le scelte prima di procedere alla risoluzione del turno, mantenendo separate le informazioni relative alle decisioni dei due giocatori nella modalità hot-seat. Una volta ricevute entrambe le azioni, il motore di combattimento deve occuparsi automaticamente della loro esecuzione, seguendo le regole definite dal dominio.
 
-#### FR-10) Risoluzione automatica del turno
+#### FR-11) Risoluzione automatica del turno
 Il motore di combattimento deve essere responsabile della gestione completa della sequenza di eventi che compongono un turno. La risoluzione deve seguire il seguente ordine:
 1) Applicazione degli effetti iniziali del turno.
 2) Utilizzo degli strumenti o gestione dei cambi Pokémon.
@@ -70,7 +73,7 @@ Il motore di combattimento deve essere responsabile della gestione completa dell
 4) Applicazione degli effetti di fine turno.
 Nel caso in cui entrambi i giocatori scelgano di utilizzare una mossa, l'ordine deve essere determinato confrontando la velocità dei Pokémon coinvolti: il Pokémon con velocità maggiore deve agire per primo. Nel caso in cui entrambi i giocatori effettuino azioni non basate sulle mosse (strumenti o sostituzioni), deve essere utilizzato come criterio di risoluzione l'ordine di scelta, eseguendo prima l'azione del giocatore 1 e successivamente quella del giocatore 2. Ogni evento significativo generato durante la risoluzione deve aggiornare correttamente lo stato della battaglia e produrre un messaggio nei log.
 
-#### FR-11) Gestione degli stati alterati
+#### FR-12) Gestione degli stati alterati
 Il sistema deve supportare la gestione degli stati alterati che possono modificare lo stato o il comportamento dei Pokémon durante il combattimento. Gli stati alterati rappresentano condizioni che possono influenzare negativamente il Pokémon coinvolto. Ogni stato alterato deve possedere una propria logica di funzionamento. Alcuni stati possono modificare direttamente le statistiche del Pokémon, mentre altri possono impedire temporaneamente determinate azioni oppure applicare effetti periodici alla fine di ogni turno. Devono essere supportati i seguenti stati: 
 - Bruciatura: riduce l'efficacia degli attacchi fisici del Pokémon coinvolto e causa una perdita progressiva di punti salute a fine turno. 
 - Veleno: applica un danno residuo che viene calcolato durante la fase di fine turno.
@@ -80,14 +83,14 @@ Il sistema deve supportare la gestione degli stati alterati che possono modifica
 
 Gli stati alterati devono essere rappresentati come parte dello stato corrente del Pokémon e devono essere aggiornati automaticamente dal motore di combattimento durante le diverse fasi del turno. Il sistema deve inoltre gestire correttamente la loro eventuale rimozione tramite strumenti, abilità o effetti specifici. Ogni cambiamento relativo agli stati alterati deve essere comunicato attraverso i log della battaglia, indicandone l'applicazione, l'effetto e la rimozione.
 
-#### FR-12) Gestione del calcolo del danno
+#### FR-13) Gestione del calcolo del danno
 Il sistema deve implementare un meccanismo di calcolo del danno che tenga conto dei diversi elementi che influenzano il risultato di un attacco. Quando un Pokémon utilizza una mossa offensiva, il sistema deve determinare il danno prodotto, valutando innanzitutto il tipo di mossa utilizzata e la relativa categoria, distinguendo tra attacchi fisici e speciali.
 - Nel caso di una mossa fisica devono essere utilizzate la statistica di attacco del Pokémon attaccante e la difesa del Pokémon bersaglio.
 - Nel caso di una mossa special devono invece essere considerate la statistica di attacco speciale dell'attaccante e la difesa speciale del difensore.
 
 Il calcolo deve inoltre considerare la potenza base della mossa, eventuali modificatori applicati alle statistiche, il bonus STAB quando il tipo della mossa coincide con uno dei tipi dei Pokémon utilizzatore, l'efficacia della combinazione tra tipo della mossa e tipo del Pokémon avversario, eventuali condizioni ambientali, eventuali abilità dei Pokémon coinvolti e possibili effetti temporanei applicati durante la battaglia.
 
-#### FR-13) Gestione dell'efficacia dei tipi
+#### FR-14) Gestione dell'efficacia dei tipi
 Il sistema deve implementare il sistema di relazioni tra i diversi tipi di Pokémon, attraverso una matrice di efficacia. Ogni combinazione tra il tipo della mossa utilizzata e il tipo di Pokémon bersaglio deve produrre un determinato modificatore che rappresenta l'efficacia dell'attacco. Devono essere gestiti i seguenti casi:
 - Danno super efficace.
 - Danno poco efficace.
@@ -95,22 +98,22 @@ Il sistema deve implementare il sistema di relazioni tra i diversi tipi di Poké
 
 Nel caso di un Pokémon con doppio tipo, il sistema deve combinare direttamente gli effetti dei due tipi difensivi, per determinare il moltiplicatore finale applicato al danno.
 
-#### FR-14) Gestione delle modifiche alle statistiche
+#### FR-15) Gestione delle modifiche alle statistiche
 Il sistema deve permettere alle mosse e agli effetti speciali di modificare temporaneamente le statistiche dei Pokémon durante la battaglia. Ogni Pokémon deve poter mantenere informazioni relative ai modificatori applicati alle proprie caratteristiche principali. Gli effetti possono riguardare statistiche offensive, difensive o relative alla velocità, aumentando o diminuendo temporaneamente il valore utilizzato nei calcoli del combattimento. Durante il calcolo del danno o dell'ordine di esecuzione, il sistema deve utilizzare il valore aggiornato della statistica, considerando tutti i modificatori attualmente attivi.
 
-#### FR-15) Gestione del cambio del Pokémon
+#### FR-16) Gestione del cambio del Pokémon
 Il sistema deve permettere ai giocatori di sostituire il Pokémon attivo con un altro Pokémon (vivo) appartenente alla propria squadra. Il cambio volontario deve essere disponibile come possibile azione durante il turno. Il sistema deve impedire il cambio verso Pokémon già esausti o non disponibili. Quando un Pokémon viene sostituito, devono essere gestiti tutti gli eventi associati al cambio, come l'attivazione di eventuali abilità.
 
-#### FR-16) Gestione del KO
+#### FR-17) Gestione del KO
 Il sistema deve rilevare automaticamente quando i punti salute di un Pokémon raggiungono lo zero. Quando un Pokémon viene sconfitto, il sistema deve aggiornare correttamente lo stato della squadra e impedire ulteriori azioni da parte del Pokémon eliminato. Dopo un KO, il giocatore interessato deve poter scegliere un nuovo Pokémon tra quelli ancora disponibili nella propria squadra. La battaglia non deve poter continuare fino a quando la sostituzione obbligatoria non è stata completata. 
 
-#### FR-17) Gestione della fine della partita
+#### FR-18) Gestione della fine della partita
 Il sistema deve controllare continuamente lo stato delle due squadra. Quando un giocatore perde tutti i sei Pokémon disponibili, la partita deve essere considerata conclusa e il sistema deve dichiarare automaticamente il vincitore.
 
-#### FR-18) Gestione dei log della partita
+#### FR-19) Gestione dei log della partita
 Il sistema deve mantenere un log cronologico contenente tutti gli eventi significativi avvenuti durante lo svolgimento della partita. Il log deve permettere al giocatore di comprendere l'evoluzione della battaglia e deve includere informazioni relative all'utilizzo delle mosse, ai danni inflitti, al fallimento degli attacchi, all'applicazione o rimozione degli stati alterati, ai cambi, all'utilizzo di strumenti, alle modifiche del meteo, all'attivazione di abilità e alla conclusione della partita.
 
-#### FR-19) Gestione dell'interfaccia grafica
+#### FR-20) Gestione dell'interfaccia grafica
 Il sistema deve fornire un'interfaccia grafica minimale, permetta ai giocatori di configurare la partita e interagire con il combattimento. 
 - Durante la preparazione della partita deve consentire la selezione della modalità della creazione della squadra, la scelta dei Pokémon, la configurazione delle mosse e la visualizzazione delle informazioni necessarie alla costruzione del team. 
 - Durante la battaglia devono essere mostrate tutte le informazioni fondamentali per comprendere lo stato corrente dello scontro (principalmente riprese dai log).
