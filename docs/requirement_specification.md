@@ -16,9 +16,6 @@ Il sistema deve supportare una modalità multiplayer locale, nella quale due ute
 ### BR-04: Riproduzione coerente delle regole di combattimento:
 Il sistema deve garantire che la simulazione della battaglia produca risultati coerenti con le regole definite dal dominio implementato. Ogni turno deve essere risolto seguendo un insieme preciso di regole che determinano l'ordine delle azioni e gli effetti prodotti. La risoluzione deve considerare elementi quali la priorità delle mosse, la velocità dei Pokémon coinvolti, gli effetti dovuti alle condizioni ambientali, gli stati alterati attivi e la gestione delle situazioni di KO. A parità di condizioni iniziali e di risultati casuali generati, il motore di combattimento deve produrre sempre lo stesso risultato.
 
-### BR-05: Architettura estendibile:
-Il sistema deve rappresentare un esempio di applicazione pratica dei paradigmi di programmazione funzionale studiati durante il corso. L'architettura deve essere progettata in modo da permettere l'introduzione futura di nuovi elementi del gioco (Pokémon aggiuntivi, nuove mosse, nuovi strumenti, nuove condizioni ambientali, ...) senza richiedere modifiche invasive alle componenti già esistenti.
-
 ## 2) Requisiti funzionali:
 
 ### 2.1) Gestione del dominio
@@ -99,39 +96,31 @@ Il sistema deve rilevare automaticamente il KO di un Pokémon e chiederne l'imme
 
 ## 3) Requisiti non funzionali:
 
-### NFR-01: Usabilità
-L'interfaccia deve permettere agli utenti di comprendere facilmente lo stato della battaglia, selezionare rapidamente le azioni e visualizzare informazioni rilevanti sullo svolgimento della battaglia.
+### NFR-01) Usabilità
+L'interfaccia del sistema deve permettere agli utenti di comprendere facilmente lo stato della partita e di effettuare scelte senza ambiguità. Durante il combattimento il giocatore deve avere sempre accesso alle informazioni necessarie per prendere decisioni strategiche, come i punti salute del Pokémon corrente, le mosse disponibili, i PP rimanenti, gli strumenti utilizzabili e le condizioni ambientali attive. La modalità hot-seat richiede che i due utenti utilizzino lo stesso dispositivo, ma mantenendo separate le proprie informazioni strategiche.
 
-### NFR-02: Affidabilità
-Il sistema deve garantire la coerenza dello stato della partita, l'assenza di transizioni impossibili e il corretto aggiornamento dei dati.
+### NFR-02) Affidabilità
+Il sistema deve garantire la consistenza dello stato della partita durante tutta la durata del combattimento. Ogni azione effettuata dai giocatori deve produrre una transizione valida dello stato del gioco, evitando situazioni impossibili.
 
-### NFR-03: Manutenibilità
-Il codice deve essere organizzato in componenti e le logiche principali devono essere separate tra dominio, gestione della logica, motore di combattimento e interfaccia grafica.
+### NFR-03) Estendibilità
+Il sistema deve rappresentare un esempio di applicazione pratica dei paradigmi di programmazione funzionale studiati durante il corso. L'architettura deve essere progettata in modo da permettere l'introduzione futura di nuovi elementi del gioco (ad esempio Pokémon aggiuntivi, nuove mosse, nuovi strumenti o nuove condizioni ambientali), senza richiedere modifiche invasive alle componenti già esistenti.
 
-### NFR-04: Estendibilità
-Il sistema deve permettere future estensioni quali:
-- Nuove mosse.
-- Nuovi Pokémon.
-- Nuovi ambienti.
-- Nuovi strumenti.
-L'aggiunta di nuovi elementi non deve richiedere modifiche significative al motore principale.
-
-### NFR-05: Performance
-Le operazioni durante il combattimento devono essere eseguite in tempo reale. Il sistema deve garantire tempi di risposta ridotti durante la selezione delle azioni, il calcolo del danno e l'aggiornamento dello stato.
+### NFR-04) Tracciabilità
+Ogni modifica significativa dello stato della partita deve essere accompagnata da una corrispondente informazione nel log della battaglia. Gli utenti devono poter comprendere il motivo per cui una determinata situazione si è verificata.
 
 ## 4) Requisiti di implementazione:
 
-### IR-01: Linguaggio di sviluppo
+### IR-01) Linguaggio di sviluppo
 Il sistema deve essere sviluppato utilizzando il linguaggio Scala 3 come linguaggio principale. In particolare, il progetto deve fare uso delle funzionalità introdotte nelle versioni più recenti del linguaggio, come ad esempio i meccanismi di gestione del contesto, i tipi algebrici e le estensioni dei tipi. La versione specifica del linguaggio Scala deve essere la 3.4.2
 
-### IR-02: Sistema di build
+### IR-02) Sistema di build
 La gestione della compilazione, delle dipendenze e dell'esecuzione del progetto deve essere effettuata attraverso *SBT* (*Scala Build Tool*). La configurazione del progetto deve permettere di compilare il codice sorgente, eseguire l'applicazione principale, eseguire la suite di test automatizzati e gestire le librerie esterne necessarie.
 
-### IR-03: Organizzazione architetturale
+### IR-03) Organizzazione architetturale
 L'implementazione deve seguire una struttura modulare nella quale ogni componente del sistema abbia una responsabilità ben definita. Il progetto deve presentare una parte di dominio (rappresentazione delle entità principali del gioco e delle relative regole statiche), una parte di logica applicativa (che si occupa della gestione dello stato della partita e delle operazioni che modificano il comportamento del sistema), un livello applicativo (che si occupa di coordinare il funzionamento generale del programma e collegare la logica di gioco con l'interfaccia) e una parte di interfaccia grafica (responsabile solamente della presentazione delle informazioni all'utente e della raccolta delle azioni effettuate tramite la stessa).
 
-### IR-04: Utilizzo del paradigma funzionale
+### IR-04) Utilizzo del paradigma funzionale
 L'implementazione deve seguire un approccio prevalentemente funzionale, limitando il più possibile la presenza di stato modificabile. In particolare, una scelta effettuata durante un turno deve produrre una nuova configurazione della battaglia anziché modificare direttamente quella precedente.
 
-### IR-05: Gestione dei contenuti di gioco tramite DSL
+### IR-05) Gestione dei contenuti di gioco tramite DSL
 Le informazioni relative agli elementi del dominio devono essere definite attraverso strutture dichiarative. Il progetto deve utilizzare *DSL* (*Domain Specific Language*) interno per permettere di descrivere i contenuti del gioco in modo leggibile.
