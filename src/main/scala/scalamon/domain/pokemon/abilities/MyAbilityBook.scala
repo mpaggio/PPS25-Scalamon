@@ -101,7 +101,7 @@ object MyAbilityBook:
         )
       then
         val loggedState = log(s"[FlashFire] ${state.self.getActive.species.name} is now immune to Fire moves and gains a boost!")(state)
-        self(_.updateFlags(_.copy(flashFireActive = true)))(loggedState)
+        self(updateFlags(_.copy(flashFireActive = true)))(loggedState)
       else state
     },
 
@@ -275,11 +275,11 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnTurnEnd) define MagicGuard as { state =>
-      val updatedState = self(_.updateFlags(_.copy(magicGuardActive = true)))(state)
+      val updatedState = self(updateFlags(_.copy(magicGuardActive = true)))(state)
       updatedState.self.getActive.statusCondition match
         case Some(Burned | Paralyzed | Poisoned | Frozen | Sleeping(_)) =>
           val loggedState = log(s"[MagicGuard] ${updatedState.self.getActive.species.name} is immune to indirect damage of the altered status!")(state)
-          self(_.updateFlags(_.copy(magicGuardActive = true)))(loggedState)
+          self(updateFlags(_.copy(magicGuardActive = true)))(loggedState)
         case _ => updatedState
     },
 
@@ -309,8 +309,8 @@ object MyAbilityBook:
 
     OnTrigger(OnSwitchIn(Self)) define CloudNine as { state =>
       val loggedState = log(s"[CloudNine] ${state.self.getActive.species.name} suppresses weather effects!")(state)
-      val firstUpdated = self(_.updateFlags(_.copy(weatherSuppressed = true)))(loggedState)
-      opponent(_.updateFlags(_.copy(weatherSuppressed = true)))(firstUpdated)
+      val firstUpdated = self(updateFlags(_.copy(weatherSuppressed = true)))(loggedState)
+      opponent(updateFlags(_.copy(weatherSuppressed = true)))(firstUpdated)
     },
 
     OnTrigger(OnTurnStart) define SwiftSwim as { state =>
@@ -351,7 +351,7 @@ object MyAbilityBook:
 
     OnTrigger(OnSwitchIn(Self)) define ShadowTag as { state =>
       val loggedState = log(s"[ShadowTag] ${state.self.getActive.species.name} prevents the opponent from switching the active Pokemon!")(state)
-      opponent(_.updateFlags(_.copy(isSwitchBlocked = true)))(loggedState)
+      opponent(updateFlags(_.copy(isSwitchBlocked = true)))(loggedState)
     },
 
     OnTrigger(OnDamageTaken(Self)) define LiquidOoze as { state =>

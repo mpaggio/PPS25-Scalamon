@@ -108,7 +108,7 @@ final class WeatherEndTurnResolverTest extends AnyFunSuite:
   }
 
   test("weatherSuppressed prevents weather end-turn effects") {
-    val state = self(_.updateFlags(_.copy(weatherSuppressed = true)))(mkBattleState(selfType = Fire, selfHp = 160, weather = Rain))
+    val state = self(updateFlags(_.copy(weatherSuppressed = true)))(mkBattleState(selfType = Fire, selfHp = 160, weather = Rain))
     val updated = summon[WeatherEndTurnResolver].apply(state)
     assert(updated.self.getActive.currentHp == 160)
     assert(updated.opponent.getActive.currentHp == 160)

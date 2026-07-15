@@ -5,18 +5,14 @@ import scalamon.domain.moves.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.state.DamagePolicy
 import scalamon.logics.turns.TurnResolutionImpl.*
-import scalamon.domain.moves.MoveDatabase.findByName
-import scalamon.logics.state.AlteredStatusModule.*
 import scalamon.domain.moves.Accuracy.given
 import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
-import scalamon.domain.pokemon.abilities.{AbilityTrigger, MyAbilityBook}
-import scalamon.domain.types.Type
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.log.BattleLogger.emptyLogger
 import scalamon.logics.turns.ActionOrder.*
-import scalamon.logics.state.BattleStateImpl.{opponent, self}
+import Utilities.*
 
 /**
  * Coordinates the execution of a battle turn.
@@ -24,38 +20,39 @@ import scalamon.logics.state.BattleStateImpl.{opponent, self}
 final class BattleOrchestrator(using DamagePolicy):
 
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (TurnResult, BattleState) =
-    val plan = TurnFlow.actionOrdering(state, choices, speedOf)
-    val resetState = updateLogs(_ => emptyLogger)(self(_.updateFlags(_.copy(magicGuardActive = false)))(state))
-    val afterTurnStart = forBothSides(applyPassiveEffects(OnTurnStart))(resetState)
-    val afterExecution = orderedActions(plan)(choices).foldLeft(afterTurnStart)((s, f) => f(s))
-    resolveTurn(afterExecution)
+    val order = TurnFlow.actionOrdering(state, choices, speedOf)
+    val allStateTransformers = startTurn concat orderedActions(order)(choices) concat endTurn
+    val newState = allStateTransformers.foldLeft(state)((s, f) => f(s))
+    (getTurnResults(newState), newState)
 
-  private def orderedActions(plan: ActionOrder)(choices: TurnChoices): List[StateTransformer] =
+  private def startTurn: List[StateTransformer] = List(
+    updateLogs(_ => emptyLogger),
+    self(updateFlags(_.copy(magicGuardActive = false))),
+    forBothSides(applyPassiveEffects(OnTurnStart)),
+  )
+
+  private def orderedActions(order: ActionOrder)(choices: TurnChoices): List[StateTransformer] =
     val turnOrder = List(
       executeAction(choices.player1Action),
       switchSelfOpponent,
       executeAction(choices.player2Action),
       switchSelfOpponent
     )
-    plan match
+    order match
       case Player1First => turnOrder
       case Player2First => turnOrder.reverse
 
   /** Applies a forced switch for the given side, then its switch-in effects. */
-  def applyForcedSwitch(side: Side, newActive: PokemonRef)(state: BattleState): BattleState =
-    onSide(side)( oriented =>
-      val switched = oriented.copy(self = TurnResolutionImpl.applyForcedSwitch(oriented.self, newActive))
-      applyPassiveEffects(OnSwitchIn(Self))(switched)
-    )(state)
+  private def executeSwitch(side: Side, newActive: PokemonRef): StateTransformer =
+    onSide(side)(
+      applyPassiveEffects(OnSwitchOut(Self)) andThen
+      SwitchAction(newActive.value) andThen
+      applyPassiveEffects(OnSwitchIn(Self))
+    )
 
   /** Applies a batch of forced switches in order (covers the "both KO" case). */
   def applyForcedSwitches(choices: List[(Side, PokemonRef)])(state: BattleState): BattleState =
-    choices.foldLeft(state) { case (s, (side, ref)) => applyForcedSwitch(side, ref)(s) }
-
-
-  private def applyPassiveEffects(trigger: Trigger)(bs: BattleState): BattleState =
-    val newBs = MyAbilityBook.runTrigger(trigger, bs.self.getActive.species.abilitySlot)(bs)
-    newBs.passiveEffects.foldLeft(newBs)((state, effect) => effect(trigger)(state))
+    choices.foldLeft(state) { case (s, (side, ref)) => executeSwitch(side, ref)(s) }
 
   private def executeAction(battleAction: BattleAction)(state: BattleState): BattleState =
     battleAction match
@@ -69,9 +66,7 @@ final class BattleOrchestrator(using DamagePolicy):
         if state.self.flags.isSwitchBlocked then
           updateLogs(BattleLogger.logMessage("Switch is blocked"))(state)
         else
-          val beforeSwitchOut = applyPassiveEffects(OnSwitchOut(Self))(state)
-          val switched = SwitchAction(to.value)(beforeSwitchOut)
-          applyPassiveEffects(OnSwitchIn(Self))(switched)
+          executeSwitch(Side.Self, to)(state)
 
       case UseItem(name) =>
         state.self.items.find(_.name == name)
@@ -92,24 +87,13 @@ final class BattleOrchestrator(using DamagePolicy):
       case Some(move: NonDamagingMove) => executeNonDamageMove(move)(state)
       case None => updateLogs(BattleLogger.logError(s"Move ${moveRef.value} not found"))(state)
 
-  private def findMove(moveRef: MoveRef): Option[Move] =
-    MoveDatabase.allMoves.findByName(moveRef.value)
-
-  private def hasPpFor(pokemon: PokemonState, move: Move): Boolean =
-    pokemon.moveState(move.name).currentPp > 0
-
-  private def canMove(pokemon: PokemonState, moveType: Type, currentWeather: Weather): Boolean =
-    pokemon.statusCondition.forall(_.canMove(moveType, currentWeather))
-
-  private def isSelfHitting(pokemon: PokemonState): Boolean =
-    pokemon.statusCondition.exists(_.isSelfHitting)
 
   /**
    * Executes a damaging move; the manual flip/unflip dance is now expressed
    * through asOpponent, which makes the intent explicit.
    */
   private def executeDamageMove(move: DamageMove)(state: BattleState): BattleState =
-    val withLastMove = self(_.updateFlags(_.copy(lastMove = Some(move))))(state)
+    val withLastMove = self(updateFlags(_.copy(lastMove = Some(move))))(state)
     val afterMove = MoveAction(move)(withLastMove)
     val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
     val afterDamageTaken = asOpponent(applyPassiveEffects(OnDamageTaken(Self)))(afterDamageDealt)
@@ -120,20 +104,7 @@ final class BattleOrchestrator(using DamagePolicy):
       afterDamageTaken
 
   private def executeNonDamageMove(move: Move)(state: BattleState): BattleState =
-    val stateWithResetFlag = self(_.updateFlags(_.copy(lastMove = None)))(state)
+    val stateWithResetFlag = self(updateFlags(_.copy(lastMove = None)))(state)
     val afterMove = MoveAction(move)(stateWithResetFlag)
     asOpponent(applyPassiveEffects(OnDamageTaken(Self)))(afterMove)
 
-  /** Runs f from the perspective of the given side, restoring orientation. */
-  private def onSide(side: Side)(f: StateTransformer): StateTransformer =
-    side match
-      case Side.Self => f
-      case Side.Opponent => s => switchSelfOpponent(f(switchSelfOpponent(s)))
-
-  /** Runs f from the opponent's perspective, restoring orientation. */
-  private def asOpponent(f: StateTransformer): StateTransformer =
-    onSide(Side.Opponent)(f)
-
-  /** Runs f once per side, each time from that side's perspective. */
-  private def forBothSides(f: StateTransformer): StateTransformer =
-    state => List(Side.Self, Side.Opponent).foldLeft(state)((s, side) => onSide(side)(f)(s))
