@@ -1,10 +1,10 @@
 package scalamon.logics.turns
 
-import scalamon.domain.moves.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.OnTurnEnd
 import scalamon.domain.moves.Accuracy.given
 import scalamon.logics.state.StateTransformerModuleImpl.*
-import scalamon.logics.state.AlteredStatusModule.applyCondition
+import scalamon.domain.alteredStatus.AlteredStatusModule.applyCondition
 import scalamon.logics.weather.{WeatherEndTurnResolver, WeatherSystem}
 import scalamon.logics.weather.WeatherSystem.default
 import Utilities.*

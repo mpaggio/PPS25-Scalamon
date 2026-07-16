@@ -1,6 +1,6 @@
 package scalamon.logics.state
-import scalamon.domain.pokemon.pokedex.MyPokedex
-import scalamon.domain.moves.MoveDatabase.*
+import scalamon.database.MoveDatabase.*
+import scalamon.database.MyPokedex
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.BattleStateImpl.*

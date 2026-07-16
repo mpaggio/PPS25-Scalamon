@@ -2,7 +2,7 @@ package scalamon.domain.moves
 
 import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.moves.Accuracy.*
-import scalamon.domain.moves.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.logics.state.StateFixtures
 import scalamon.logics.state.StateTransformerModuleImpl.*

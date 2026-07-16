@@ -1,11 +1,11 @@
 package scalamon.app
 
+import scalamon.logics.damage.DamagePolicy
 import scalamon.logics.state.BattleStateImpl.{BattleState, switchSelfOpponent}
-import scalamon.logics.state.DamagePolicy
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
-import scalamon.logics.teambuilder.AffineTeamBuilder.AffineTeamBuilder
+import scalamon.logics.teambuilder.AffineTeamBuilder
 import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
-import scalamon.logics.teambuilder.RandomTeamBuilder.RandomTeamBuilder
+import scalamon.logics.teambuilder.RandomTeamBuilder
 import scalamon.logics.teambuilder.TeamBuilder.TeamBuilder
 import scalamon.logics.turns.*
 import scalamon.logics.turns.TurnResult.*
@@ -21,7 +21,7 @@ import scalamon.util.StateMonad.*
  * The whole game is a computation over the pair (BattleState, view.V);
  * `battle` and `ui` lift computations on each half into the combined state.
  */
-final class GameApp(val view: GameView):
+final class GameLoop(val view: GameView):
   import GameConfig.*
 
   private type Game[A] = StateMonad[(BattleState, view.V), A]
@@ -67,8 +67,8 @@ final class GameApp(val view: GameView):
     ManualTeamBuilder(choosePokemonTeam, chooseMoves, chooseItems)
 
   private def automaticBuilder(mode: Mode): TeamBuilder = mode match
-    case Mode.Affine => AffineTeamBuilder()
-    case _           => RandomTeamBuilder()
+    case Mode.Affine => AffineTeamBuilder
+    case _           => RandomTeamBuilder
 
   private def teamBuilders(mode: Mode): StateMonad[view.V, (TeamBuilder, TeamBuilder)] = mode match
     case Mode.Manual =>

@@ -1,4 +1,4 @@
-package scalamon.domain.moves
+package scalamon.domain.alteredStatus
 
 /**
  * Represents the various status condition that can affect a Pokémon during battle.

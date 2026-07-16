@@ -3,10 +3,11 @@ package scalamon.logics.teambuilder
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.shouldBe
 import scalamon.app.GameConfig.TeamSize
+import scalamon.database.MoveDatabase
 import scalamon.domain.actions.Items.{Item, allItems}
 import scalamon.domain.moves.Move
 import scalamon.domain.pokemon.Pokemon
-import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
+import scalamon.database.MyPokedex.allPokemons
 import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
 
 class ManualTeamBuilderTest extends AnyFunSuite:
@@ -15,7 +16,7 @@ class ManualTeamBuilderTest extends AnyFunSuite:
     allPokemons.find(_.name == name).getOrElse(throw new NoSuchElementException(s"Pokemon with name $name not found"))
 
   private def moveNamed(name: String): Move =
-    scalamon.domain.moves.MoveDatabase.allMoves.find(_.name == name).getOrElse(throw new NoSuchElementException(s"Move with name $name not found"))
+    MoveDatabase.allMoves.find(_.name == name).getOrElse(throw new NoSuchElementException(s"Move with name $name not found"))
 
   private def itemNamed(name: String): Item =
     allItems.find(_.name == name).getOrElse(throw new NoSuchElementException(s"Item with name $name not found"))

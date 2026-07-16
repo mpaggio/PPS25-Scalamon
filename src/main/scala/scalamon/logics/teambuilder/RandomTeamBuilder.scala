@@ -3,19 +3,15 @@ package scalamon.logics.teambuilder
 import TeamBuilder.*
 
 /**
- * Companion object for RandomTeamBuilder.
- * Provides a namespace for the random team generation strategy.
+ * Singleton implementation of [[TeamBuilder]] that utilizes total randomness
+ * for both Pokémon and move selection.
+ *
+ * It acts as a concrete "Strategy" within the team-building framework,
+ * allowing for high variety in battle simulations.
  */
-object RandomTeamBuilder:
+object RandomTeamBuilder extends TeamBuilder:
 
-  /**
-   * Implementation of [[TeamBuilder]] that utilizes total randomness
-   * for both Pokémon and move selection.
-   *
-   * It acts as a concrete "Strategy" within the team-building framework,
-   * allowing for high variety in battle simulations.
-   */
-  case class RandomTeamBuilder() extends TeamBuilder:
+
     import scala.util.Random
     /**
      * Randomly selects a team of unique Pokémon from the provided available pool.

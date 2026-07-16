@@ -1,18 +1,19 @@
-package scalamon.domain.pokemon.abilities
+package scalamon.database
 
+import scalamon.domain.alteredStatus.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatusUtility.*
 import scalamon.domain.moves.*
-import scalamon.domain.moves.AlteredStatus.*
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.abilities.AbilityDSL.{AbilityBook, OnTrigger}
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.pokemon.abilities.Target.*
+import scalamon.domain.pokemon.abilities.{Ability, AbilityDefinition, AbilitySlot, AbilityTrigger}
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.StateTransformerModuleImpl.*
-import scalamon.domain.moves.AlteredStatusUtility.*
 import scalamon.logics.log.BattleLogger
-import scalamon.logics.state.BattleStateImpl.{self, opponent}
+import scalamon.logics.state.BattleStateImpl.{opponent, self}
+import scalamon.logics.state.StateTransformerModuleImpl.*
 
 import scala.language.postfixOps
 import scala.util.Random

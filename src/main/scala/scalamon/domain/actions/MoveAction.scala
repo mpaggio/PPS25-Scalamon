@@ -1,14 +1,14 @@
-package scalamon.domain.moves
+package scalamon.domain.actions
 
-import Accuracy.*
-import Accuracy.ProbabilityRoll
+import scalamon.domain.actions.Action
+import scalamon.domain.moves.Accuracy.ProbabilityRoll
+import scalamon.domain.moves.{DamageMove, MoveEffect, StatusMove}
 import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
-import scalamon.logics.state.StateTransformerModuleImpl.*
-import scalamon.logics.state.DamageMoveCalculatorImpl.getDamage
-import scalamon.logics.state.DamagePolicy
-import scalamon.domain.actions.Action
+import scalamon.logics.damage.DamagePolicy
 import scalamon.logics.log.BattleLogger
+import scalamon.logics.damage.DamageMoveCalculatorImpl.getDamage
+import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.weather.WeatherSystem
 
 /**

@@ -1,5 +1,7 @@
 package scalamon.logics.state
 
+import scalamon.domain.alteredStatus
+
 trait PokemonStateModule extends StateComponent:
   type PokemonState
   protected type StatsState
@@ -32,14 +34,14 @@ trait PokemonStateModule extends StateComponent:
 object PokemonStateModuleImpl extends PokemonStateModule:
   import StatsStateModuleImpl.*
   case class Pks(
-    currentHp: HP,
-    modifiedStats: StatsState,
-    moves: Map[String, MoveState],
-    status: Set[AlteredStatus] = Set(),
-    species: PokemonSpecies)
+                  currentHp: HP,
+                  modifiedStats: StatsState,
+                  moves: Map[String, MoveState],
+                  status: Set[alteredStatus.AlteredStatus] = Set(),
+                  species: PokemonSpecies)
   override type PokemonState = Pks
   override type PokemonSpecies = scalamon.domain.pokemon.Pokemon
-  override type AlteredStatus = scalamon.domain.moves.AlteredStatus
+  override type AlteredStatus = alteredStatus.AlteredStatus
   override type StatsState = StatsStateModuleImpl.StatsState
   override type HP = StatsStateModuleImpl.Stat
   override type MoveState = scalamon.logics.state.MoveStateModuleImpl.MoveState

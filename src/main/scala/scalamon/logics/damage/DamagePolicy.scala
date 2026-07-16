@@ -1,4 +1,4 @@
-package scalamon.logics.state
+package scalamon.logics.damage
 
 /**
  * Defines the damage levels for the battle, which determines how much damage moves will deal.

@@ -1,7 +1,7 @@
 package scalamon.logics.weather
 
-import scalamon.domain.moves.AlteredStatus
-import scalamon.domain.moves.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus
+import AlteredStatus.*
 import scalamon.domain.types.Type
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*

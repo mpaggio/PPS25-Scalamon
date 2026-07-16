@@ -1,9 +1,8 @@
 package scalamon.logics.turns
 
-import scalamon.domain.actions.SwitchAction
+import scalamon.domain.actions.{MoveAction, SwitchAction}
 import scalamon.domain.moves.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
-import scalamon.logics.state.DamagePolicy
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.domain.moves.Accuracy.given
 import scalamon.domain.pokemon.abilities.Target
@@ -13,6 +12,7 @@ import scalamon.logics.log.BattleLogger
 import scalamon.logics.log.BattleLogger.emptyLogger
 import scalamon.logics.turns.ActionOrder.*
 import Utilities.*
+import scalamon.logics.damage.DamagePolicy
 
 /**
  * Coordinates the execution of a battle turn.

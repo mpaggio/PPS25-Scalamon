@@ -5,7 +5,7 @@ import scalamon.domain.pokemon.abilities.Target
 import AbilityTrigger.*
 import Target.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
-import scalamon.domain.moves.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.log.BattleLogger.logUseItem
 

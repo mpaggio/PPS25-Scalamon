@@ -8,7 +8,7 @@ import MoveDSL.*
 import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import Accuracy.*
-import AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.domain.pokemon.abilities.Target.*
 

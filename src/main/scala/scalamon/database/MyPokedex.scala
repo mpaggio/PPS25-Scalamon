@@ -1,4 +1,4 @@
-package scalamon.domain.pokemon.pokedex
+package scalamon.database
 
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.abilities.Ability.*

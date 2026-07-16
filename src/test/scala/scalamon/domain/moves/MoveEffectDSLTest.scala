@@ -4,7 +4,7 @@ import org.scalatest.matchers.should.Matchers.*
 import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
 import Accuracy.*
-import AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.domain.pokemon.abilities.Target.*
 

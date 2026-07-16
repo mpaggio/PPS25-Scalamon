@@ -1,9 +1,9 @@
-package scalamon.logics.state
+package scalamon.domain.alteredStatus
 
-import scalamon.domain.moves.AlteredStatus
-import scalamon.domain.moves.AlteredStatus.*
-import scalamon.domain.moves.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.*
+import AlteredStatus.*
+import AlteredStatusUtility.*
+import scalamon.domain.alteredStatus
 import scalamon.domain.types.Type
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.state.BattleStateImpl.*
@@ -13,7 +13,7 @@ import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.weather.WeatherSystem
 
 /**
- * Logic module responsible for the lifecycle and combat effects of [[AlteredStatus]].
+ * Logic module responsible for the lifecycle and combat effects of [[alteredStatus.AlteredStatus]].
  *
  * This module implements the mechanics of status condition.
  * It leverages extension methods to enrich the domain enum with behavioral logic
@@ -21,7 +21,7 @@ import scalamon.logics.weather.WeatherSystem
  */
 object AlteredStatusModule:
 
-  extension (status: AlteredStatus)
+  extension (status: alteredStatus.AlteredStatus)
     /**
      * Determines if the current status prevents the Pokémon from executing a move.
      *

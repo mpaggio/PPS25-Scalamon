@@ -1,7 +1,8 @@
 package scalamon.logics.log
 
 import scalamon.domain.actions.Items.Item
-import scalamon.domain.moves.{AlteredStatus, Move}
+import scalamon.domain.alteredStatus.AlteredStatus
+import scalamon.domain.moves.Move
 import scalamon.logics.state.BattleStateImpl.PlayerState
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 

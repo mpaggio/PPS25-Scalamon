@@ -42,12 +42,10 @@ object PlayerStateModuleImpl extends PlayerStateModule:
   override def playerInitialState(name: String, team: Map[PokemonId, PokemonState], active: PokemonId, items: Items): PlayerState =
     Ps(name, team, active, items, BattleFlags())
 
-  private def mapValues[K, V](m: Map[K, V])(f: V => V): Map[K, V] = m.map(e => (e._1, f(e._2)))
-
   def switchActive(newActive: PokemonId): Op = ps => ps.copy(activeId = newActive)
   def active(f: InnerOp): Op = ps => ps.copy(team = ps.team.updated(ps.activeId, f(ps.getActive)))
-  def bench(f: InnerOp): Op = ps => ps.copy(team = ps.team.map(e => if e._1 == ps.activeId then (e._1, e._2) else (e._1, f(e._2))))
-  def all(f: InnerOp): Op = ps => ps.copy(team = mapValues(ps.team)(f))
-  def allThat(p: PokemonState => Boolean)(f: InnerOp): Op = ps => ps.copy(team = mapValues(ps.team)(s => if p(s) then f(s) else s))
+  def bench(f: InnerOp): Op = ps => allThat(s => s != ps.getActive)(f)(ps)
+  def all(f: InnerOp): Op = ps => ps.copy(team = ps.team.map(e => (e._1, f(e._2))))
+  def allThat(p: PokemonState => Boolean)(f: InnerOp): Op = all(s => if p(s) then f(s) else s)
   def items(f: Items => Items): Op = ps => ps.copy(items = f(ps.items))
   def updateFlags(f: BattleFlags => BattleFlags): Op = ps => ps.copy(flags = f(ps.flags))

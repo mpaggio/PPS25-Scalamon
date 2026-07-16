@@ -2,6 +2,7 @@ package scalamon.domain.pokemon.pokedex
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
+import scalamon.database.MyPokedex
 import scalamon.domain.types.Type
 import scalamon.domain.types.Type.*
 import scalamon.domain.pokemon.abilities.Ability.*

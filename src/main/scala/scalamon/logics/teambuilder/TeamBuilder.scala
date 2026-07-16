@@ -2,9 +2,9 @@ package scalamon.logics.teambuilder
 
 import scalamon.domain.actions.Items.{Item, allItems}
 import scalamon.domain.moves.Move
-import scalamon.domain.moves.MoveDatabase.allMoves
+import scalamon.database.MoveDatabase.allMoves
 import scalamon.domain.pokemon.Pokemon
-import scalamon.domain.pokemon.pokedex.MyPokedex.*
+import scalamon.database.MyPokedex.*
 import scalamon.logics.state.MoveStateModuleImpl.moveInitialState
 import scalamon.logics.state.PlayerStateModuleImpl.{PlayerState, PokemonState, playerInitialState}
 import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState

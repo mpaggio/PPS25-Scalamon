@@ -1,11 +1,11 @@
 package scalamon.logics.state
 
 import org.scalatest.matchers.should.Matchers.*
-import scalamon.domain.moves.AlteredStatus.*
-import scalamon.domain.moves.AlteredStatusUtility.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.ProbabilityRoll
 import scalamon.domain.types.Type.*
-import scalamon.logics.state.AlteredStatusModule.*
+import scalamon.domain.alteredStatus.AlteredStatusModule.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.domain.weather.Weather.*
 import scalamon.logics.weather.WeatherSystem.given

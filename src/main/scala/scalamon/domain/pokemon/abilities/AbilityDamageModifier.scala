@@ -1,6 +1,6 @@
 package scalamon.domain.pokemon.abilities
 
-import scalamon.domain.moves.AlteredStatus.Burned
+import scalamon.domain.alteredStatus.AlteredStatus.Burned
 import scalamon.domain.moves.{DamageMove, DamageMoveCategory}
 import scalamon.domain.moves.DamageMoveCategory.Physical
 import scalamon.domain.pokemon.abilities.Ability.*

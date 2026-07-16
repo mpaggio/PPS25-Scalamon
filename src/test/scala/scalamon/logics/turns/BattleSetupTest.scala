@@ -4,9 +4,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.moves.Move
 import scalamon.domain.pokemon.Pokemon
-import scalamon.domain.pokemon.pokedex.MyPokedex.allPokemons
+import scalamon.database.MyPokedex.allPokemons
 import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
 import scalamon.app.GameConfig.*
+import scalamon.database.MoveDatabase
 
 class BattleSetupTest extends AnyFunSuite:
 
@@ -14,7 +15,7 @@ class BattleSetupTest extends AnyFunSuite:
     allPokemons.find(_.name == name).getOrElse(throw new NoSuchElementException(s"Pokemon with name $name not found"))
 
   private def moveNamed(name: String): Move =
-    scalamon.domain.moves.MoveDatabase.allMoves.find(_.name == name).getOrElse(throw new NoSuchElementException(s"Move with name $name not found"))
+    MoveDatabase.allMoves.find(_.name == name).getOrElse(throw new NoSuchElementException(s"Move with name $name not found"))
 
   test("setupBattle should create an initial battle state with player1 as self and player2 as opponent") {
     val team1 = List(

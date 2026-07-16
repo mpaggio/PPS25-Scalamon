@@ -1,11 +1,10 @@
 package scalamon.logics.turns
 
+import scalamon.database.{MoveDatabase, MyAbilityBook}
 import scalamon.domain.moves.Accuracy.given
-import scalamon.domain.moves.MoveDatabase
-import scalamon.domain.moves.MoveDatabase.findByName
-import scalamon.domain.pokemon.abilities.MyAbilityBook
+import MoveDatabase.findByName
 import scalamon.domain.types.Type
-import scalamon.logics.state.AlteredStatusModule.{canMove, isSelfHitting}
+import scalamon.domain.alteredStatus.AlteredStatusModule.{canMove, isSelfHitting}
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.turns.TurnResolutionImpl.isKnockedOut
 

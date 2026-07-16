@@ -1,7 +1,7 @@
 package scalamon.logics.weather
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.moves.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather.*
 import scalamon.logics.weather.WeatherSystem.given

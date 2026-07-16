@@ -11,10 +11,11 @@ import scalamon.logics.state.BattleStateImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.MoveStateModuleImpl.*
-import scalamon.domain.pokemon.pokedex.MyPokedex.*
+import scalamon.database.MyPokedex.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.StatsStateModuleImpl.*
 import Accuracy.*
+import scalamon.domain.actions.MoveAction
 import scalamon.domain.weather.Weather.*
 import scalamon.logics.weather.WeatherSystem.given
 
@@ -30,7 +31,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
   )
 
   test("A damaging move action should decrease its Power Points (PP) after every single use"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
     val action: MoveAction = MoveAction(swift)
@@ -40,7 +41,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     state2.self.team(pokemon.name).moveState(swift.name).currentPp shouldBe 30
 
   test("Damaging move action with 100% accuracy should always decrease enemy HP and consume PP"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
     val battleEndingState =
@@ -49,7 +50,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleEndingState.self.team(pokemon.name).moveState(swift.name).currentPp shouldBe 31
 
   test("Damaging move action with 0% accuracy should not decrease enemy HP but must consume PP"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 101
 
     val battleEndingState =
@@ -66,7 +67,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     )
 
   test("A status move should decrease its Power Points (PP) after every single use"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
     val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
@@ -78,7 +79,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     state2.self.team(pokemon.name).moveState(recover.name).currentPp shouldBe 30
 
   test("Status move with 0% accuracy should not have effects but must consume PP"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 101
 
     val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
@@ -90,7 +91,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleEndingState.self.team(pokemon.name).moves(recover.name).currentPp shouldBe 31
 
   test("Status move with healing effect should heal the user and consume PP"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
     val recover = move named "Recover" withPP 32 withAccuracy 100 withType Normal withEffect (Effect healing 50) as Status
@@ -103,7 +104,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleFinalState.self.team(pokemon.name).moves(recover.name).currentPp shouldBe (recover.pp.asInt - 1)
 
   test("Damaging move with recoil effect should damage both target and user"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
     val doubleEdge = move named "Double edge" withPower 100 withPP 24 withAccuracy 100 withType Normal withEffect (Effect recoil 25) as Physical
@@ -116,7 +117,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleFinalState.self.team(pokemon.name).currentHp shouldBe (maxHp - expectedRecoil)
 
   test("Status move with composable effect should lead to the correct effects on the state"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 1
 
     val transformation1: StateTransformer = opponent( bench( currentHp( decrease(10))))
@@ -135,7 +136,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleFinalState.self.getActive.currentHp shouldBe math.min(100, battleFinalState.self.getActive.species.baseStats.hp.toInt)
 
   test("Fog should reduce move accuracy"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 90
 
     val fogBattle = battleStartingState.copy(weather = Fog)
@@ -143,7 +144,7 @@ class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
     battleEndingState.opponent.team(pokemon.name).currentHp shouldBe pokemon.baseStats.hp.toInt
 
   test("Rain should make Electric moves ignore accuracy"):
-    import scalamon.logics.state.DamagePolicy.Easy.given
+    import scalamon.logics.damage.DamagePolicy.Easy.given
     given ProbabilityRoll = () => 100
 
     val thunder = move named "Thunder" withPower 120 withPP 16 withAccuracy 70 withType Electric as Special

@@ -2,10 +2,11 @@ package scalamon.domain.pokemon.abilities
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
-import scalamon.domain.moves.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
 import scalamon.domain.moves.{DamageMove, DamageMoveCategory, Move}
 import scalamon.domain.moves.DamageMoveCategory.Physical
-import scalamon.domain.moves.MoveDatabase.allMoves
+import scalamon.database.MoveDatabase.allMoves
+import scalamon.database.MyAbilityBook
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.pokemon.abilities.AbilityTrigger.*
 import scalamon.domain.pokemon.abilities.Target.*

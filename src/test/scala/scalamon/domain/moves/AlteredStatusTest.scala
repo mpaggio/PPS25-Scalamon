@@ -1,7 +1,7 @@
 package scalamon.domain.moves
 
 import org.scalatest.matchers.should.Matchers.*
-import AlteredStatusUtility.*
+import scalamon.domain.alteredStatus.AlteredStatusUtility.*
 
 class AlteredStatusTest extends org.scalatest.funsuite.AnyFunSuite:
 

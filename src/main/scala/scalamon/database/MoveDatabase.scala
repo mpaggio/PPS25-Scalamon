@@ -1,14 +1,14 @@
-package scalamon.domain.moves
+package scalamon.database
 
+import scalamon.domain.alteredStatus.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatusUtility.*
+import scalamon.domain.moves.DamageMoveCategory.*
+import scalamon.domain.moves.MoveDSL.move
+import scalamon.domain.moves.MoveEffectDSL.Effect
+import scalamon.domain.moves.StatusMoveCategory.Status
+import scalamon.domain.moves.{DamageMoveCategory, DamagingMove, Move, NonDamagingMove}
 import scalamon.domain.types.Type
 import scalamon.domain.types.Type.*
-import DamageMoveCategory.*
-import StatusMoveCategory.*
-import MoveDSL.*
-import MoveEffectDSL.*
-import MoveEffectDSL.Effect.*
-import AlteredStatus.*
-import AlteredStatusUtility.*
 import scalamon.logics.state.StatsStateModuleImpl.*
 
 /**
