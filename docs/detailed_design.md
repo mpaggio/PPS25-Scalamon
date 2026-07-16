@@ -47,9 +47,10 @@ Le quattro scelte descritte di seguito — il meccanismo degli state transformer
 ### State transformer e gerarchia dello stato
 
 Lo stato di battaglia è un valore immutabile organizzato per aggregazione gerarchica:
-il `BattleState` contiene i due `PlayerState`, ciascuno dei quali contiene i `PokemonState` del team, che a loro volta aggregano statistiche modificate (`StatsState`) e stato delle mosse (`MoveState`). Ogni evento di gioco è modellato dal tipo
+il `BattleState` contiene i due `PlayerState`, ciascuno dei quali contiene i `PokemonState` del team,
+che a loro volta aggregano statistiche modificate (`StatsState`) e stato delle mosse (`MoveState`).
 Ognuno di questi componenti rappresenta uno stato dinamico variabile in battaglia.
-Ad esempio esistono mosse che possono alterare le statistiche di un Pokèmon mentre le mosse devono tenere traccia dei PP rimanenti.
+Ad esempio le mosse devono tenere traccia dei PP rimanenti, esistono inoltre effetti che possono alterare le statistiche di un Pokèmon.
 
 ```scala
 type StateTransformer = BattleState => BattleState
@@ -69,6 +70,7 @@ val healMove     = self(allThat(_.currentHp < 40)(currentHp(increase(10))))
 
 I selettori del *PlayerState* `self` e `opponent` permettono di descrivere se l'effetto
 si applica al giocatore che lo invoca o all'avversario.
+
 La conseguenza di design più importante è l'**uniformità**: mosse, abilità, strumenti,
 status alterati ed effetti meteo implementano tutti lo stesso contratto `StateTransformer`,
 descritti come innesto dei combinatori granulari.
@@ -107,7 +109,7 @@ La costruzione del team ammette tre modalità:
 - **Affine**: mosse STAB più mosse di copertura ricavate dalla tabella dei tipi
 - **Manuale**: la scelta di Pokémon, mosse e oggetti è affidata all'utente tramite l'interfaccia.
 
-Le tre modalità differiscono solo nel come selezionano, non nel come si costruisce uno stato di gioco valido.
+Le tre modalità differiscono solo nella logica di selezione, non nel come si costruisce uno stato di gioco valido.
 È stato quindi adottato il **Template Method pattern**:
 il trait `TeamBuilder` definisce l'algoritmo fisso `buildTeam` — selezione,
 verifica degli invarianti di composizione (6 Pokémon, 4 mosse ciascuno, dotazione di strumenti),
