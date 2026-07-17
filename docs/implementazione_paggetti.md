@@ -106,3 +106,25 @@ Ogni operazione non crea immediatamente l'effetto finale, ma restituisce eventua
 Il DSL non introduce una nuova gerarchia di oggetti per rappresentare le mosse, ma agisce solamente come livello di costruzione sopra le strutture già esistenti. Il risultato finale è un oggetto che implementa il trait `MoveEffect`, mantenendo compatibile il livello dichiarativo con il sistema di esecuzione basato su `StateTransformer`.
 
 ![Diagramma semplificato Move Effect e Move Effect DSL](resources/move_effect.png)
+
+## Mosse
+L'implementazione delle mosse è stata progettata separando il concetto di mossa come elemento di dominio dal suo stato durante l'esecuzione della battaglia. In questo modo è possibile mantenere immutabili le informazioni caratteristiche della mossa, mentre le informazioni che cambiano durante la partita vengono gestite tramite una struttura di stato dedicata.
+
+### Modello statico della mossa:
+Il punto centrale è rappresentato dal trait `Move`, che definisce le proprietà comuni a tutte le mosse (nome, PP massimi, accuratezza e tipo). La scelta di utilizzare un `sealed trait` permette di definire una gerarchia chiusa, consentendo al compilatore di verificare la completezza dei pattern matching utilizzati dal motore di battaglia.
+
+Sono poi state definite due categorie di mosse. Le mosse offensive sono modellate tramite il trait `DamagingMove`, che estende `Move`, introducendo la potenza base (`Power`), la categoria offensiva (`Physical` o `Special`) e un eventuale effetto secondario. L'effetto secondario è opzionale perchè una mossa offensiva può limitarsi al solo calcolo del danno oppure prendere anche conseguenze aggiuntive. L'implementazione concreta è rappresentata dalla `case class` `DamageMove`. Le mosse prive di danno diretto (status) sono rappresentate dal trait `NonDamagingMove`. Queste mosse richiedono necessariamente un `MoveEffect`, poiché la loro funzione consiste nella trasformazione dello stato della battaglia. La relativa implementazione concreta è fornita dalla `case class` `StatusMove`.
+
+![Diagramma di Move](resources/moves_static.png)
+
+### DSL per la definizione delle mosse:
+La creazione delle mosse è stata semplificata tramite il modulo `MoveDSL`, che introduce una sintassi dichiarativa per costruire gli oggetto `Move`. Il DSL (proprio come per quello usato per gli effetti) utilizza un approccio basato su un *builder* incrementale. Il metodo `move` crea un nuovo `MoveBuilder`, contenente inizialmente campi opzionali vuoti. Le caratteristiche della mossa vengono aggiunte progressivamente tramite *extension methods* con sintassi infissa. Ogni operazione restituisce una copia del builder tramite il metodo `copy` delle case class, mantenendo il comportamento immutabile. La costruzione termina attraverso l'operatore `as(category)` che rappresenta il punto in cui viene determinata la categoria definitiva della mossa (status o damage). Prima della creazione viene eseguita una validazione dei campi obbligatori tramite `require`, impedendo la generazione di mosse non valide.
+
+![Diagramma di Move DSL](resources/move_DSL.png)
+
+### Modello dinamico della mossa:
+Durante una battaglia, alcuni attributi della mossa devono poter cambiare. Il caso principale è rappresentato dai PP residui. Per evitare di modificare direttamente l'oggetto `Move`, che rappresenta una descrizione statica della mossa, è stato introdotto il modulo `MoveStateModule`. Tale modulo gestisce lo stato dinamico associato alla mossa, attraverso il tipo `MoveState`. L'implementazione concreta è fornita da `MoveStateModuleImpl` che utilizza la *case class* `Ms(move, currentPP)`, dove `move` rappresenta il riferimento alla mossa originale immutabile, mentre `currentPP` rappresenta il numero attuale di utilizzi disponibili.
+
+Le modifiche allo stato della mossa vengono effettuate attraverso funzioni pure che restituiscono nuove versioni dello stato. Ad esempio, la riduzione dei PP viene implementata tramite `decreasePPBy(value)`, che utilizza internamente una trasformazione del tipo `PP => PP` applicata allo stato corrente. La modifica non avviene tramite mutazione dell'oggetto esistente, ma tramite la creazione di una nuova istanza della *case class* interna `Ms`.
+
+![Diagramma di Move State](resources/moves_dynamic.png)
