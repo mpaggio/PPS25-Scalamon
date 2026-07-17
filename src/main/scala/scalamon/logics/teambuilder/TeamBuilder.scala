@@ -12,8 +12,9 @@ import scalamon.app.GameConfig.*
 
 /**
  * Module providing the core abstractions and constants for the team-building subsystem.
- * It centralizes the rules governing team composition and provides the structural
- * foundation for various team generation strategies.
+ * It centralizes the rules governing team composition, defines the function types used 
+ * by team-building strategies and provides the structural foundation for various team 
+ * generation approaches.
  */
 object TeamBuilder:
 
@@ -28,8 +29,10 @@ object TeamBuilder:
    * selection logic to the abstract steps below.
    *
    * The steps are declared as function-valued members (rather than methods
-   * with parameter lists) so that a concrete strategy can be plain data: a
-   * case class whose fields *are* the steps (see [[ManualTeamBuilder]]).
+   * with parameter lists) so that a concrete strategy can be plain data: an
+   * object or a case class whose fields are the steps. Concrete implementations
+   * are responsible only for the selection logic, while the construction and
+   * validation of the resulting game state are handled by this trait.
    */
   trait TeamBuilder:
 
@@ -45,10 +48,12 @@ object TeamBuilder:
     /**
      * Template Method for creating a [[PlayerState]]:
      * invokes the concrete steps for Pokémon and items, enforces the
-     * composition invariants, maps each Pokémon to its initial state and
-     * sets the first one as the active lead.
+     * composition invariants, maps each selected Pokémon to its initial 
+     * state (including its initialized move states) and sets the first 
+     * selected Pokémon as the active lead.
      *
-     * @throws IllegalArgumentException if any invariant is violated.
+     * @throws IllegalArgumentException if the generated team or any Pokémon
+     * does not satisfy the required size constraints.
      */
     final def buildTeam(playerName: String): PlayerState =
       val chosenPokemonTeam = choosePokemonTeam(allPokemons, TeamSize)
@@ -65,7 +70,10 @@ object TeamBuilder:
     /**
      * Template Method for creating a [[PokemonState]]: moves are selected by
      * the concrete step, the move-count invariant is enforced, and the move
-     * states are initialized with the correct PP values.
+     * states are initialized with the correct PP values. This method builds
+     * the initial state for a Pokémon by selecting its moves, validating the
+     * move-count invariant, initializing each move state with its starting PP
+     * and assembling the resulting Pokémon state.
      */
     private final def buildPokemonState(pokemon: Pokemon): PokemonState =
       val chosenMoves = chooseMoves(pokemon, allMoves.toList, MovesPerPokemon)

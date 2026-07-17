@@ -1,13 +1,14 @@
-package scalamon.logics.state
+package scalamon.domain.alteredStatus
 
 import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.alteredStatus.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatusModule.*
 import scalamon.domain.alteredStatus.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.ProbabilityRoll
 import scalamon.domain.types.Type.*
-import scalamon.domain.alteredStatus.AlteredStatusModule.*
-import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.domain.weather.Weather.*
+import scalamon.logics.state.StateFixtures
+import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.weather.WeatherSystem.given
 
 class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with StateFixtures:

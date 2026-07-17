@@ -1,23 +1,22 @@
-package scalamon.domain.moves
+package scalamon.domain.actions
 
 import org.scalatest.matchers.should.Matchers.*
-import DamageMoveCategory.*
-import StatusMoveCategory.*
-import MoveDSL.{move, *}
-import MoveEffectDSL.*
-import MoveEffectDSL.Effect.*
+import scalamon.database.MyPokedex.*
+import scalamon.domain.moves.Accuracy.ProbabilityRoll
+import scalamon.domain.moves.MoveDSL.move
+import scalamon.domain.moves.MoveEffectDSL.Effect
+import scalamon.domain.moves.{DamagingMove, MoveEffect}
 import scalamon.domain.types.Type.*
+import scalamon.domain.weather.Weather.*
 import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.MoveStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
-import scalamon.logics.state.MoveStateModuleImpl.*
-import scalamon.database.MyPokedex.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.state.StatsStateModuleImpl.*
-import Accuracy.*
-import scalamon.domain.actions.MoveAction
-import scalamon.domain.weather.Weather.*
 import scalamon.logics.weather.WeatherSystem.given
+import scalamon.domain.moves.DamageMoveCategory.*
+import scalamon.domain.moves.StatusMoveCategory.Status
 
 class MoveActionTest extends org.scalatest.funsuite.AnyFunSuite:
 

@@ -1,4 +1,4 @@
-package scalamon.domain.moves
+package scalamon.domain.alteredStatus
 
 import org.scalatest.matchers.should.Matchers.*
 import scalamon.domain.alteredStatus.AlteredStatusUtility.*

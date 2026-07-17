@@ -3,14 +3,14 @@ package scalamon.logics.teambuilder
 import TeamBuilder.*
 
 /**
- * Singleton implementation of [[TeamBuilder]] that uses a "smart" strategy
- * based on type affinity and offensive coverage.
+ * Singleton implementation of [[TeamBuilder]] that builds teams using
+ * affinity and offensive coverage heuristics.
  *
- * It follows the "Strategy" design pattern for team generation and
- * integrates into the "Template Method" defined in the base trait.
+ * It implements the Strategy pattern for team generation and integrates
+ * with the Template Method defined in the base trait.
  */
 object AffineTeamBuilder extends TeamBuilder:
-  /** Number of moves of the same type as the Pokémon (STAB) to attempt to assign. */
+  /** Designed number of STAB (Same Type Attack Bonus) moves to assign before selecting coverage moves.*/
   val numberOfSameTypeMoves = 2
 
   import scala.util.Random
@@ -27,8 +27,8 @@ object AffineTeamBuilder extends TeamBuilder:
 
   /**
    * Selects size moves for the Pokémon, following tactical efficacy criteria:
-   * 1. Attempts to assign 2 STAB (Same Type Attack Bonus) moves.
-   * 2. Attempts to assign remaning coverage moves (SuperEffective against types that resists to the Pokémon's type).
+   * 1. Attempts to assign up to two STAB (Same Type Attack Bonus) moves.
+   * 2. Attempts to assign the remaining coverage moves, that are super effective against types that resists to the Pokémon's type.
    * 3. Uses a fallback mechanism to ensure the requirement of exactly size moves is met.
    */
   override def chooseMoves: MoveSelector = (pokemon, availableMoves, size) =>
@@ -43,18 +43,18 @@ object AffineTeamBuilder extends TeamBuilder:
     handleFallback(selectedMovesSoFar, availableMoves, size: Int)
 
   /**
-   * Randomly selects a set of items from the available pool.
+   * Randomly selects size distinct items from the available pool.
    */
   override def chooseItems: ItemSelector = (availableItems, size) => Random.shuffle(availableItems).take(size)
 
   /**
-   * Mechanism that guarantee compliance with the size-move invariant.
+   * Mechanism that guarantees compliance with the size-move invariant.
    * If the affinity logic fails to find enough moves, it fills the remaining
    * slots with random moves from the general database.
    *
-   * @param selectedSoFar Move selected so far by the smart logic.
+   * @param selectedSoFar Moves selected so far by the smart logic.
    * @param all The entire pool of moves available in the database.
-   * @return A complete list of exactly size moves.
+   * @return A complete list containing exactly size moves.
    */
   private def handleFallback(selectedSoFar: List[Move], all: List[Move], size: Int): List[Move] =
     if selectedSoFar.size < size then
@@ -67,7 +67,7 @@ object AffineTeamBuilder extends TeamBuilder:
    * Implements the strategic coverage criterion by querying the domain model.
    * A move is considered "affine" if its type is SuperEffective against at least one type
    * that the current Pokémon is NotVeryEffective against.
-   * The algorithm derives relationships directly from the type table.
+   * The algorithm is computed directly from the type effectiveness table.
    *
    * @param moveType The type of the move to evaluate.
    * @param myType The type of the Pokémon learning the move.

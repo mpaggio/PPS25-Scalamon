@@ -1,6 +1,5 @@
 package scalamon.domain.actions
 
-import scalamon.domain.actions.Action
 import scalamon.domain.moves.Accuracy.ProbabilityRoll
 import scalamon.domain.moves.{DamageMove, MoveEffect, StatusMove}
 import scalamon.domain.pokemon.abilities.Target

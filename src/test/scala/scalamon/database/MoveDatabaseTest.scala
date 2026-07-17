@@ -1,9 +1,9 @@
-package scalamon.domain.moves
+package scalamon.database
 
-import scalamon.domain.types.Type.*
-import DamageMoveCategory.*
-import scalamon.database.MoveDatabase
 import scalamon.database.MoveDatabase.*
+import scalamon.domain.moves.{DamagingMove, NonDamagingMove}
+import scalamon.domain.types.Type.*
+import scalamon.domain.moves.DamageMoveCategory.*
 
 class MoveDatabaseTest extends org.scalatest.funsuite.AnyFunSuite:
 
