@@ -61,3 +61,48 @@ Le condizioni di stato che prevedono eventi casuali (ad esempio paralisi, congel
 Le probabilità associate ai diversi effetti e la durata degli stati temporanei sono invece centralizzate nell'oggetto `AlteredStatusUtility`, che raccoglie sia le costanti di configurazione, sia i metodi utilizzati per generare casualmente la durata di sonno e confusione.
 
 ![Diagramma Altered Status, Altered Status Module e Altered Status Utility](resources/altered_status.png)
+
+## Effetti delle mosse
+La gestione degli effetti secondari delle mosse è stata implementata attraverso un modello basato su trasformazioni dello stato della battaglia. Ogni effetto prodotto da una mossa viene rappresentato come un oggetto in grado di generare uno `StateTransformer`, ovvero una funzione pura che riceve lo stato corrente della battaglia e restituisce il nuovo stato risultante dall'applicazione dell'effetto.
+
+Il comportamento comune è definito dal trait `MoveEffect`, che rappresenta l'astrazione base per tutti gli effetti disponibili:
+- Applicazione di uno stato alterato.
+- Modifica delle statistiche.
+- Cura dei punti salute.
+- Danno da contraccolpo.
+- Applicazione dello stato di ricarica.
+- Modifica della probabilità di colpo critico.
+- Trasformazioni personalizzate.
+
+Ogni implementazione concreta del trait ridefinisce il metodo `executeEffect`, restituendo la trasformazione necessaria per far evolvere il `BattleState`.
+
+Gli effetti sono rappresentati tramite diverse `case class`, ognuna responsabile della costruzione di una specifica trasformazione dello stato. 
+
+`AlteredState` permette di applicare una condizione alterata al Pokémon bersaglio. L'effetto riceve una funzione `statusFactory`, utilizzata per generare lo stato da applicare, e una probabilità di successo rappresentata tramite il tipo di dominio `Accuracy`. Prima di modificare lo stato, viene quindi effettuato un test probabilistico, permettendo di modellare effetti come paralisi, avvelenamento o confusione, con probabilità variabili relative all'effetto.
+
+`StatChange` gestisce invece le modifiche temporanee alle statistiche dei Pokémon. La trasformazione riceve una funzione che modifica il relativo `StatsState` e un parametro `Target` che determina se l'effetto deve essere applicato al Pokémon utilizzatore oppure all'avversario.
+
+Gli effetti `Heal` e `Recoil` utilizzano il valore percentuale degli HP massimi del Pokémon per calcolare dinamicamente il quantitativo di punti salute da ripristinare o sottrarre. Questa scelta permette di definire facilmente mosse con effetti proporzionali alla salute massima del Pokémon target, senza introdurre valori fissi.
+
+L'effetto `Recharge` rappresenta invece le mosse che obbligano il Pokémon utilizzatore a trascorrere alcuni turni in stato di ricarica. Per implementarlo viene riutilizzato il sistema delle alterazioni di stato, aggiungendo una condizione `Charging` al Pokémon utilizzatore e aggiornando il log della battaglia.
+
+Infine, `ComposableEffect` permette di incapsulare direttamente una trasformazione arbitraria dello stato. Questa classe fornisce un punto di estensione per eventuali effetti non previsti dalle implementazioni standard.
+
+### DSL per la definizione degli effetti
+Per rendere la definizione delle mosse più leggibile e vicina al linguaggio del dominio, è stato sviluppato un *DSL (Domain Specific Language)* dedicato alla costruzione degli effetti. Lo scopo è quello di nascondere i dettagli implementativi delle classi che rappresentano gli effetti, permettendo di descrivere una mossa attraverso una sintassi più espressiva e dichiarativa.
+
+Il DSL è stato implementato all'interno dell'oggetto `MoveEffectDSL` e sfrutta gli *extension methods*, per creare una notazione simile al linguaggio naturale. 
+
+Il punto di ingresso del DSL è rappresentato dall'oggetto interno `Effect`, che espone una serie di operazioni corrispondenti ai principali effetti disponibili nel gioco:
+- `applying` per applicare uno stato alterato.
+- `changing` per modificare una statistica.
+- `healing` per curare il Pokémon utilizzatore.
+- `recoil` per applicare danno da contraccolpo.
+- `recharging` per aggiungere uno stato di ricarica.
+- `multiplyingCriticalBy` per modificare il moltiplicatore del colpo critico.
+
+Ogni operazione non crea immediatamente l'effetto finale, ma restituisce eventualmente un *Builder* intermedio, che permette di specificare ulteriori parametri necessari alla costruzione dell'oggetto. Il processo può essere visto come una costruzione progressiva (tipo di effetto, configurazione dei parametri, creazione del `MoveEffect` concreto). Il builder viene utilizzato per conservare temporaneamente le informazioni raccolte fino a quando tutti i parametri necessari non sono disponibili, momento in cui viene creato l'effetto definitivo.
+
+Il DSL non introduce una nuova gerarchia di oggetti per rappresentare le mosse, ma agisce solamente come livello di costruzione sopra le strutture già esistenti. Il risultato finale è un oggetto che implementa il trait `MoveEffect`, mantenendo compatibile il livello dichiarativo con il sistema di esecuzione basato su `StateTransformer`.
+
+![Diagramma semplificato Move Effect e Move Effect DSL](resources/move_effect.png)
