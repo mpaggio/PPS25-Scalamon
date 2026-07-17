@@ -1,24 +1,5 @@
 # Marco Paggetti
 
-## Team Builder
-Il sottosistema dedicato alla costruzione delle squadre ha lo scopo di generare lo stato iniziale di un giocatore, comprendente il team di Pokémon, le mosse associate a ciascun membro e gli strumenti disponibili durante la battaglia. Per ottenere una implementazione facilmente estendibile è stato adottato il *Template Method*, delegando alle implementazioni concrete esclusivamente la logica di selezione degli elementi della squadra.
-
-Il punto di partenza del sottosistema è rappresentato dal trait `TeamBuilder`, il quale definisce l'algoritmo generale di costruzione attraverso il metodo `buildTeam`. Tale algoritmo rimane invariato indipendentemente dalla strategia utilizzata e garantisce il rispetto di tutti gli invarianti richiesti dal sistema. Le operazioni variabili dell'algoritmo sono invece rappresentate dai tre membri astratti: `choosePokemonTeam`, `chooseMoves` e `chooseItems`.
-
-A differenza di una classica implementazione del Template Method, tali operazioni non sono modellati come metodi astratti con liste di parametri, ma come *function values*. Ogni strategia concreta fornisce quindi tre funzioni che descrivono il comportamento desiderato, mentre il trait mantiene completamente sotto il proprio controllo il processo di costruzione dello stato iniziale del giocatore.
-
-Una volta selezionati i Pokémon, il metodo `buildTeam` verifica che il numero dei membri sia conforme ai vincoli definiti nella configurazione di gioco. Successivamente ogni Pokémon viene convertito nel corrispondente `PokemonState` tramite il metodo privato `buildPokemonState`, che inizializza le mosse selezionate, creando per ciascuna il relativo `MoveState`, comprensivo del corretto valore iniziale dei PP. Al termine della costruzione viene generato il `PlayerState`, impostando automaticamente il primo Pokémon della squadra come Pokémon attivo. L'utilizzo delle chiamate `require` consente inoltre di garantire il rispetto degli invarianti fondamentali del sottosistema, evitando la creazione di stati di gioco inconsistenti.
-
-Il sistema prevede diverse strategie di selezione, ciascuna implementata come singleton o come case class che estendono il trait `TeamBuilder`:
-
-### Random Team Builder:
-`RandomTeamBuilder` realizza la strategia più semplice. Pokémon, mosse e strumenti vengono selezionati casualmente mediante l'algoritmo di mescolamento fornito da `scala.util.Random`. Nel caso delle mosse, la selezione avviene considerando l'intero database disponibile, senza verificare che il Pokémon sia effettivamente in grado di apprenderle. Tale scelta è stata effettuata per privilegiare la varietà delle simulazioni e semplificare il processo di generazione automatica dei team.
-
-### Affine Team Builder:
-`AffineTeamBuilder` implementa invece una strategia più sofisticata, orientata ad aumentare l'efficacia offensiva della squadra. Per ogni Pokémon vengono inizialmente selezionate, quando disponibili, fino a due mosse dello stesso tipo del Pokémon, in modo da sfruttare il bonus STAB (*Same Type Attack Bonus*). Successivamente vengono ricercate mosse di copertura offensiva, individuando tipi che risultino super efficaci contro quelli verso cui il tipo del Pokémon risulta invece poco efficace. Tale informazione non è codificata manualmente, ma viene ricavata dinamicamente interrogando la tabella di efficacia dei tipi (`TypeChart`). Il metodo `checkIfMoveTypeIsAffine` analizza infatti tutte le possibili combinazioni di tipi, verificando se il tipo della mossa può compensare una debolezza offensiva del Pokémon. Dato che il database potrebbe non contenere un numero sufficiente di mosse compatibili con tali criteri, il metodo `handleFallback` completa la selezione scegliendo casualmente le mosse mancanti. In questo modo viene sempre garantito il rispetto del numero massimo di mosse previsto dal regolamento.
-
-![Diagramma Team Builder, Random Team Builder e Affine Team Builder](resources/team_builder.png)
-
 ## Statistiche relative alle mosse
 Per rappresentare alcune delle principali caratteristiche delle mosse è stato adottato un approccio basato sugli *opaque types*, introducendo i tipi di dominio `Accuracy`, `Power` e `PP` (Power Points). Questa scelta è stata presa per evitare la *Primitive Obsession* e per evitare di modellare tali proprietà come semplici valori interni, rendendole invece concetti espliciti del dominio applicativo e riducendo il rischio di utilizzare valori non validi all'interno del sistema. Gli opaque type, rispetto a dei normali alias di tipo, risultano distinti durante la compilazione, pur essendo rappresentati internamente dal medesimo tipo sottostante (`Int`).
 
@@ -128,3 +109,36 @@ Durante una battaglia, alcuni attributi della mossa devono poter cambiare. Il ca
 Le modifiche allo stato della mossa vengono effettuate attraverso funzioni pure che restituiscono nuove versioni dello stato. Ad esempio, la riduzione dei PP viene implementata tramite `decreasePPBy(value)`, che utilizza internamente una trasformazione del tipo `PP => PP` applicata allo stato corrente. La modifica non avviene tramite mutazione dell'oggetto esistente, ma tramite la creazione di una nuova istanza della *case class* interna `Ms`.
 
 ![Diagramma di Move State](resources/moves_dynamic.png)
+
+## Azione relativa alle mosse
+Le azioni rappresentano le operazioni che possono essere eseguite durante una battaglia e sono state modellate da Pasini come trasformazioni dello stato globale del combattimento. L'astrazione principale è rappresentata dal trait `Action`, che estende direttamente `StateTransformer`. In questo modo, ogni azione può essere vista come una funzione che riceve un `BattleState` e restituisce una nuova versione aggiornata dello stesso stato.
+
+L'implementazione concreta dell'azione delle mosse è rappresentato dalla *case class* `MoveAction`, che incapsula l'esecuzione di una mossa Pokémon. Una `MoveAction` contiene la mossa da eseguire (`Move`), il bersaglio dell'azione (`Target`) e alcune dipendenze contestuali ricevute tramite *Contextual Abstraction* (`DamagePolicy` per il calcolo del danno, `ProbabilityRoll` per la gestione della casualità e `WeatherSystem` per modificatori ambientali).
+
+L'esecuzione di una `MoveAction` segue una pipeline composta da tre fasi principali:
+1) Consumo dei PP: la prima trasformazione aggiorna lo stato del Pokémon utilizzatore, diminuendo di uno il numero dei PP disponibili per la mossa, tramite aggiornamento del `MoveState` relativo alla mossa.
+2) Calcolo e applicazione del danno: la seconda fase viene eseguita solamente nel caso in cui la mossa superi il controllo di accuratezza. Se la mossa è una `DamageMove`, viene utilizzato il `DamageMoveCalculator` per determinare il danno prodotto, considerando il contesto della battaglia. Il risultato del calcolo viene poi trasformato in un aggiornamento dello stato degli HP del bersaglio. Nel caso di una `StatusMove`, questa fase viene saltata perchè la mossa non produce danno diretto.
+3) Applicazione degli effetti secondari: l'ultima fase applica gli eventuali `MoveEffect` associati alla mossa. Gli effetti vengono eseguiti attraverso il metodo `executeEffect`, che restituisce una nuova trasformazione dello stato della battaglia.
+
+Le diverse fasi non vengono applicate modificando direttamente il `BattleState`, ma vengono composte tramite `foldLeft` sulla lista delle trasformazioni (`logStep`, `ppStep`, `damageStep` e `effectStep`). Ogni trasformazione riceve il risultato della precedente e produce un nuovo stato.
+
+![Diagramma Move Action](resources/move_action.png)
+
+## Team Builder (realizzato insieme a Brighi)
+Il sottosistema dedicato alla costruzione delle squadre ha lo scopo di generare lo stato iniziale di un giocatore, comprendente il team di Pokémon, le mosse associate a ciascun membro e gli strumenti disponibili durante la battaglia. Per ottenere una implementazione facilmente estendibile è stato adottato il *Template Method*, delegando alle implementazioni concrete esclusivamente la logica di selezione degli elementi della squadra.
+
+Il punto di partenza del sottosistema è rappresentato dal trait `TeamBuilder`, il quale definisce l'algoritmo generale di costruzione attraverso il metodo `buildTeam`. Tale algoritmo rimane invariato indipendentemente dalla strategia utilizzata e garantisce il rispetto di tutti gli invarianti richiesti dal sistema. Le operazioni variabili dell'algoritmo sono invece rappresentate dai tre membri astratti: `choosePokemonTeam`, `chooseMoves` e `chooseItems`.
+
+A differenza di una classica implementazione del Template Method, tali operazioni non sono modellati come metodi astratti con liste di parametri, ma come *function values*. Ogni strategia concreta fornisce quindi tre funzioni che descrivono il comportamento desiderato, mentre il trait mantiene completamente sotto il proprio controllo il processo di costruzione dello stato iniziale del giocatore.
+
+Una volta selezionati i Pokémon, il metodo `buildTeam` verifica che il numero dei membri sia conforme ai vincoli definiti nella configurazione di gioco. Successivamente ogni Pokémon viene convertito nel corrispondente `PokemonState` tramite il metodo privato `buildPokemonState`, che inizializza le mosse selezionate, creando per ciascuna il relativo `MoveState`, comprensivo del corretto valore iniziale dei PP. Al termine della costruzione viene generato il `PlayerState`, impostando automaticamente il primo Pokémon della squadra come Pokémon attivo. L'utilizzo delle chiamate `require` consente inoltre di garantire il rispetto degli invarianti fondamentali del sottosistema, evitando la creazione di stati di gioco inconsistenti.
+
+Il sistema prevede diverse strategie di selezione, ciascuna implementata come singleton o come case class che estendono il trait `TeamBuilder`:
+
+### Random Team Builder:
+`RandomTeamBuilder` realizza la strategia più semplice. Pokémon, mosse e strumenti vengono selezionati casualmente mediante l'algoritmo di mescolamento fornito da `scala.util.Random`. Nel caso delle mosse, la selezione avviene considerando l'intero database disponibile, senza verificare che il Pokémon sia effettivamente in grado di apprenderle. Tale scelta è stata effettuata per privilegiare la varietà delle simulazioni e semplificare il processo di generazione automatica dei team.
+
+### Affine Team Builder:
+`AffineTeamBuilder` implementa invece una strategia più sofisticata, orientata ad aumentare l'efficacia offensiva della squadra. Per ogni Pokémon vengono inizialmente selezionate, quando disponibili, fino a due mosse dello stesso tipo del Pokémon, in modo da sfruttare il bonus STAB (*Same Type Attack Bonus*). Successivamente vengono ricercate mosse di copertura offensiva, individuando tipi che risultino super efficaci contro quelli verso cui il tipo del Pokémon risulta invece poco efficace. Tale informazione non è codificata manualmente, ma viene ricavata dinamicamente interrogando la tabella di efficacia dei tipi (`TypeChart`). Il metodo `checkIfMoveTypeIsAffine` analizza infatti tutte le possibili combinazioni di tipi, verificando se il tipo della mossa può compensare una debolezza offensiva del Pokémon. Dato che il database potrebbe non contenere un numero sufficiente di mosse compatibili con tali criteri, il metodo `handleFallback` completa la selezione scegliendo casualmente le mosse mancanti. In questo modo viene sempre garantito il rispetto del numero massimo di mosse previsto dal regolamento.
+
+![Diagramma Team Builder, Random Team Builder e Affine Team Builder](resources/team_builder.png)
