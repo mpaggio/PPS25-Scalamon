@@ -6,6 +6,7 @@ import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.logics.damage.DamagePolicy
 import scalamon.logics.log.BattleLogger
+import scalamon.logics.log.BattleLogger.*
 import scalamon.logics.damage.DamageMoveCalculatorImpl.getDamage
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.weather.WeatherSystem
@@ -38,9 +39,22 @@ case class MoveAction(move: Move, target: Target = Opponent)
    * @return A new [[BattleState]] reflecting all changes.
    */
   override def apply(bs: BattleState): BattleState =
+    val ignoresAccuracy = weather.ignoresAccuracy(bs.weather, move.moveType)
+    val accuracyMultiplier = weather.accuracyMultiplier(bs.weather)
+
     val isHit =
-      if weather.ignoresAccuracy(bs.weather, move.moveType) then true
-      else (move.accuracy * weather.accuracyMultiplier(bs.weather)).test
+      if ignoresAccuracy then true
+      else (move.accuracy * accuracyMultiplier).test
+
+    val weatherLogStep: StateTransformer = battleState =>
+      val withAccuracyIgnoredLog =
+        if ignoresAccuracy then updateLogs(logWeatherAccuracyIgnored(battleState.weather, move.moveType))(battleState)
+        else battleState
+      
+      if !ignoresAccuracy && accuracyMultiplier != 1.0 then
+        updateLogs(logWeatherAccuracyModifier(withAccuracyIgnoredLog.weather, accuracyMultiplier))(withAccuracyIgnoredLog)
+      else
+        withAccuracyIgnoredLog
 
     val logStep = updateLogs(BattleLogger.logMoveRoll(move, isHit))
 
@@ -70,4 +84,4 @@ case class MoveAction(move: Move, target: Target = Opponent)
           else battleState
         case Self => battleState
 
-    List(logStep ,ppStep, damageStep, effectStep).foldLeft(bs)((state, transformer) => transformer(state))
+    List(weatherLogStep, logStep ,ppStep, damageStep, effectStep).foldLeft(bs)((state, transformer) => transformer(state))
