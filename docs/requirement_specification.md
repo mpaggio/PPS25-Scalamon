@@ -113,9 +113,11 @@ Gli stati alterati devono essere rappresentati come parte dello stato dinamico c
 
 #### FR-12) Gestione del calcolo del danno
 Il sistema deve implementare un meccanismo di calcolo del danno prodotto da una mossa offensiva, che tenga conto dei diversi fattori che possono influenzarne l'esito. Quando un Pokémon utilizza una mossa offensiva, il sistema deve determinare il danno prodotto attraverso la seguente formula:
+
 ![Formula del danno completo](resources/Formula_danno.png)
 
 Dove il valore di base del danno viene ottenuto tramite:
+
 ![Formula del danno base](resources/Formula_danno_base.png)
 
 Dove:
