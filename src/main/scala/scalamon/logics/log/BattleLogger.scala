@@ -1,10 +1,12 @@
 package scalamon.logics.log
 
 import scalamon.domain.actions.Item
-import scalamon.domain.alteredStatus.AlteredStatus
 import scalamon.domain.moves.Move
+import scalamon.domain.alteredStatus.AlteredStatus
 import scalamon.logics.state.BattleStateImpl.PlayerState
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
+import scalamon.domain.weather.Weather
+import scalamon.domain.types.Type
 
 /**
  * Functional logging interface for battle events.
@@ -205,6 +207,126 @@ trait BattleLogger:
    *   the updated logger
    */
   def logStatusEnded(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs residual damage dealt by weather at the end of the turn.
+   *
+   * @param pokemonState
+   * the Pokémon that takes weather damage
+   * @param weather
+   * the weather condition causing the damage
+   * @param damage
+   * the amount of HP lost
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherDamage(pokemonState: PokemonState, weather: Weather, damage: Int)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs HP restored by weather at the end of the turn.
+   *
+   * @param pokemonState
+   * the Pokémon that is healed by weather
+   * @param weather
+   * the weather condition causing the healing
+   * @param heal
+   * the amount of HP restored
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherHeal(pokemonState: PokemonState, weather: Weather, heal: Int)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs that weather modifies the power of moves of a given type.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the affected move type
+   * @param multiplier
+   * the power multiplier applied by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherPowerModifier(weather: Weather, moveType: Type, multiplier: Double)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs that weather changes the global move accuracy.
+   *
+   * @param weather
+   * the active weather condition
+   * @param multiplier
+   * the accuracy multiplier applied by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherAccuracyModifier(weather: Weather, multiplier: Double)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs that weather causes moves of a given type to ignore accuracy checks.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the move type affected by the weather rule
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherAccuracyIgnored(weather: Weather, moveType: Type)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs that weather prevents freeze from being inflicted.
+   *
+   * @param weather
+   * the active weather condition preventing freeze
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherFreezeBlocked(weather: Weather)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs that weather modifies the probability of inflicting sleep for a move type.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the affected move type
+   * @param multiplier
+   * the sleep chance multiplier applied by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherSleepModifier(weather: Weather, moveType: Type, multiplier: Double)(logger: BattleLogger): BattleLogger
+
+  /**
+   * Logs that weather overrides the paralysis chance for a move type.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the affected move type
+   * @param chance
+   * the paralysis chance enforced by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherParalysisOverride(weather: Weather, moveType: Type, chance: Double)(logger: BattleLogger): BattleLogger
 
   extension (logger: BattleLogger)
     /**
@@ -459,3 +581,131 @@ object BattleLogger:
    */
   def logStatusEnded(pokemonState: PokemonState, status: AlteredStatus)(logger: BattleLogger): BattleLogger =
     s"${pokemonState.species.name} is no more under the effect of status [${status.toString}]" :: logger
+
+  /**
+   * Logs residual HP damage caused by weather at the end of the turn.
+   *
+   * @param pokemonState
+   * the Pokémon that takes the weather damage
+   * @param weather
+   * the weather condition causing the damage
+   * @param damage
+   * the amount of HP lost
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherDamage(pokemonState: PokemonState, weather: scalamon.domain.weather.Weather, damage: Int)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} takes $damage HP damage due to weather [$weather]" :: logger
+
+  /**
+   * Logs HP restored by weather at the end of the turn.
+   *
+   * @param pokemonState
+   * the Pokémon that is healed by the weather
+   * @param weather
+   * the weather condition causing the healing
+   * @param heal
+   * the amount of HP restored
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherHeal(pokemonState: PokemonState, weather: scalamon.domain.weather.Weather, heal: Int)(logger: BattleLogger): BattleLogger =
+    s"${pokemonState.species.name} restores $heal HP due to weather [$weather]" :: logger
+
+  /**
+   * Logs that weather modifies the power of moves of a given type.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the move type whose power is being modified
+   * @param multiplier
+   * the power multiplier applied by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherPowerModifier(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type, multiplier: Double)(logger: BattleLogger): BattleLogger =
+    s"Weather [$weather] modifies power of [$moveType] moves by x$multiplier" :: logger
+
+  /**
+   * Logs that weather changes the global move accuracy.
+   *
+   * @param weather
+   * the active weather condition
+   * @param multiplier
+   * the accuracy multiplier applied by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherAccuracyModifier(weather: scalamon.domain.weather.Weather, multiplier: Double)(logger: BattleLogger): BattleLogger =
+    s"Weather [$weather] changes global accuracy by x$multiplier" :: logger
+
+  /**
+   * Logs that weather causes moves of a given type to ignore accuracy checks.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the move type that ignores accuracy because of weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherAccuracyIgnored(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type)(logger: BattleLogger): BattleLogger =
+    s"Weather [$weather] causes [$moveType] moves to ignore accuracy checks" :: logger
+
+  /**
+   * Logs that weather prevents freeze from being inflicted.
+   *
+   * @param weather
+   * the active weather condition preventing freeze
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherFreezeBlocked(weather: scalamon.domain.weather.Weather)(logger: BattleLogger): BattleLogger =
+    s"Weather [$weather] prevents freeze from being applied" :: logger
+
+  /**
+   * Logs that weather modifies the sleep chance of moves of a given type.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the move type whose sleep chance is being modified
+   * @param multiplier
+   * the sleep chance multiplier applied by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherSleepModifier(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type, multiplier: Double)(logger: BattleLogger): BattleLogger =
+    s"Weather [$weather] modifies sleep chance for [$moveType] moves by x$multiplier" :: logger
+
+  /**
+   * Logs that weather overrides the paralysis chance of moves of a given type.
+   *
+   * @param weather
+   * the active weather condition
+   * @param moveType
+   * the move type whose paralysis chance is being overridden
+   * @param chance
+   * the paralysis chance enforced by weather
+   * @param logger
+   * the logger to update
+   * @return
+   * the updated logger
+   */
+  def logWeatherParalysisOverride(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type, chance: Double)(logger: BattleLogger): BattleLogger =
+    s"Weather [$weather] overrides paralysis chance for [$moveType] moves to $chance" :: logger

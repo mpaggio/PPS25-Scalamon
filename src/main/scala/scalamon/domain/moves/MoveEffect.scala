@@ -8,6 +8,7 @@ import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.state.StateTransformerModuleImpl.*
+import scalamon.logics.weather.WeatherSystem
 
 /**
  * Represents all the possible effects that a move can have.
@@ -41,15 +42,21 @@ case class ComposableEffect(transformer: StateTransformer) extends MoveEffect:
  * @param statusFactory A functional supplier that provides the status to apply.
  * @param probability The [[Accuracy]] value representing the chance of success.
  */
-case class AlteredState(statusFactory: () => AlteredStatus, probability: Accuracy) extends MoveEffect:
+case class AlteredState(statusFactory: () => AlteredStatus, probability: Accuracy)(using weather: WeatherSystem) extends MoveEffect:
   override def executeEffect: StateTransformer = battleState =>
-    if probability.test then
-      val statusToApply = statusFactory()
-      val target = battleState.opponent.getActive
-      val updatedState = opponent(active(addStatus(statusToApply)))(battleState)
-      updateLogs(BattleLogger.logStatusInflicted(target, statusToApply))(updatedState)
-    else
-      battleState
+    val statusToApply = statusFactory()
+
+    statusToApply match
+      case Frozen if weather.blocksFreeze(battleState.weather) =>
+        updateLogs(BattleLogger.logWeatherFreezeBlocked(battleState.weather))(battleState)
+
+      case _ if probability.test =>
+        val target = battleState.opponent.getActive
+        val updatedState = opponent(active(addStatus(statusToApply)))(battleState)
+        updateLogs(BattleLogger.logStatusInflicted(target, statusToApply))(updatedState)
+
+      case _ =>
+        battleState
 
 /**
  * Modifies a specific statistic of the target by a number of stages.

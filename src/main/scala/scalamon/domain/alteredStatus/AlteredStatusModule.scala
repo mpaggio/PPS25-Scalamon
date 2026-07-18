@@ -1,9 +1,9 @@
-package scalamon.domain.alteredStatus
+package scalamon.logics.state
 
+import scalamon.domain.alteredStatus.AlteredStatus
+import scalamon.domain.alteredStatus.AlteredStatus.*
+import scalamon.domain.alteredStatus.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.*
-import AlteredStatus.*
-import AlteredStatusUtility.*
-import scalamon.domain.alteredStatus
 import scalamon.domain.types.Type
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.state.BattleStateImpl.*
@@ -13,7 +13,7 @@ import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer
 import scalamon.logics.weather.WeatherSystem
 
 /**
- * Logic module responsible for the lifecycle and combat effects of [[alteredStatus.AlteredStatus]].
+ * Logic module responsible for the lifecycle and combat effects of [[AlteredStatus]].
  *
  * This module implements the mechanics of status condition.
  * It leverages extension methods to enrich the domain enum with behavioral logic
@@ -21,7 +21,7 @@ import scalamon.logics.weather.WeatherSystem
  */
 object AlteredStatusModule:
 
-  extension (status: alteredStatus.AlteredStatus)
+  extension (status: AlteredStatus)
     /**
      * Determines if the current status prevents the Pokémon from executing a move.
      *
@@ -40,7 +40,7 @@ object AlteredStatusModule:
       case Paralyzed =>
         val failChance = weather
           .paralysisChanceOverride(currentWeather, moveType)
-          .map(pct => (pct*100).toInt)
+          .map(pct => (pct * 100).toInt)
           .getOrElse(paralysisFailureChance)
         !accuracyFromPercent(failChance).test
       case _ => true
@@ -73,9 +73,21 @@ object AlteredStatusModule:
         else
           val a = battleState.self.getActive
           val baseDamage = a.species.baseStats.hp.toInt / statusDamageDivisor
-          val damageAmount = (baseDamage * weather.residualDamageMultiplier(battleState.weather, status)).toInt
+          val weatherMultiplier = weather.residualDamageMultiplier(battleState.weather, status)
+          val damageAmount = (baseDamage * weatherMultiplier).toInt
           val damageState = self(active(takeDamage(damageAmount)))(battleState)
-          updateLogs(BattleLogger.logStatusDamage(a, status, damageAmount))(damageState)
+
+          val withWeatherLog =
+            if weatherMultiplier != 1.0 then
+              updateLogs(
+                BattleLogger.logMessage(
+                  s"Weather [${battleState.weather}] modifies residual damage of status [${status.toString}] by x$weatherMultiplier"
+                )
+              )(damageState)
+            else damageState
+
+          updateLogs(BattleLogger.logStatusDamage(a, status, damageAmount))(withWeatherLog)
+
       case Sleeping(turns) =>
         val a = battleState.self.getActive
         if turns > 0 then
@@ -84,6 +96,7 @@ object AlteredStatusModule:
         else
           val nextState = removeCondition(Sleeping(turns - 1))(battleState)
           updateLogs(BattleLogger.logStatusEnded(a, Sleeping(turns)))(nextState)
+
       case Confused(turns) =>
         val a = battleState.self.getActive
         if turns > 0 then
@@ -92,6 +105,7 @@ object AlteredStatusModule:
         else
           val nextState = removeCondition(Confused(turns - 1))(battleState)
           updateLogs(BattleLogger.logStatusEnded(a, Confused(turns)))(nextState)
+
       case Charging(turns) =>
         val a = battleState.self.getActive
         if turns > 0 then
@@ -100,6 +114,7 @@ object AlteredStatusModule:
         else
           val nextState = removeCondition(Charging(turns - 1))(battleState)
           updateLogs(BattleLogger.logStatusEnded(a, Charging(turns)))(nextState)
+
       case _ => battleState
 
   /**

@@ -5,7 +5,7 @@ import scala.util.Random
 /**
  * Represents the accuracy of a move as a value between 0% and 100%.
  *
- * It utilizes an opaque type to wrap an `Int`, ensuring that accuracy values
+ * It utilizes an opaque type to wrap an ⁠ Int ⁠, ensuring that accuracy values
  * are treated as a distinct domain concept, rather than mere integers.
  * This prevents the primitive obsession and guarantees that all values in the
  * system are validated and clamped between 0% and 100%.
@@ -15,11 +15,12 @@ object Accuracy:
   opaque type Accuracy = Int
   /** A functional strategy for generating a probability roll. */
   type ProbabilityRoll = () => Int
+
   /** Default implementation of the probability roll, provided as a given. */
   given defaultRoll: ProbabilityRoll = () => Random.nextInt(100) + 1
 
   /**
-   * Factory method to create an `Accuracy` instance from a percentage value.
+   * Factory method to create an ⁠ Accuracy ⁠ instance from a percentage value.
    *
    * @param accuracy percentage value in range [0, 100].
    * @return a validated Accuracy instance.
@@ -28,7 +29,7 @@ object Accuracy:
     accuracyFromRatio(accuracy.toDouble / 100.0)
 
   /**
-   * Factory method to create an `Accuracy` instance from a ratio value.
+   * Factory method to create an ⁠ Accuracy ⁠ instance from a ratio value.
    *
    * @param accuracy ratio in range [0.0, 1.0].
    * @return a validated Accuracy instance.
@@ -79,7 +80,7 @@ object Accuracy:
      * @param value The value to be added to the current accuracy.
      * @return The resulting accuracy value (not clamped).
      */
-    infix def +(value: Int) : Accuracy = clamp(accuracy + value)
+    infix def +(value: Int): Accuracy = clamp(accuracy + value)
 
     /**
      * Decreases accuracy by a fixed percentage value.
@@ -87,7 +88,7 @@ object Accuracy:
      * @param value The value to be decreased from the current accuracy.
      * @return The resulting accuracy value (not clamped).
      */
-    infix def -(value: Int) : Accuracy = clamp(accuracy - value)
+    infix def -(value: Int): Accuracy = clamp(accuracy - value)
 
     /**
      * Multiply accuracy by a fixed double value.
@@ -95,4 +96,4 @@ object Accuracy:
      * @param value The multiplier factor to be multiplied to current accuracy.
      * @return The resulting accuracy value (not clamped).
      */
-    infix def *(value: Double) : Accuracy = clamp((accuracy.toDouble * value).toInt)
+    infix def *(value: Double): Accuracy = clamp((accuracy.toDouble * value).toInt)

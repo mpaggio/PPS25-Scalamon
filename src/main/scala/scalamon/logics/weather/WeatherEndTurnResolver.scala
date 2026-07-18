@@ -1,63 +1,97 @@
 package scalamon.logics.weather
 
-import scalamon.domain.weather.Weather
-import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
+import scalamon.logics.log.BattleLogger
+import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState, switchSelfOpponent, updateLogs}
 import scalamon.logics.state.PlayerStateModuleImpl.active
 import scalamon.logics.state.PokemonStateModuleImpl.*
 
 /**
- * Resolves weather-based end-of-turn effects on the current battle context.
+ * Resolves end-of-turn effects produced by the active weather.
  *
- * This component applies residual weather damage and weather healing to the
- * currently active Pokémon on both sides of the battle.
+ * The resolver updates both sides of the battle by applying weather-driven
+ * residual damage and healing to their active Pokémon. If weather effects are
+ * suppressed, the battle state is returned unchanged.
  */
 trait WeatherEndTurnResolver:
+
   /**
-   * Applies end-of-turn weather effects to the given battle context.
+   * Applies the active weather's end-of-turn effects to the battle state.
    *
-   * @param state
-   * the current battle context
-   * @return
-   * an updated battle context after applying weather damage and healing
+   * The current weather is inspected once, then the resolver applies damage
+   * and healing to each side's active Pokémon from their own perspective.
+   *
+   * @param state the current battle state
+   * @return the updated battle state after weather resolution
    */
   def apply(state: BattleState): BattleState
 
 object WeatherEndTurnResolver:
+
   /**
-   * Default weather end-of-turn resolver.
+   * Default implementation of the weather end-of-turn resolver.
    *
-   * It uses the contextual `WeatherSystem` to determine whether the active
-   * Pokémon on each side should take damage or receive healing at the end
-   * of the turn.
+   * It uses the contextual ⁠ WeatherSystem ⁠ to compute residual damage and
+   * healing fractions for the active Pokémon on both sides.
    */
   given default(using weatherSystem: WeatherSystem): WeatherEndTurnResolver with
 
+    /**
+     * Applies weather effects unless the weather is currently suppressed.
+     *
+     * The self side is updated first, then the battle perspective is flipped
+     * so the same logic can be reused for the opponent side.
+     *
+     * @param state the current battle state
+     * @return the updated battle state
+     */
     override def apply(state: BattleState): BattleState =
       if state.self.flags.weatherSuppressed then state
       else
-        val weather = state.weather
-        state.copy(
-          self = applyToActive(state.self, weather),
-          opponent = applyToActive(state.opponent, weather)
-        )
+        val afterSelf = applyAndLogCurrentSide(state)
+        val fromOpponentView = switchSelfOpponent(afterSelf)
+        val afterOpponentFromOpponentView = applyAndLogCurrentSide(fromOpponentView)
+        switchSelfOpponent(afterOpponentFromOpponentView)
 
     /**
-     * Applies weather end-of-turn effects to the active Pokémon of a player.
+     * Applies weather damage/heal to the currently active Pokémon on the
+     * side represented by ⁠ state.self ⁠, and logs the applied effects.
      *
-     * @param player
-     * the player whose active Pokémon is being updated
-     * @param weather
-     * the active weather condition
-     * @return
-     * the updated player state
+     * @param state the battle state from the current side's perspective
+     * @return the updated battle state for that side
      */
-    private def applyToActive(player: PlayerState, weather: Weather): PlayerState =
-      val act = player.getActive
+    private def applyAndLogCurrentSide(state: BattleState): BattleState =
+      val act = state.self.getActive
+      val weather = state.weather
       val pokemonType = act.species.pokemonType
-      val damageFraction = weatherSystem.endTurnDamageFraction(weather, pokemonType)
-      val healFraction = weatherSystem.endTurnHealFraction(weather, pokemonType)
-      val maxHp = act.species.baseStats.hp.toInt
-      val damage = (maxHp * damageFraction).toInt
-      val healAmount = (maxHp * healFraction).toInt
-      val updateActive = heal(healAmount)(takeDamage(damage)(act))
-      active(_ => updateActive)(player)
+      val maxHp = act.maxHp
+
+      val damage =
+        (maxHp * weatherSystem.endTurnDamageFraction(weather, pokemonType)).toInt
+
+      val healAmount =
+        (maxHp * weatherSystem.endTurnHealFraction(weather, pokemonType)).toInt
+
+      val updatedState =
+        state.copy(self = applyToActive(state.self, damage, healAmount))
+
+      val withDamageLog =
+        if damage > 0 then
+          updateLogs(BattleLogger.logWeatherDamage(act, weather, damage))(updatedState)
+        else updatedState
+
+      if healAmount > 0 then
+        updateLogs(BattleLogger.logWeatherHeal(act, weather, healAmount))(withDamageLog)
+      else withDamageLog
+
+    /**
+     * Applies the resolved damage and healing to the active Pokémon of a player.
+     *
+     * @param player the player whose active Pokémon is being updated
+     * @param damage the HP to remove
+     * @param healAmount the HP to restore
+     * @return the updated player state
+     */
+    private def applyToActive(player: PlayerState, damage: Int, healAmount: Int): PlayerState =
+      val act = player.getActive
+      val updatedActive = heal(healAmount)(takeDamage(damage)(act))
+      active(_ => updatedActive)(player)
