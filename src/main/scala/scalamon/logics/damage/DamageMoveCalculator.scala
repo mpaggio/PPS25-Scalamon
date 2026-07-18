@@ -1,10 +1,11 @@
-package scalamon.logics.state
+package scalamon.logics.damage
 
 import scalamon.domain.moves.Accuracy.{ProbabilityRoll, accuracyFromPercent}
 import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
 import scalamon.domain.pokemon.abilities.AbilityDamageModifier
 import scalamon.logics.weather.WeatherSystem
-import scalamon.logics.damage.DamagePolicy
+import scalamon.logics.state.BattleStateImpl
+import scalamon.logics.state.StatsStateModuleImpl
 
 final case class DamageResult(damage: Int, logs: List[String])
 

@@ -1,4 +1,4 @@
-package scalamon.logics.state
+package scalamon.domain.alteredStatus
 
 import scalamon.domain.alteredStatus.AlteredStatus
 import scalamon.domain.alteredStatus.AlteredStatus.*

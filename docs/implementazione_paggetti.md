@@ -21,7 +21,7 @@ Gli stati alterati sono modellati tramite l'enumerazione `AlteredStatus`, che co
 L'enumerazione descrive esclusivamente i possibili stati alterati, mentre il relativo comportamento è implementato all'interno del modulo `AlteredStatusModule`. Per evitare di modificare direttamente il modello del dominio, la logica viene aggiunta mediante *extension methods*, che arricchiscono i valori di enumerazione con le operazioni necessarie alla simulazione della battaglia. Tramite gli extension method è stato infatti possibile definire il comportamento esternamente all'enumerazione, facendo rimanere il dominio indipendente rispetto alla logica della battaglia, mantenendo una buona separazione delle responsabilità.
 
 Ogni stato acquisisce così tre comportamenti fondamentali:
-- Verifica della possibilità di eseguire una mossa (`canMove`).
+- Verifica della possibilità di eseguire una mossa (`canMove`), tenendo conto sia dello stato alterato sia degli eventuali effetti delle condizioni meteorologiche.
 - determinazione dell'eventuale auto-danno dovuto alla confusione (`isSelfHitting`).
 - Applicazione degli effetti ricorrenti a fine turno (`applyCondition`).
 
@@ -30,14 +30,14 @@ Questa soluzione mantiene il modello del dominio estremamente compatto e consent
 L'applicazione degli effetti di stato avviene attraverso lo `StateTransformer`, già impiegata nelle altre componenti del sistema. Il metodo `applyCondition` non modifica direttamente il `BattleState`, ma restituisce una trasformazione dello stato che verrà successivamente composta con le altre trasformazioni della pipeline di gioco. In questo modo, gli effetti di stato risultano completamente compatibili con il modello funzionale adottato dall'intero progetto, evitando modifiche distruttive dello stato della battaglia.
 
 Le trasformazioni implementate comprendono:
-- Applicazione del danno residuo per ustione e avvelenamento.
+- Applicazione del danno residuo per ustione e avvelenamento, eventualmente modificato dalle condizioni meteorologiche.
 - Decremento del contatore degli stati temporanei.
 - Rimozione automatica della condizione al termine della sua durata.
 - Aggiornamento del log della battaglia.
 
 L'utilizzo della funzione ausiliaria `removeCondition` evita inoltre la duplicazione del codice necessario alla rimozione degli stati temporanei.
 
-Le condizioni di stato che prevedono eventi casuali (ad esempio paralisi, congelamento o confusione) non effettuano direttamente il lancio dei numeri casuali, ma utilizzano il `ProbabilityRoll` fornito implicitamente al modulo, la cui esecuzione viene richiamata dal metodo `test` del valore di accuratezza della mossa. Questa soluzione rende la logica indipendente dal generatore casuale utilizzato e permette di sostituire facilmente il meccanismo di estrazione durante i test automatici, ottenendo esecuzioni completamente deterministiche.
+Le condizioni di stato che prevedono eventi casuali (ad esempio paralisi, congelamento o confusione) non effettuano direttamente il lancio dei numeri casuali, ma utilizzano il `ProbabilityRoll` fornito implicitamente al modulo, la cui esecuzione viene richiamata dal metodo `test` del valore di accuratezza della mossa. Questa soluzione rende la logica indipendente dal generatore casuale utilizzato e permette di sostituire facilmente il meccanismo di estrazione durante i test automatici, ottenendo esecuzioni completamente deterministiche. Inoltre, il modulo riceve implicitamente anche un'istanza di `WeatherSystem`, che permette di adattare il comportamento di alcuni stati alle condizioni meteorologiche della battaglia.
 
 Le probabilità associate ai diversi effetti e la durata degli stati temporanei sono invece centralizzate nell'oggetto `AlteredStatusUtility`, che raccoglie sia le costanti di configurazione, sia i metodi utilizzati per generare casualmente la durata di sonno e confusione.
 
@@ -59,7 +59,7 @@ Ogni implementazione concreta del trait ridefinisce il metodo `executeEffect`, r
 
 Gli effetti sono rappresentati tramite diverse `case class`, ognuna responsabile della costruzione di una specifica trasformazione dello stato. 
 
-`AlteredState` permette di applicare una condizione alterata al Pokémon bersaglio. L'effetto riceve una funzione `statusFactory`, utilizzata per generare lo stato da applicare, e una probabilità di successo rappresentata tramite il tipo di dominio `Accuracy`. Prima di modificare lo stato, viene quindi effettuato un test probabilistico, permettendo di modellare effetti come paralisi, avvelenamento o confusione, con probabilità variabili relative all'effetto.
+`AlteredState` permette di applicare una condizione alterata al Pokémon bersaglio. L'effetto riceve una funzione `statusFactory`, utilizzata per generare lo stato da applicare, una probabilità di successo rappresentata tramite il tipo di dominio `Accuracy` e, tramite *Contextual Abstraction*, un'istanza di `WeatherSystem`, che consente di adattare l'applicazione di alcune alterazioni alle condizioni meteorologiche della battaglia. Prima di applicare la condizione alterata, vengono valutate eventuali restrizioni imposte dal sistema meteorologico. Ad esempio, alcune condizioni atmosferiche impediscono completamente l'applicazione dello stato `Frozen`. In caso contrario, viene effettuato un test probabilistico, permettendo di modellare effetti come paralisi, avvelenamento o confusione, con probabilità variabili relative all'effetto. Quando un'alterazione viene impedita dal meteo, l'evento viene registrato nel battle log senza modificare lo stato della battaglia.
 
 `StatChange` gestisce invece le modifiche temporanee alle statistiche dei Pokémon. La trasformazione riceve una funzione che modifica il relativo `StatsState` e un parametro `Target` che determina se l'effetto deve essere applicato al Pokémon utilizzatore oppure all'avversario.
 
@@ -113,15 +113,15 @@ Le modifiche allo stato della mossa vengono effettuate attraverso funzioni pure 
 ## Azione relativa alle mosse
 Le azioni rappresentano le operazioni che possono essere eseguite durante una battaglia e sono state modellate da Pasini come trasformazioni dello stato globale del combattimento. L'astrazione principale è rappresentata dal trait `Action`, che estende direttamente `StateTransformer`. In questo modo, ogni azione può essere vista come una funzione che riceve un `BattleState` e restituisce una nuova versione aggiornata dello stesso stato.
 
-L'implementazione concreta dell'azione delle mosse è rappresentato dalla *case class* `MoveAction`, che incapsula l'esecuzione di una mossa Pokémon. Una `MoveAction` contiene la mossa da eseguire (`Move`), il bersaglio dell'azione (`Target`) e alcune dipendenze contestuali ricevute tramite *Contextual Abstraction*: `DamagePolicy` per il calcolo del danno, `ProbabilityRoll` per la gestione della casualità e `WeatherSystem` per applicare gli effetti delle condizioni meteorologiche sull'esecuzione della mossa (ad esempio modifiche riguardanti l'accuratezza della mossa).
+L'implementazione concreta dell'azione delle mosse è rappresentata dalla *case class* `MoveAction`, che incapsula l'esecuzione di una mossa Pokémon. Una `MoveAction` contiene la mossa da eseguire (`Move`), il bersaglio dell'azione (`Target`) e alcune dipendenze contestuali ricevute tramite *Contextual Abstraction*: `DamagePolicy` per il calcolo del danno, `ProbabilityRoll` per la gestione della casualità e `WeatherSystem` per applicare gli effetti delle condizioni meteorologiche sull'esecuzione della mossa (ad esempio modifiche riguardanti l'accuratezza della mossa).
 
 L'esecuzione di una `MoveAction` segue una pipeline composta da quattro fasi principali:
-1) Valutazione delle condizioni meteorologiche: viene interrogato il `WeatherSystem` per determinare se le condizioni atmosferiche modificano il comportamento della mossa. In particolare, il sistema verifica se il meteo rende la mossa infallibile oppure applica un moltiplicatore alla sua accuratezza. Eventuali modifiche vengono registrate nel battle log.
-2) Consumo dei PP: la prima trasformazione aggiorna lo stato del Pokémon utilizzatore, diminuendo di uno il numero dei PP disponibili per la mossa, tramite aggiornamento del `MoveState` relativo alla mossa.
-3) Calcolo e applicazione del danno: la seconda fase viene eseguita solamente nel caso in cui la mossa superi il controllo di accuratezza, eventualmente modificato dal `WeatherSystem`. Se la mossa è una `DamageMove`, viene utilizzato il `DamageMoveCalculator` per determinare il danno prodotto, considerando il contesto della battaglia. Il risultato del calcolo viene poi trasformato in un aggiornamento dello stato degli HP del bersaglio. Nel caso di una `StatusMove`, questa fase viene saltata perchè la mossa non produce danno diretto.
+1) Valutazione delle condizioni meteorologiche: viene interrogato il `WeatherSystem` per determinare se le condizioni atmosferiche modificano il comportamento della mossa. In particolare, il sistema verifica se il meteo rende la mossa infallibile oppure applica un moltiplicatore alla sua accuratezza. Le eventuali modifiche vengono registrate nel battle log.
+2) Consumo dei PP: la seconda trasformazione aggiorna lo stato del Pokémon utilizzatore, diminuendo di uno il numero dei PP disponibili per la mossa, tramite aggiornamento del `MoveState` relativo alla mossa.
+3) Calcolo e applicazione del danno: la terza fase viene eseguita solamente nel caso in cui la mossa superi il controllo di accuratezza, eventualmente modificato dal `WeatherSystem`. Se la mossa è una `DamageMove`, viene utilizzato il `DamageMoveCalculator` per determinare il danno prodotto, considerando il contesto della battaglia. Il risultato del calcolo viene poi trasformato in un aggiornamento dello stato degli HP del bersaglio. Nel caso di una `StatusMove`, questa fase viene saltata perchè la mossa non produce danno diretto.
 4) Applicazione degli effetti secondari: l'ultima fase applica gli eventuali `MoveEffect` associati alla mossa. Gli effetti vengono eseguiti attraverso il metodo `executeEffect`, che restituisce una nuova trasformazione dello stato della battaglia.
 
-Le diverse fasi non vengono applicate modificando direttamente il `BattleState`, ma vengono composte tramite `foldLeft` sulla lista delle trasformazioni (`weatherStep`, `logStep`, `ppStep`, `damageStep` e `effectStep`). Ogni trasformazione riceve il risultato della precedente e produce un nuovo stato.
+Le diverse fasi non vengono applicate modificando direttamente il `BattleState`, ma vengono composte tramite `foldLeft` sulla lista delle trasformazioni (`weatherLogStep`, `logStep`, `ppStep`, `damageStep` e `effectStep`). Ogni trasformazione riceve il risultato della precedente e produce un nuovo stato.
 
 ![Diagramma Move Action](resources/move_action.png)
 

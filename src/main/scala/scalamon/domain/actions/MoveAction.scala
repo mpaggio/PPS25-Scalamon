@@ -5,7 +5,7 @@ import scalamon.domain.moves.{DamageMove, MoveEffect, StatusMove}
 import scalamon.domain.pokemon.abilities.Target
 import scalamon.domain.pokemon.abilities.Target.*
 import scalamon.logics.damage.DamagePolicy
-import scalamon.logics.state.DamageMoveCalculatorImpl.getDamage
+import scalamon.logics.damage.DamageMoveCalculatorImpl.getDamage
 import scalamon.logics.log.BattleLogger
 import scalamon.logics.log.BattleLogger.*
 import scalamon.logics.state.StateTransformerModuleImpl.*

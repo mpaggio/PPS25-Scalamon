@@ -15,7 +15,6 @@ class AlteredStatusModuleTest extends org.scalatest.funsuite.AnyFunSuite with St
 
   test("Sleeping and Charging Pokemon should not be able to move"):
     import scalamon.domain.moves.Accuracy.given
-    import scalamon.logics.weather.WeatherSystem.given
     Sleeping(3).canMove(Grass, ClearSky) shouldBe false
     Charging(2).canMove(Grass, ClearSky) shouldBe false
 

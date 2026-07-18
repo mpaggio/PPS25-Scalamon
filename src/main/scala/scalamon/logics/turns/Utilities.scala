@@ -4,7 +4,7 @@ import scalamon.database.{MoveDatabase, MyAbilityBook}
 import scalamon.domain.moves.Accuracy.given
 import MoveDatabase.findByName
 import scalamon.domain.types.Type
-import scalamon.logics.state.AlteredStatusModule.*
+import scalamon.domain.alteredStatus.AlteredStatusModule.*
 import scalamon.logics.state.StateTransformerModuleImpl.*
 import scalamon.logics.turns.TurnResolutionImpl.isKnockedOut
 
