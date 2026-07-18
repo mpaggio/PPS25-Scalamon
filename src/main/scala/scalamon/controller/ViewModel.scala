@@ -1,4 +1,4 @@
-package scalamon.app
+package scalamon.controller
 
 import scalamon.util.StateMonad
 import scalamon.logics.teambuilder.TeamBuilder.*
@@ -40,7 +40,7 @@ enum PlayerIntent:
  * State monad. Every method blocks until the player has provided the
  * requested input (where input is requested).
  */
-trait GameView:
+trait ViewModel:
   type V
 
   /** The initial, empty view. */

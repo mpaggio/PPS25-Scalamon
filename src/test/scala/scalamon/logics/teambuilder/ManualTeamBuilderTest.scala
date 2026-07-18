@@ -2,13 +2,13 @@ package scalamon.logics.teambuilder
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.shouldBe
-import scalamon.app.GameConfig.TeamSize
+import scalamon.controller.GameConfig.TeamSize
 import scalamon.database.MoveDatabase
-import scalamon.domain.actions.Items.{Item, allItems}
+import scalamon.domain.actions.Item
+import scalamon.database.MyItemSet.allItems
 import scalamon.domain.moves.Move
 import scalamon.domain.pokemon.Pokemon
 import scalamon.database.MyPokedex.allPokemons
-import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
 
 class ManualTeamBuilderTest extends AnyFunSuite:
 

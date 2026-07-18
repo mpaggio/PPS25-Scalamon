@@ -1,7 +1,7 @@
 package scalamon.view
 
-import scalamon.app.*
-import scalamon.domain.actions.Items.Item
+import scalamon.controller.*
+import scalamon.domain.actions.Item
 import scalamon.domain.moves.{DamageMove, Move, StatusMove}
 import scalamon.domain.pokemon.Pokemon
 import scalamon.logics.teambuilder.TeamBuilder.*
@@ -20,8 +20,8 @@ import scala.annotation.tailrec
  * buttons and tooltips, dialogs, blocking event loops. A terminal view
  * could replace this object without touching the application layer.
  */
-object SwingGameView extends GameView:
-  type V = Frame
+object View extends ViewModel:
+  opaque type V = Frame
 
   def initial: V = createFrame()
 

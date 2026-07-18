@@ -1,7 +1,7 @@
 package scalamon
 
-import scalamon.app.GameLoop
-import scalamon.view.SwingGameView
+import scalamon.controller.GameLoop
+import scalamon.view.View
 
 @main def runScalamonGUI(): Unit =
-  GameLoop(SwingGameView).run()
+  GameLoop(View).run()

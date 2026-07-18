@@ -6,7 +6,7 @@ import scalamon.domain.types.Type.values
 import scalamon.domain.types.TypeEffectiveness.*
 import scalamon.domain.types.TypeChart.effectiveness
 import scalamon.database.MoveDatabase.*
-import scalamon.app.GameConfig.*
+import scalamon.controller.GameConfig.*
 import scalamon.logics.teambuilder.AffineTeamBuilder.numberOfSameTypeMoves
 
 class AffineTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:

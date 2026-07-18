@@ -1,6 +1,6 @@
 package scalamon.logics.log
 
-import scalamon.domain.actions.Items.Item
+import scalamon.domain.actions.Item
 import scalamon.domain.alteredStatus.AlteredStatus
 import scalamon.domain.moves.Move
 import scalamon.logics.state.BattleStateImpl.PlayerState

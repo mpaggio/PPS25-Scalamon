@@ -1,14 +1,15 @@
 package scalamon.logics.teambuilder
 
-import scalamon.domain.actions.Items.{Item, allItems}
+import scalamon.domain.actions.Item
 import scalamon.domain.moves.Move
 import scalamon.database.MoveDatabase.allMoves
+import scalamon.database.MyItemSet.allItems
 import scalamon.domain.pokemon.Pokemon
 import scalamon.database.MyPokedex.*
 import scalamon.logics.state.MoveStateModuleImpl.moveInitialState
 import scalamon.logics.state.PlayerStateModuleImpl.{PlayerState, PokemonState, playerInitialState}
 import scalamon.logics.state.PokemonStateModuleImpl.pokemonInitialState
-import scalamon.app.GameConfig.*
+import scalamon.controller.GameConfig.*
 
 /**
  * Module providing the core abstractions and constants for the team-building subsystem.

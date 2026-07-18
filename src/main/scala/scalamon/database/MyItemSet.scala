@@ -1,37 +1,12 @@
-package scalamon.domain.actions
+package scalamon.database
 
-import scalamon.domain.pokemon.abilities.AbilityTrigger
-import scalamon.domain.pokemon.abilities.Target
-import AbilityTrigger.*
-import Target.*
-import scalamon.logics.state.StateTransformerModuleImpl.*
+import scalamon.domain.actions.Item
 import scalamon.domain.alteredStatus.AlteredStatus.*
-import scalamon.logics.log.BattleLogger
-import scalamon.logics.log.BattleLogger.logUseItem
+import scalamon.domain.pokemon.abilities.AbilityTrigger.*
+import scalamon.domain.pokemon.abilities.Target.*
+import scalamon.logics.state.StateTransformerModuleImpl.*
 
-object Items:
-
-  case class Item(
-                   name: String,
-                   description: String,
-                   effect: StateTransformer,
-                   until: Set[AbilityTrigger] = Set.empty,
-                   onCancel: StateTransformer = identity
-                 ) extends Action:
-
-    def apply(bs: BattleState): BattleState =
-      if bs.self.items.contains(this) then
-        val addCancel = addPassiveEffect(t => if until.contains(t) then onCancel else identity)
-        val consumeItem = self(items(_ - this))
-        val logItemUse = updateLogs(logUseItem(bs.self, this))
-        (effect andThen addCancel andThen consumeItem andThen logItemUse)(bs)
-      else
-        updateLogs(BattleLogger.logError(s"Item $name not found"))(bs)
-
-    override def equals(obj: Any): Boolean = obj match
-      case item: Item => this.name == item.name
-      case _ => false
-
+object MyItemSet:
   val nullItem: Item = Item(
     name = "null",
     description = "None",

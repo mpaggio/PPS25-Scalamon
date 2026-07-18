@@ -1,13 +1,12 @@
-package scalamon.logics.turns
+package scalamon.logics.teambuilder
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
+import scalamon.controller.GameConfig.*
+import scalamon.database.MoveDatabase
+import scalamon.database.MyPokedex.allPokemons
 import scalamon.domain.moves.Move
 import scalamon.domain.pokemon.Pokemon
-import scalamon.database.MyPokedex.allPokemons
-import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
-import scalamon.app.GameConfig.*
-import scalamon.database.MoveDatabase
 
 class BattleSetupTest extends AnyFunSuite:
 
@@ -48,7 +47,7 @@ class BattleSetupTest extends AnyFunSuite:
       chooseItems = (_, _) => Set.empty
     )
 
-    val state = BattleSetup.setupBattle(builder1, builder2)
+    val state = BattleSetup.setupBattle((builder1, "p1"), (builder2, "p2"))
 
     state.self.team.size shouldBe TeamSize
     state.opponent.team.size shouldBe TeamSize

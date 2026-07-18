@@ -1,7 +1,7 @@
 package scalamon.logics.teambuilder
 
 import org.scalatest.matchers.should.Matchers.*
-import scalamon.app.GameConfig.*
+import scalamon.controller.GameConfig.*
 
 class RandomTeamBuilderTest extends org.scalatest.funsuite.AnyFunSuite:
 

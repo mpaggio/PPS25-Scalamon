@@ -1,11 +1,9 @@
-package scalamon.app
+package scalamon.controller
 
 import scalamon.logics.damage.DamagePolicy
 import scalamon.logics.state.BattleStateImpl.{BattleState, switchSelfOpponent}
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
-import scalamon.logics.teambuilder.AffineTeamBuilder
-import scalamon.logics.teambuilder.ManualTeamBuilder.ManualTeamBuilder
-import scalamon.logics.teambuilder.RandomTeamBuilder
+import scalamon.logics.teambuilder.*
 import scalamon.logics.teambuilder.TeamBuilder.TeamBuilder
 import scalamon.logics.turns.*
 import scalamon.logics.turns.TurnResult.*
@@ -21,15 +19,14 @@ import scalamon.util.StateMonad.*
  * The whole game is a computation over the pair (BattleState, view.V);
  * `battle` and `ui` lift computations on each half into the combined state.
  */
-final class GameLoop(val view: GameView):
+final class GameLoop(val view: ViewModel):
   import GameConfig.*
+  import Presenter.playerNames
 
   private type Game[A] = StateMonad[(BattleState, view.V), A]
 
   private def battle[A](m: StateMonad[BattleState, A]): Game[A] = m.onFirst[view.V]
   private def ui[A](m: StateMonad[view.V, A]): Game[A] = m.onSecond[BattleState]
-
-  private val players: List[String] = List(Side.Self, Side.Opponent).map(Presenter.sideLabel)
   
   private def speedOf(ps: PlayerState): Speed = Speed(ps.getActive.modifiedStats.speed)
   
@@ -73,8 +70,8 @@ final class GameLoop(val view: GameView):
   private def teamBuilders(mode: Mode): StateMonad[view.V, (TeamBuilder, TeamBuilder)] = mode match
     case Mode.Manual =>
       for
-        first  <- manualBuilder(players.head)
-        second <- manualBuilder(players.last)
+        first  <- manualBuilder(playerNames._1)
+        second <- manualBuilder(playerNames._2)
       yield (first, second)
     case automatic => StateMonad.unit((automaticBuilder(automatic), automaticBuilder(automatic)))
   
@@ -97,7 +94,7 @@ final class GameLoop(val view: GameView):
 
   private def hotSeatChoices: Game[TurnChoices] = for
     first  <- playerAction
-    _      <- ui(view.announce(s"${players.last}'s turn. Change the controller!"))
+    _      <- ui(view.announce(s"${playerNames._2}'s turn. Change the controller!"))
     second <- asOpponent(playerAction)
   yield TurnChoices(first, second)
 
@@ -123,8 +120,8 @@ final class GameLoop(val view: GameView):
         yield ()
       case _ => StateMonad.unit(())
 
-  private def endGame(winner: Side): Game[Unit] = for
-    _ <- ui(view.announce(s"${Presenter.sideLabel(winner).toUpperCase} WINS"))
+  private def endGame(winnerName: String): Game[Unit] = for
+    _ <- ui(view.announce(s"${winnerName.toUpperCase} WINS"))
     _ <- ui(view.close)
   yield ()
 
@@ -133,7 +130,7 @@ final class GameLoop(val view: GameView):
     result  <- resolveTurn(orchestrator, choices)
     _       <- handleForcedSwitch(orchestrator, result)
     _ <- result match
-      case Victory(winner) => endGame(winner)
+      case Victory(winnerName) => endGame(winnerName)
       case _               => gameLoop(orchestrator)
   yield ()
 
@@ -148,7 +145,7 @@ final class GameLoop(val view: GameView):
 
     given DamagePolicy = damagePolicyOf(difficulty)
     val orchestrator = BattleOrchestrator()
-    val initialState = BattleSetup.setupBattle(playerBuilder, opponentBuilder)
+    val initialState = BattleSetup.setupBattle((playerBuilder, playerNames._1), (opponentBuilder, playerNames._2))
 
     val program: Game[Unit] = for
       bs <- battle(StateMonad.get[BattleState])

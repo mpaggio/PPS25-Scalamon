@@ -34,7 +34,7 @@ object PlayerStateModuleImpl extends PlayerStateModule:
   override type PlayerState = Ps
   override type PokemonState = PokemonStateModuleImpl.PokemonState
   override type PokemonId = String
-  override type Items = Set[scalamon.domain.actions.Items.Item]
+  override type Items = Set[scalamon.domain.actions.Item]
 
   def playerInitialState(name: String, team: Map[PokemonId, PokemonState], active: PokemonId): PlayerState =
     playerInitialState(name, team, active, Set.empty)

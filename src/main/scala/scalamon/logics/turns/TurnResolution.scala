@@ -29,7 +29,7 @@ final case class SwitchRequest(side: Side, candidates: List[PokemonRef])
  */
 enum TurnResult:
   case Ongoing
-  case Victory(winner: Side)
+  case Victory(winnerName: String)
   case ForcedSwitch(requests: List[SwitchRequest])
 
 trait TurnResolutionModule:
@@ -51,8 +51,8 @@ object TurnResolutionImpl extends TurnResolutionModule:
    * Resolves the outcome of a turn and applies ent turn effects.
    */
   override def getTurnResults(state: BattleState): TurnResult =
-    if isDefeated(state.self) then TurnResult.Victory(Side.Opponent)
-    else if isDefeated(state.opponent) then TurnResult.Victory(Side.Self)
+    if isDefeated(state.self) then TurnResult.Victory(state.opponent.name)
+    else if isDefeated(state.opponent) then TurnResult.Victory(state.self.name)
     else
       val requests = List(Side.Self, Side.Opponent).flatMap: side =>
         val player = playerOf(state, side)

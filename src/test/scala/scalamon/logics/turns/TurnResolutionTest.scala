@@ -104,17 +104,17 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   
   test("resolveTurn SelfWins is triggered when all opponent's Pokemon are knocked out"){
     val opponentAllKO = opponent( all( currentHp( decrease( 999)))) (battle)
-    getTurnResults(opponentAllKO) shouldBe Victory(Self)
+    getTurnResults(opponentAllKO) shouldBe Victory(opponentAllKO.self.name)
   }
 
   test("resolveTurn SelfWins takes priority over ForcedSwitch on a simultaneous KO"){
     val simultaneousKO = self(active(currentHp(decrease(1))))(opponent(all(currentHp(decrease(999))))(battleActiveLowHP))
-    getTurnResults(simultaneousKO) shouldBe Victory(Self)
+    getTurnResults(simultaneousKO) shouldBe Victory(simultaneousKO.self.name)
   }
 
   test("resolveTurn SelfLoses is triggered when all self's Pokemon are knocked out"){
     val selfAllKO = self(active(currentHp(decrease(1))))(battleOnlyLowHP)
-    getTurnResults(selfAllKO) shouldBe Victory(Opponent)
+    getTurnResults(selfAllKO) shouldBe Victory(selfAllKO.opponent.name)
   }
 
   test("resolveTurn returns ForcedSwitch when self's active Pokemon is KO but bench is alive") {

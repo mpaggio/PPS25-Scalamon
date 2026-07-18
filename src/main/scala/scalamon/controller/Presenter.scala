@@ -1,9 +1,10 @@
-package scalamon.app
+package scalamon.controller
 
 import scalamon.logics.state.BattleStateImpl.BattleState
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 import scalamon.logics.turns.Side
+import scalamon.logics.turns.Side.*
 
 /**
  * Pure formatting of domain data into plain text for the views.
@@ -12,9 +13,7 @@ import scalamon.logics.turns.Side
  */
 object Presenter:
 
-  def sideLabel(side: Side): String = side match
-    case Side.Self     => "Player 1"
-    case Side.Opponent => "Player 2"
+  val playerNames: (String, String) = ("Player 1", "Player 2")
 
   def status(bs: BattleState): String =
     s"${bs.self.getActive.species.name}" +
@@ -31,14 +30,13 @@ object Presenter:
       .map((name, m) => MoveSlot(name, m.currentPp, m.maxPp))
       .toList
 
-  def forcedSwitchMessage(side: Side): String =
-    s"${sideLabel(side)}: Pokemon KO, select a substitute [mandatory]:"
+  def forcedSwitchMessage(side: Side): String = s"${sideLabel(side)}: Pokemon KO, select a substitute [mandatory]:"
 
   def initialSetupLog(mode: Mode, bs: BattleState): String =
     s"--- INITIAL SETUP ---\n" +
       s"Selected mode: $mode\n\n" +
-      team(s"TEAM ${sideLabel(Side.Self).toUpperCase}", bs.self) + "\n\n" +
-      team(s"TEAM ${sideLabel(Side.Opponent).toUpperCase}", bs.opponent) + "\n\n" +
+      team(s"TEAM ${bs.self.name.toUpperCase}", bs.self) + "\n\n" +
+      team(s"TEAM ${bs.opponent.name.toUpperCase}", bs.opponent) + "\n\n" +
       s"Initial lead: ${bs.self.getActive.species.name} vs ${bs.opponent.getActive.species.name}\n" +
       s"-----------------------\n\n"
 
@@ -47,3 +45,7 @@ object Presenter:
       .map((name, pokemon) => s"- $name -> ${pokemon.moves.keys.mkString(", ")}")
       .mkString("\n")
     s"$title:\n$details"
+
+  private def sideLabel(side: Side): String = side match
+    case Self => playerNames._1
+    case _ => playerNames._2

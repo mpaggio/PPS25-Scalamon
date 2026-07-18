@@ -1,4 +1,4 @@
-package scalamon.app
+package scalamon.controller
 
 /**
  * Single source of truth for the game's numeric parameters.
