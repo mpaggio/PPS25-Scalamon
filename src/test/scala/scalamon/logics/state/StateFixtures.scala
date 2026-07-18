@@ -3,7 +3,7 @@ import scalamon.database.MoveDatabase.*
 import scalamon.database.MyPokedex
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.MoveStateModuleImpl.*
 import scalamon.domain.types.Type
 

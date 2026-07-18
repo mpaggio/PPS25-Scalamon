@@ -2,7 +2,7 @@ package scalamon.logics.state
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.*

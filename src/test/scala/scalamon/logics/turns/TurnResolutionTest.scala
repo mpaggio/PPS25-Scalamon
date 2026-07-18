@@ -2,7 +2,7 @@ package scalamon.logics.turns
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{a, be, shouldBe, shouldEqual, shouldNot}
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StateFixtures

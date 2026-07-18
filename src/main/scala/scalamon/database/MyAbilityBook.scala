@@ -12,7 +12,7 @@ import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
 import scalamon.logics.log.BattleLogger
-import scalamon.logics.state.BattleStateImpl.{opponent, self}
+import scalamon.logics.state.BattleStateModuleImpl.{opponent, self}
 import scalamon.logics.state.StateTransformerModuleImpl.*
 
 import scala.language.postfixOps

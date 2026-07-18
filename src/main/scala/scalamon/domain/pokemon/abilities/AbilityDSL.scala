@@ -1,6 +1,6 @@
 package scalamon.domain.pokemon.abilities
 
-import scalamon.logics.state.BattleStateImpl.BattleState
+import scalamon.logics.state.BattleStateModuleImpl.BattleState
 
 /**
  * Declarative DSL for the definition of passive abilities.

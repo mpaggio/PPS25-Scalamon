@@ -1,6 +1,6 @@
 package scalamon.domain.pokemon.abilities
 
-import scalamon.logics.state.BattleStateImpl.BattleState
+import scalamon.logics.state.BattleStateModuleImpl.BattleState
 
 /**
  * Represents the effect of an ability in the battle state.

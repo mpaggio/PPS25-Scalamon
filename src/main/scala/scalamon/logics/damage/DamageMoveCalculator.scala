@@ -4,7 +4,7 @@ import scalamon.domain.moves.Accuracy.{ProbabilityRoll, accuracyFromPercent}
 import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
 import scalamon.domain.pokemon.abilities.AbilityDamageModifier
 import scalamon.logics.weather.WeatherSystem
-import scalamon.logics.state.BattleStateImpl
+import scalamon.logics.state.BattleStateModuleImpl
 import scalamon.logics.state.StatsStateModuleImpl
 
 final case class DamageResult(damage: Int, logs: List[String])
@@ -24,7 +24,7 @@ object DamageMoveCalculatorImpl extends DamageMoveCalculator:
   import scalamon.domain.moves.DamageMoveCategory.*
   import scalamon.domain.types.*
 
-  override type BattleState = BattleStateImpl.BattleState
+  override type BattleState = BattleStateModuleImpl.BattleState
   override type StatsState = StatsStateModuleImpl.StatsState
   override type Move = scalamon.domain.moves.DamageMove
 

@@ -1,7 +1,7 @@
 package scalamon.controller
 
 import scalamon.logics.damage.DamagePolicy
-import scalamon.logics.state.BattleStateImpl.{BattleState, switchSelfOpponent}
+import scalamon.logics.state.BattleStateModuleImpl.{BattleState, switchSelfOpponent}
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.teambuilder.*
 import scalamon.logics.teambuilder.TeamBuilder.TeamBuilder

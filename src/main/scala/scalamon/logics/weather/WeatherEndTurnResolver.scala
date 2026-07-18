@@ -1,7 +1,7 @@
 package scalamon.logics.weather
 
 import scalamon.logics.log.BattleLogger
-import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState, switchSelfOpponent, updateLogs}
+import scalamon.logics.state.BattleStateModuleImpl.{BattleState, PlayerState, switchSelfOpponent, updateLogs}
 import scalamon.logics.state.PlayerStateModuleImpl.active
 import scalamon.logics.state.PokemonStateModuleImpl.*
 

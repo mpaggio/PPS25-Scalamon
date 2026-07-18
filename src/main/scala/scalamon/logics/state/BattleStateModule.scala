@@ -19,7 +19,7 @@ trait BattleStateModule extends StateComponent:
   def setWeather(w: Weather): Op
   def updateLogs(f: Logger => Logger): Op
 
-object BattleStateImpl extends BattleStateModule:
+object BattleStateModuleImpl extends BattleStateModule:
   
   import scalamon.logics.log.BattleLogger.*
   import scalamon.domain.weather.Weather.ClearSky

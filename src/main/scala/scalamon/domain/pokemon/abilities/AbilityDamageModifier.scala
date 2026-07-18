@@ -6,7 +6,7 @@ import scalamon.domain.moves.DamageMoveCategory.Physical
 import scalamon.domain.pokemon.abilities.Ability.*
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.BattleStateImpl.BattleState
+import scalamon.logics.state.BattleStateModuleImpl.BattleState
 
 /**
  * Multipliers of damage derived from the passive abilities.

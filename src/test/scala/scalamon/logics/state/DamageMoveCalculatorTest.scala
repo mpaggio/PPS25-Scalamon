@@ -11,7 +11,7 @@ import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
 import scalamon.domain.pokemon.statistics.Stats
 import scalamon.domain.types.Type.*
-import scalamon.logics.state.BattleStateImpl.battleState
+import scalamon.logics.state.BattleStateModuleImpl.battleState
 import scalamon.logics.damage.DamageMoveCalculatorImpl.getDamage
 import scalamon.logics.state.PlayerStateModuleImpl.playerInitialState
 import scalamon.logics.state.PokemonStateModuleImpl.*
@@ -52,7 +52,7 @@ class DamageMoveCalculatorTest extends AnyFunSuite:
     active = "Bulbasaur"
   )
 
-  val state: BattleStateImpl.Bs = battleState(playerAtk, playerDef)
+  val state: BattleStateModuleImpl.Bs = battleState(playerAtk, playerDef)
 
   val physicalMove: DamageMove = move named "Tackle" withPower 40 withPP 35 withAccuracy 100 withType Normal as Physical
   val specialMove: DamageMove = move named "Flamethrower" withPower 90 withPP 15 withAccuracy 100 withType Fire as Special

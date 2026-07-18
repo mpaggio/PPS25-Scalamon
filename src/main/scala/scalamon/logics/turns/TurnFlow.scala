@@ -1,6 +1,6 @@
 package scalamon.logics.turns
 
-import scalamon.logics.state.BattleStateImpl.{BattleState, PlayerState}
+import scalamon.logics.state.BattleStateModuleImpl.{BattleState, PlayerState}
 
 /**
  * Pair of actions selected by the two trainers for the current turn.

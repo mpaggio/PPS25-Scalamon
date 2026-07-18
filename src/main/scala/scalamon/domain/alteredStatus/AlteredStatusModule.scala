@@ -6,7 +6,7 @@ import scalamon.domain.alteredStatus.AlteredStatusUtility.*
 import scalamon.domain.moves.Accuracy.*
 import scalamon.domain.types.Type
 import scalamon.logics.log.BattleLogger
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StateTransformerModuleImpl.StateTransformer

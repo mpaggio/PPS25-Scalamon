@@ -3,7 +3,7 @@ package scalamon.logics.log
 import scalamon.domain.actions.Item
 import scalamon.domain.moves.Move
 import scalamon.domain.alteredStatus.AlteredStatus
-import scalamon.logics.state.BattleStateImpl.PlayerState
+import scalamon.logics.state.BattleStateModuleImpl.PlayerState
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 import scalamon.domain.weather.Weather
 import scalamon.domain.types.Type

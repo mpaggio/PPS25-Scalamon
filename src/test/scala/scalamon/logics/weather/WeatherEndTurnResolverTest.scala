@@ -11,7 +11,7 @@ import scalamon.domain.types.Type
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.weather.WeatherEndTurnResolver.given

@@ -8,7 +8,7 @@ import scalamon.domain.moves.MoveEffectDSL.Effect
 import scalamon.domain.moves.{DamagingMove, MoveEffect}
 import scalamon.domain.types.Type.*
 import scalamon.domain.weather.Weather.*
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.MoveStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*

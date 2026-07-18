@@ -1,6 +1,6 @@
 package scalamon.controller
 
-import scalamon.logics.state.BattleStateImpl.BattleState
+import scalamon.logics.state.BattleStateModuleImpl.BattleState
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.state.PokemonStateModuleImpl.PokemonState
 import scalamon.logics.turns.Side

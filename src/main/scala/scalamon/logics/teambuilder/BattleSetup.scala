@@ -1,7 +1,7 @@
 package scalamon.logics.teambuilder
 
 import scalamon.domain.weather.Weather
-import scalamon.logics.state.BattleStateImpl.{BattleState, battleState}
+import scalamon.logics.state.BattleStateModuleImpl.{BattleState, battleState}
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.teambuilder.TeamBuilder.TeamBuilder
 

@@ -8,7 +8,7 @@ import scalamon.domain.pokemon.pokedex.PokedexADT
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
 import scalamon.domain.pokemon.statistics.Stats
 import scalamon.domain.types.Type.Grass
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
 import scalamon.logics.state.PokemonStateModuleImpl.*
 

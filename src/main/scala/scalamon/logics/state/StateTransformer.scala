@@ -6,10 +6,10 @@ trait StateTransformerModule:
   type TransformerFlatMapper = StateTransformer => List[StateTransformer]
 
 object StateTransformerModuleImpl extends StateTransformerModule:
-  override type BattleState = BattleStateImpl.BattleState
+  override type BattleState = BattleStateModuleImpl.BattleState
   
   export MoveStateModuleImpl.*
   export StatsStateModuleImpl.*
   export PokemonStateModuleImpl.{StatsState => _, MoveState => _, *}
   export PlayerStateModuleImpl.{PokemonState => _, *}
-  export BattleStateImpl.{PlayerState => _, BattleState => _, *}
+  export BattleStateModuleImpl.{PlayerState => _, BattleState => _, *}
