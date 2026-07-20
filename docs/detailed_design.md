@@ -77,7 +77,7 @@ non è percepibile: una volta selezionate le azioni, l'input dell'utente non pu�
 influenzare lo svolgimento del turno, quindi il risultato è equivalente a quello di un sistema
 mutabile che logga ogni evento nel momento in cui accade.
 
-*Aggiunta diagramma a stati su BattleState che contiene logger*
+![Diagramma di sequenza del BattleLogger](resources/BattleLoggerSequenceDiagram.png)
 
 ## Team building
 
