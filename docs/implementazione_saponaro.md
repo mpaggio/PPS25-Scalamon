@@ -109,3 +109,46 @@ per entrambi i lati mediante inversione di prospettiva evita duplicazione di cod
 rende l’algoritmo più compatto, espressivo e aderente a uno stile funzionale in Scala.
 
 ![Diagramma del sistema meteo](resources/WeatherSystemDiagram.png)
+
+### Battle Logger
+
+Il `BattleLogger` è il sottosistema incaricato di raccogliere e uniformare i messaggi prodotti
+durante la battaglia, così da rendere osservabili in modo chiaro tutti gli eventi rilevanti del
+combattimento. Il file `BattleLogger.scala` definisce il modello del log come `opaque type
+BattleLogger = List[String]`, scelta che consente di nascondere la rappresentazione concreta e
+di evitare un uso improprio della struttura come semplice lista di stringhe.
+
+L’aggiornamento del log avviene in modo funzionale, attraverso funzioni che ricevono un logger e
+ne restituiscono una nuova versione arricchita con un messaggio. L’extension method `setPlayer`
+aggiunge automaticamente l’etichetta del giocatore corrente, così ogni messaggio viene registrato
+dal punto di vista della prospettiva `self` del `BattleState`.
+
+L’integrazione con il resto del motore avviene tramite il metodo `updateLogs` definito in
+`BattleStateModule.scala`, che applica una funzione di aggiornamento al campo `logs` dello
+stato di battaglia. In questo modo il logger non è un servizio esterno o mutabile, ma una parte
+integrante dello stato globale, coerente con l’approccio basato su `StateTransformer` adottato
+dall’intero progetto.
+
+Il modulo espone poi un insieme di metodi specializzati, come `logMoveRoll`, `logSwitchPokemon`,
+`logUseItem`, `logStatusInflicted`, `logStatusDamage`, `logWeatherDamage` e `logWeatherHeal`, che
+centralizzano la costruzione dei messaggi testuali. Questa scelta evita la duplicazione di stringhe
+formattate nei vari moduli e mantiene separata la logica di dominio dalla rappresentazione testuale
+degli eventi.
+
+Il logger viene utilizzato in modo trasversale da molte componenti del sistema. In `Item.scala`,
+ad esempio, viene impiegato per registrare l’uso di uno strumento oppure per segnalare un errore
+nel caso l’oggetto non sia presente nell’inventario del giocatore. In `SwitchAction.scala`
+il log registra invece il cambio di Pokémon, riportando sia il Pokémon lasciato in campo sia quello
+entrato in battaglia.
+
+Anche `MoveAction.scala` fa un uso esteso del logger: il modulo registra gli effetti del meteo
+sull’accuratezza, l’esito del test di successo della mossa ed eventuali messaggi prodotti dal calcolo
+del danno. Il calcolatore del danno, infatti, restituisce un `DamageResult` composto da danno numerico
+e lista di messaggi, che vengono poi riversati nel log dal chiamante tramite`updateLogs`.
+
+Infine, il logger viene sfruttato anche nella gestione complessiva del turno e nella risoluzione
+degli effetti atmosferici. `BattleOrchestrator.scala` lo resetta all’inizio di ogni turno e lo usa
+per segnalare eventi come l’impossibilità di agire, la mancanza di PP o un cambio bloccato, mentre
+`WeatherEndTurnResolver.scala` registra il danno e la cura generati dal meteo alla fine del turno.
+
+![Diagramma di sequenza del BattleLogger](resources/BattleLoggerSequenceDiagram.png)
