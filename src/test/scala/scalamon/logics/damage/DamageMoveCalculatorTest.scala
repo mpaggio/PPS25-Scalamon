@@ -1,23 +1,24 @@
-package scalamon.logics.state
+package scalamon.logics.damage
 
 import org.scalatest.funsuite.AnyFunSuite
-import scalamon.domain.moves.Accuracy.ProbabilityRoll
-import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
-import scalamon.domain.moves.DamageMoveCategory.*
-import scalamon.domain.moves.MoveDSL.move
 import scalamon.database.MoveDatabase.{allMoves, ofType}
 import scalamon.database.MyPokedex
+import scalamon.domain.moves.Accuracy.ProbabilityRoll
+import scalamon.domain.moves.DamageMoveCategory.*
+import scalamon.domain.moves.MoveDSL.move
+import scalamon.domain.moves.{CriticalMultiplier, DamageMove}
 import scalamon.domain.pokemon.Pokemon
 import scalamon.domain.pokemon.statistics.StatADT.fromInt
 import scalamon.domain.pokemon.statistics.Stats
 import scalamon.domain.types.Type.*
-import scalamon.logics.state.BattleStateModuleImpl.battleState
 import scalamon.logics.damage.DamageMoveCalculatorImpl.getDamage
+import scalamon.logics.damage.DamagePolicy.Medium.given
+import scalamon.logics.state.BattleStateModuleImpl.battleState
+import scalamon.logics.state.MoveStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.playerInitialState
 import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StatsStateModuleImpl.*
-import scalamon.logics.damage.DamagePolicy.Medium.given
-import scalamon.logics.state.MoveStateModuleImpl.*
+import scalamon.logics.state.{BattleStateModuleImpl, PlayerStateModuleImpl, PokemonStateModuleImpl}
 import scalamon.logics.weather.WeatherSystem
 
 class DamageMoveCalculatorTest extends AnyFunSuite:

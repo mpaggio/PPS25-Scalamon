@@ -1,5 +1,10 @@
 package scalamon.logics.state
 
+/**
+ * A module that defines the state and operations for Pokémon stats.
+ * It extends the StateComponent trait, providing a structure for managing
+ * the state of a Pokémon's stats, including operations to modify them.
+ */
 trait StatsStateModule extends StateComponent:
   type StatsState
   type Stat
@@ -7,22 +12,40 @@ trait StatsStateModule extends StateComponent:
   override protected type InnerState = Stat
   type Stats
 
+  /**
+   * Creates the initial state of a Pokémon's stats given its base stats.
+   */
   def statsInitialState(value: Stats): StatsState
 
+  /**
+   * Operations to modify individual stats. Each operation takes a function
+   * that transforms the current stat value and returns a new stat value.
+   */
+  def maxHp(f: InnerOp): Op
   def attack(f: InnerOp): Op
   def defense(f: InnerOp): Op
   def specialAttack(f: InnerOp): Op
   def specialDefense(f: InnerOp): Op
   def speed(f: InnerOp): Op
 
+  /**
+   * Basic operations to modify a stat by decreasing, increasing, or multiplying it.
+   */
   def decrease(amount: Int): InnerOp
   def increase(amount: Int): InnerOp
   def multiply(factor: Double): InnerOp
 
   extension (s: Stat)
+    /** Clamps the stat value between a minimum and maximum value. */
     def clamped(min: Int, max: Int): Stat
+    /** Ensures the stat value is non-negative. */
     def positive: Stat
 
+/**
+ * Concrete implementation of the StatsStateModule.
+ * It defines the internal representation of the stats state and provides operations to manipulate it.
+ * In addition, it exposes the parameters of the stats values as Int.
+ */
 object StatsStateModuleImpl extends StatsStateModule:
 
   case class Ss(hp: Stat, attack: Stat, defense: Stat, specialAttack: Stat, specialDefense: Stat, speed: Stat)
