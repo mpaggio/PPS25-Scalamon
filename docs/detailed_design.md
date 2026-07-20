@@ -61,6 +61,8 @@ Un raffinamento funzionale distingue questa realizzazione dal Template Method cl
 Questa scelta abilita l'inversione di dipendenza verso l'interfaccia: la porta `GameView` fornisce i tre selettori come funzioni differite che, quando invocate dal template durante il setup della battaglia, eseguono le schermate interattive di scelta. Il dominio non sa che dietro un selettore c'è un utente; l'interfaccia non conosce gli invarianti di composizione, che restano verificati in
 un unico punto (`buildTeam`), qualunque sia la strategia.
 
+![Diagramma di sequenza del team building](resources/team_builder_det_design.png)
+
 ## Monad state loop
 
 Essendo il progetto interamente funzionale, un problema riscontrato è stato quello di capire come far evolvere in loop due stati (quello di
