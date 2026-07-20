@@ -48,7 +48,8 @@ object TurnResolutionImpl extends TurnResolutionModule:
   override def needsForcedSwitch(player: PlayerState): Boolean = isKnockedOut(player.getActive) && !isDefeated(player)
 
   /**
-   * Resolves the outcome of a turn and applies ent turn effects.
+   * Resolves the outcome of a turn, determining if the battle is ongoing,
+   * if one side has won, or if a forced switch is required.
    */
   override def getTurnResults(state: BattleState): TurnResult =
     if isDefeated(state.self) then TurnResult.Victory(state.opponent.name)
@@ -69,6 +70,10 @@ object TurnResolutionImpl extends TurnResolutionModule:
 
   private def applyWeatherEffects: StateTransformer = summon[WeatherEndTurnResolver].apply
 
+  /**
+   * Applies end-of-turn effects, including status effects, weather effects,
+   * and abilities that trigger at the end of the turn.
+   */
   override def endTurn: List[StateTransformer] = List(
     applyStatusEffects,
     applyWeatherEffects,
