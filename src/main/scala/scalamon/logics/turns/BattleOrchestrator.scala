@@ -19,6 +19,11 @@ import scalamon.logics.damage.DamagePolicy
  */
 final class BattleOrchestrator(using DamagePolicy):
 
+  /** Executes a turn of the battle:
+   * Reset logs, applies start-of-turn effects
+   * Orders the actions and applies their effects.
+   * Applies end-of-turn effects and returns the new state and the turn result.
+   */
   def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (TurnResult, BattleState) =
     val order = TurnFlow.actionOrdering(state, choices, speedOf)
     val allStateTransformers = startTurn concat orderedActions(order)(choices) concat endTurn
@@ -72,6 +77,10 @@ final class BattleOrchestrator(using DamagePolicy):
         state.self.items.find(_.name == name)
           .getOrElse(updateLogs(BattleLogger.logError(s"Item $name not found")))(state)
 
+  /**
+   * Executes a move, checking for PP, status conditions, and self-hitting conditions.
+   * If the move is valid, it delegates to the appropriate execution function based on move type.
+   */
   private def executeMove(moveRef: MoveRef)(state: BattleState): BattleState =
     val activePokemon = state.self.getActive
     findMove(moveRef) match

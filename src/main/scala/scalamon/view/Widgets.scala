@@ -6,7 +6,6 @@ package scalamon.view
  * The facade uses them to decide where each component is placed.
  */
 private[view] object Widgets:
-  // battle screen
   val BattleStatus = "BattleStatus"
   val WeatherStatus = "WeatherStatus"
   val BattleLog = "BattleLog"
@@ -14,7 +13,6 @@ private[view] object Widgets:
   val SwitchMenu = "SwitchMenu"
   val ItemMenu = "ItemMenu"
 
-  // generic "pick exactly N items" screen
   val PickPrefix = "Pick_"
   val PickConfirm = "PickConfirm"
   val PickCancelLast = "PickCancelLast"
