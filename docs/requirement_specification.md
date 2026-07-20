@@ -217,3 +217,7 @@ L'implementazione deve seguire un approccio prevalentemente funzionale, limitand
 
 ### IR-05) Gestione dei contenuti di gioco tramite DSL
 Le informazioni relative agli elementi del dominio devono essere definite attraverso strutture dichiarative. Il progetto deve utilizzare *DSL* (*Domain Specific Language*) interno per permettere di descrivere i contenuti del gioco in modo leggibile.
+
+# Esperienza d'uso
+
+![Diagramma user experience e sequenza di gioco](resources/requirements_gameSequence.png)
