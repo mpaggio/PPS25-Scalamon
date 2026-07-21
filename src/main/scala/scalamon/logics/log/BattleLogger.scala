@@ -596,7 +596,7 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherDamage(pokemonState: PokemonState, weather: scalamon.domain.weather.Weather, damage: Int)(logger: BattleLogger): BattleLogger =
+  def logWeatherDamage(pokemonState: PokemonState, weather: Weather, damage: Int)(logger: BattleLogger): BattleLogger =
     s"${pokemonState.species.name} takes $damage HP damage due to weather [$weather]" :: logger
 
   /**
@@ -613,7 +613,7 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherHeal(pokemonState: PokemonState, weather: scalamon.domain.weather.Weather, heal: Int)(logger: BattleLogger): BattleLogger =
+  def logWeatherHeal(pokemonState: PokemonState, weather: Weather, heal: Int)(logger: BattleLogger): BattleLogger =
     s"${pokemonState.species.name} restores $heal HP due to weather [$weather]" :: logger
 
   /**
@@ -630,7 +630,7 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherPowerModifier(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type, multiplier: Double)(logger: BattleLogger): BattleLogger =
+  def logWeatherPowerModifier(weather: Weather, moveType: Type, multiplier: Double)(logger: BattleLogger): BattleLogger =
     s"Weather [$weather] modifies power of [$moveType] moves by x$multiplier" :: logger
 
   /**
@@ -645,7 +645,7 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherAccuracyModifier(weather: scalamon.domain.weather.Weather, multiplier: Double)(logger: BattleLogger): BattleLogger =
+  def logWeatherAccuracyModifier(weather: Weather, multiplier: Double)(logger: BattleLogger): BattleLogger =
     s"Weather [$weather] changes global accuracy by x$multiplier" :: logger
 
   /**
@@ -660,7 +660,7 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherAccuracyIgnored(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type)(logger: BattleLogger): BattleLogger =
+  def logWeatherAccuracyIgnored(weather: Weather, moveType: Type)(logger: BattleLogger): BattleLogger =
     s"Weather [$weather] causes [$moveType] moves to ignore accuracy checks" :: logger
 
   /**
@@ -673,7 +673,7 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherFreezeBlocked(weather: scalamon.domain.weather.Weather)(logger: BattleLogger): BattleLogger =
+  def logWeatherFreezeBlocked(weather: Weather)(logger: BattleLogger): BattleLogger =
     s"Weather [$weather] prevents freeze from being applied" :: logger
 
   /**
@@ -690,7 +690,7 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherSleepModifier(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type, multiplier: Double)(logger: BattleLogger): BattleLogger =
+  def logWeatherSleepModifier(weather: Weather, moveType: Type, multiplier: Double)(logger: BattleLogger): BattleLogger =
     s"Weather [$weather] modifies sleep chance for [$moveType] moves by x$multiplier" :: logger
 
   /**
@@ -707,5 +707,5 @@ object BattleLogger:
    * @return
    * the updated logger
    */
-  def logWeatherParalysisOverride(weather: scalamon.domain.weather.Weather, moveType: scalamon.domain.types.Type, chance: Double)(logger: BattleLogger): BattleLogger =
+  def logWeatherParalysisOverride(weather: Weather, moveType: Type, chance: Double)(logger: BattleLogger): BattleLogger =
     s"Weather [$weather] overrides paralysis chance for [$moveType] moves to $chance" :: logger
