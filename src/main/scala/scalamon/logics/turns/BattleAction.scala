@@ -97,7 +97,7 @@ case class SwitchPokemon(to: PokemonRef) extends BattleAction:
    * @return
    *   the priority of the action
    */
-  def priority: Int = 0
+  def priority: Int = 100
 
 /**
  * Action that uses an item during the turn.
@@ -112,4 +112,4 @@ case class UseItem(item: String) extends BattleAction:
    * @return
    *   the priority of the action
    */
-  def priority: Int = 0
+  def priority: Int = 100
