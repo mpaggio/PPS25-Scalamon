@@ -17,22 +17,21 @@ significato semantico e informazione operativa.
 In `TypeChart.scala` le interazioni non neutrali sono raccolte in una
 `Map[(Type, Type), TypeEffectiveness]`. Questa soluzione segue un approccio *table-driven*,
 perché la logica dei matchup non è distribuita in catene di `if` o `match`, ma concentrata
-in una struttura dichiarativa unica; inoltre, la piccola DSL interna basata su extension
+in una struttura dichiarativa unica. Inoltre, la piccola DSL interna basata su extension
 infisse come `strongAgainst` e `weakAgainst` rende la definizione della tabella più
 leggibile e vicina al dominio.
 
 Infine, `TypeOps.scala` aggiunge operazioni di alto livello come `effectivenessAgainst`,
 `multiplierAgainst` e i principali predicati booleani sul risultato del confronto. Anche
 questa scelta è idiomatica in Scala 3: il comportamento viene esposto tramite extension
-methods, mantenendo il modello leggero, leggibile e meno “java-like” rispetto a utility
-class statiche o gerarchie di servizio più verbose.
+methods, mantenendo il modello leggero e leggibile.
 
 ![Diagramma Tipi](resources/TypeDiagram.png)
 
 ### Gestione dei turni
 
 Il sottosistema dei turni è responsabile di: rappresentazione delle azioni scelte dai
-giocatori, calcolo dell’ordine di esecuzione e orchestrazione completa di un
+giocatori, calcolo del loro ordine di esecuzione e orchestrazione completa di un
 turno di battaglia. L’implementazione è distribuita tra `Speed`, `BattleAction`,
 `TurnFlow` e `BattleOrchestrator`, mantenendo separati i concetti di dato, ordinamento e
 coordinamento dell’esecuzione.
@@ -45,20 +44,19 @@ type-safe senza introdurre wrapper runtime superflui.
 
 In `BattleAction.scala` le possibili decisioni del giocatore sono modellate tramite il
 trait `BattleAction` e i casi `UseMove`, `SwitchPokemon` e `UseItem`. Ogni azione espone
-una `priority`, usata in fase di risoluzione del turno; questa struttura realizza una ADT
-aperta via trait più case class, semplice da estendere e adatta a rappresentare in modo
+una `priority`, usata in fase di risoluzione del turno; questa struttura realizza un ADT
+aperto via trait più case class, semplice da estendere e adatto a rappresentare in modo
 esplicito le scelte disponibili.
 
 Il file `TurnFlow.scala` definisce invece la logica di ordinamento delle azioni.
 L’ordine viene deciso prima confrontando la priorità delle azioni selezionate e, in
-caso di parità, confrontando la velocità dei Pokémon attivi; il risultato è rappresentato
+caso di parità, confrontando la velocità dei Pokémon attivi. Il risultato è rappresentato
 dall’enum `ActionOrder`, che distingue tra `Player1First` e `Player2First`.
 
 `BattleOrchestrator.scala` coordina infine l’intero ciclo del turno. Il metodo `runTurn`
-costruisce una sequenza di `StateTransformer` composta da effetti di inizio turno,
-esecuzione ordinata delle azioni e chiusura del turno, applicandola poi allo stato tramite
-`foldLeft`; in questo modo il turno viene espresso come pipeline dichiarativa di
-trasformazioni pure.
+costruisce una sequenza di `StateTransformer` composta da: effetti di inizio turno,
+esecuzione ordinata delle azioni e chiusura del turno. Questa sequenza viene poi applicata allo stato tramite
+`foldLeft`, in questo modo il turno viene espresso come pipeline dichiarativa di trasformazioni pure.
 
 Dal punto di vista progettuale emergono soprattutto tre scelte. La prima è l’uso di
 `opaque type` per proteggere identificatori e velocità; la seconda è la modellazione
@@ -77,8 +75,8 @@ del dominio, `WeatherSystem`, che definisce l’insieme delle regole associate a
 condizione, e `WeatherEndTurnResolver`, che applica concretamente gli effetti residui di 
 fine turno allo stato della battaglia.
 
-`Weather.scala` rappresenta le condizioni atmosferiche tramite un `enum` chiuso, con i
-casi `ClearSky`, `HeavySunlight`, `Rain`, `Fog` e `Thunderstorm`. Questa scelta è coerente
+`Weather.scala` rappresenta le condizioni atmosferiche tramite una `enum` con i
+casi: `ClearSky`, `HeavySunlight`, `Rain`, `Fog` e `Thunderstorm`. Questa scelta è coerente
 con la natura del dominio, perché il meteo è un insieme finito di condizioni discrete,
 facilmente modellabile come ADT e quindi verificabile a compile-time.
 
@@ -105,7 +103,7 @@ anche sull’avversario e aggiorna infine il log degli eventi prodotti.
 Anche qui emerge chiaramente il pattern *State Transformer* già adottato nel resto del
 progetto: il meteo non modifica oggetti in-place, ma produce una nuova versione dello
 stato di battaglia a partire da quello corrente. La scelta di riusare la stessa logica
-per entrambi i lati mediante inversione di prospettiva evita duplicazione di codice e
+per entrambi i lati (`self` e `opponent`) mediante inversione di prospettiva evita duplicazione di codice e
 rende l’algoritmo più compatto, espressivo e aderente a uno stile funzionale in Scala.
 
 ![Diagramma del sistema meteo](resources/WeatherSystemDiagram.png)
