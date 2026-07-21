@@ -24,11 +24,11 @@ final class BattleOrchestrator(using DamagePolicy):
    * Orders the actions and applies their effects.
    * Applies end-of-turn effects and returns the new state and the turn result.
    */
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (TurnResult, BattleState) =
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (BattleState, TurnResult) =
     val order = TurnFlow.actionOrdering(state, choices, speedOf)
     val allStateTransformers = startTurn concat orderedActions(order)(choices) concat endTurn
     val newState = allStateTransformers.foldLeft(state)((s, f) => f(s))
-    (getTurnResults(newState), newState)
+    (newState ,getTurnResults(newState))
 
   private def startTurn: List[StateTransformer] = List(
     updateLogs(_ => emptyLogger),

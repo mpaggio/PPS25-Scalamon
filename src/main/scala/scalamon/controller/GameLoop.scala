@@ -1,7 +1,7 @@
 package scalamon.controller
 
 import scalamon.logics.damage.DamagePolicy
-import scalamon.logics.state.BattleStateModuleImpl.{BattleState, switchSelfOpponent}
+import scalamon.logics.state.BattleStateModuleImpl.BattleState
 import scalamon.logics.state.PlayerStateModuleImpl.PlayerState
 import scalamon.logics.teambuilder.*
 import scalamon.logics.teambuilder.TeamBuilder.TeamBuilder
@@ -12,15 +12,12 @@ import scalamon.util.StateMonad.*
 
 /**
  * The application layer: it orchestrates setup, team building and the
- * hot-seat game loop. It only depends on the GameView port, so any
- * interface (Swing, terminal, ...) can be plugged in without touching
- * this class.
+ * hot-seat game loop.
  *
  * The whole game is a computation over the pair (BattleState, view.V);
  * `battle` and `ui` lift computations on each half into the combined state.
  */
 final class GameLoop(val view: ViewModel):
-  import GameConfig.*
   import Presenter.playerNames
 
   private type Game[A] = StateMonad[(BattleState, view.V), A]
@@ -48,75 +45,58 @@ final class GameLoop(val view: ViewModel):
       moves = Presenter.moveSlots(bs.self.getActive)
     )
 
-  private def actionPrompt(bs: BattleState): ActionPrompt =
-    ActionPrompt(
-      moves = Presenter.moveSlots(bs.self.getActive),
-      switchable = bs.self.team.filter((id, p) => id != bs.self.activeId && p.currentHp > 0).keys.toList,
-      items = bs.self.items.toList.map(i => ItemSlot(i.name, i.description))
-    )
+  private def manualBuilder(name: String): StateMonad[view.V, TeamBuilder] = for
+    choosePokemonTeam <- view.chooseTeam(name)
+    chooseMoves <- view.chooseMoves(name)
+    chooseItems <- view.chooseItems(name)
+  yield ManualTeamBuilder(choosePokemonTeam, chooseMoves, chooseItems)
 
-  private def manualBuilder(player: String): StateMonad[view.V, TeamBuilder] = for
-    choosePokemonTeam <- view.chooseTeam(player)
-    chooseMoves <- view.chooseMoves(player)
-    chooseItems <- view.chooseItems(player)
+  private def builderFor(mode: Mode, name: String): StateMonad[view.V, (TeamBuilder, String)] =
+    val builder = mode match
+      case Mode.Manual => manualBuilder(name)
+      case Mode.Random => StateMonad.unit(RandomTeamBuilder)
+      case Mode.Affine => StateMonad.unit(AffineTeamBuilder)
+    builder.map((_, name))
 
-  yield
-    ManualTeamBuilder(choosePokemonTeam, chooseMoves, chooseItems)
+  private def playerSetups(mode: Mode): StateMonad[view.V, List[(TeamBuilder, String)]] =
+    StateMonad.traverse(playerNames.toList)(builderFor(mode, _))
 
-  private def automaticBuilder(mode: Mode): TeamBuilder = mode match
-    case Mode.Affine => AffineTeamBuilder
-    case _           => RandomTeamBuilder
-
-  private def teamBuilders(mode: Mode): StateMonad[view.V, (TeamBuilder, TeamBuilder)] = mode match
-    case Mode.Manual =>
-      for
-        first  <- manualBuilder(playerNames._1)
-        second <- manualBuilder(playerNames._2)
-      yield (first, second)
-    case automatic => StateMonad.unit((automaticBuilder(automatic), automaticBuilder(automatic)))
-  
   private def refreshView: Game[Unit] = for
-    bs <- battle(StateMonad.get[BattleState])
+    bs <- battle(get)
     _  <- ui(view.renderBattle(viewModel(bs)))
   yield ()
 
-  private def playerAction: Game[BattleAction] = for
-    bs     <- battle(StateMonad.get[BattleState])
-    intent <- ui(view.askAction(actionPrompt(bs)))
-  yield toAction(intent)
-
-  /** Runs a computation from the opponent's perspective, restoring it. */
-  private def asOpponent[A](m: Game[A]): Game[A] = for
-    _ <- battle(StateMonad.modify(switchSelfOpponent))
-    a <- m
-    _ <- battle(StateMonad.modify(switchSelfOpponent))
-  yield a
+  private def playerAction(playerState: PlayerState): Game[BattleAction] =
+    val actionPrompt = ActionPrompt(
+      moves = Presenter.moveSlots(playerState.getActive),
+      switchable = Utilities.aliveBench(playerState).map(_.value),
+      items = playerState.items.toList.map(i => ItemSlot(i.name, i.description))
+    )
+    ui(view.askAction(actionPrompt)).map(toAction)
 
   private def hotSeatChoices: Game[TurnChoices] = for
-    first  <- playerAction
+    bs     <- battle(get)
+    first  <- playerAction(bs.self)
     _      <- ui(view.announce(s"${playerNames._2}'s turn. Change the controller!"))
-    second <- asOpponent(playerAction)
+    second <- playerAction(bs.opponent)
   yield TurnChoices(first, second)
 
   private def resolveTurn(orchestrator: BattleOrchestrator, choices: TurnChoices): Game[TurnResult] = for
-    result <- battle(StateMonad[BattleState, TurnResult](bs =>
-      val (result, next) = orchestrator.runTurn(bs, choices, speedOf)
-      (next, result)
-    ))
+    result <- StateMonad(orchestrator.runTurn(_, choices, speedOf)).onFirst
     _ <- refreshView
   yield result
 
   private def forcedSwitchChoice(request: SwitchRequest): Game[(Side, PokemonRef)] =
     ui(view.askForcedSwitch(Presenter.forcedSwitchMessage(request.side), request.candidates.map(_.value)))
-      .map(chosen => request.side -> PokemonRef(chosen))
+      .map(request.side -> PokemonRef(_))
 
   private def handleForcedSwitch(orchestrator: BattleOrchestrator, result: TurnResult): Game[Unit] =
     result match
       case ForcedSwitch(requests) =>
         for
           choices <- StateMonad.traverse(requests)(forcedSwitchChoice)
-          _       <- battle(StateMonad.modify(orchestrator.applyForcedSwitches(choices)))
-          _       <- refreshView
+          _ <- battle(StateMonad.modify(orchestrator.applyForcedSwitches(choices)))
+          _ <- refreshView
         yield ()
       case _ => StateMonad.unit(())
 
@@ -128,27 +108,27 @@ final class GameLoop(val view: ViewModel):
   private def gameLoop(orchestrator: BattleOrchestrator): Game[Unit] = for
     choices <- hotSeatChoices
     result  <- resolveTurn(orchestrator, choices)
-    _       <- handleForcedSwitch(orchestrator, result)
+    _ <- handleForcedSwitch(orchestrator, result)
     _ <- result match
       case Victory(winnerName) => endGame(winnerName)
-      case _               => gameLoop(orchestrator)
+      case _ => gameLoop(orchestrator)
   yield ()
 
   def run(): Unit =
     val setup = for
       difficulty <- view.chooseDifficulty
-      mode       <- view.chooseMode
-      builders   <- teamBuilders(mode)
+      mode <- view.chooseMode
+      builders <- playerSetups(mode)
     yield (difficulty, mode, builders)
 
-    val (readyView, (difficulty, mode, (playerBuilder, opponentBuilder))) = setup.run(view.initial)
+    val (readyView, (difficulty, mode, builders)) = setup.run(view.initial)
 
     given DamagePolicy = damagePolicyOf(difficulty)
     val orchestrator = BattleOrchestrator()
-    val initialState = BattleSetup.setupBattle((playerBuilder, playerNames._1), (opponentBuilder, playerNames._2))
+    val initialState = BattleSetup.setupBattle(builders.head, builders.last)
 
     val program: Game[Unit] = for
-      bs <- battle(StateMonad.get[BattleState])
+      bs <- battle(get)
       _  <- ui(view.showBattleScreen(viewModel(bs), Presenter.initialSetupLog(mode, bs)))
       _  <- gameLoop(orchestrator)
     yield ()

@@ -57,6 +57,20 @@ trait BattleLogger:
    *   the updated logger
    */
   def logUseItem(player: PlayerState, itemName: String)(logger: BattleLogger): BattleLogger
+  
+  /**
+   * Logs that an item has run out of uses for a player.
+   *
+   * @param player
+   *   the player whose item has run out
+   * @param itemName
+   *   the name of the item that has run out
+   * @param logger
+   *   the logger to update
+   * @return
+   *   the updated logger
+   */
+  def logItemRunsOut(player: PlayerState, itemName: String)(logger: BattleLogger): BattleLogger
 
   /**
    * Logs the outcome of a move-related success check.
@@ -420,6 +434,21 @@ object BattleLogger:
    */
   def logUseItem(player: PlayerState, item: Item)(logger: BattleLogger): BattleLogger =
     s"${player.getActive.species.name} used the item ${item.name} - ${item.description}" :: logger
+    
+  /**
+   * Logs that an item has run out of uses for a player.
+   *
+   * @param player
+   *   the player whose item has run out
+   * @param item
+   *   the item that has run out
+   * @param logger
+   *   the logger to update
+   * @return
+   *   the updated logger
+   */
+  def logItemRunsOut(player: PlayerState, item: Item)(logger: BattleLogger): BattleLogger =
+    s"${player.getActive.species.name} lost the effect of item ${item.name}" :: logger
 
   /**
    * Logs that a Pokémon cannot act because it is knocked out.

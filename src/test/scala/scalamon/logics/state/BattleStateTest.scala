@@ -36,5 +36,6 @@ class BattleStateTest extends AnyWordSpec with Matchers with BattleFixtures:
 
     "accumulate passive effects" in:
       val effect: PassiveEffect = _ => bs => bs
-      val b = addPassiveEffect(effect)(addPassiveEffect(effect)(battle))
+      val b = addPassiveEffect("e1", effect)(addPassiveEffect("e2", effect)(battle))
       b.passiveEffects should have size 2
+      removePassiveEffect("e1")(b).passiveEffects should have size 1

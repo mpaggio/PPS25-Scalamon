@@ -39,7 +39,13 @@ trait BattleStateModule extends StateComponent:
   /**
    * Returns an operation that adds a passive effect to the battle state.
    */
-  def addPassiveEffect(effect: PassiveEffect): Op
+  def addPassiveEffect(key: String, effect: PassiveEffect): Op
+  
+  /**
+   * Returns an operation that removes a passive effect from the battle state.
+   * If the key does not exist, the operation has no effect.
+   */
+  def removePassiveEffect(key: String): Op
 
   /**
    * Returns an operation that sets the weather condition in the battle state.
@@ -65,7 +71,7 @@ object BattleStateModuleImpl extends BattleStateModule:
   case class Bs(
                  self: PlayerState,
                  opponent: PlayerState,
-                 passiveEffects: List[PassiveEffect],
+                 passiveEffects: Map[String, PassiveEffect],
                  weather: Weather,
                  logs: Logger
                )
@@ -76,11 +82,16 @@ object BattleStateModuleImpl extends BattleStateModule:
   override type Trigger = scalamon.domain.pokemon.abilities.AbilityTrigger
   override type Logger = BattleLogger
   def battleState(userPokemon: PlayerState, enemyPokemon: PlayerState, initialWeather: Weather = ClearSky): BattleState =
-    Bs(userPokemon, enemyPokemon, List(), initialWeather, emptyLogger)
+    Bs(userPokemon, enemyPokemon, Map(), initialWeather, emptyLogger)
 
   def self(f: InnerOp): Op = bs => bs.copy(self = f(bs.self))
   def opponent(f: InnerOp): Op = bs => bs.copy(opponent = f(bs.opponent))
   def switchSelfOpponent: Op = bs => bs.copy(self = bs.opponent, opponent = bs.self)
-  def addPassiveEffect(effect: PassiveEffect): Op = bs => bs.copy(passiveEffects = effect :: bs.passiveEffects)
+  def addPassiveEffect(key: String, effect: PassiveEffect): Op = updatePassiveEffects(_ + (key -> effect))
+  def removePassiveEffect(key: String): Op = updatePassiveEffects(_ - key)
   def setWeather(w: Weather): Op = bs => bs.copy(weather = w)
   def updateLogs(f: Logger => Logger): Op = bs => bs.copy(logs = f(bs.logs.setPlayer(bs.self.name) ))
+  
+  private def updatePassiveEffects(f: Map[String, PassiveEffect] => Map[String, PassiveEffect]): Op =
+    bs => bs.copy(passiveEffects = f(bs.passiveEffects))
+  
