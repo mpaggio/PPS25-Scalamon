@@ -1,3 +1,5 @@
+# Retrospettiva
+
 Lo sviluppo del progetto ha seguito un approccio iterativo, con un backlog inizialmente definito sulla base della proposta progettuale e successivamente aggiornato in funzione dell'avanzamento dei lavori. Le diverse iterazioni hanno permesso di consolidare progressivamente le funzionalità principali, adattando la pianificazione alle difficoltà emerse durante lo sviluppo.
 
 Uno degli aspetti più complessi ha riguardato l'organizzazione del lavoro all'interno del team. Nonostante una suddivisione iniziale dei compiti, molte componenti del sistema si sono rilevate fortemente interdipendenti, rendendo necessario un frequente coordinamento tra i membri del gruppo. Questa situazione ha limitato la possibilità di procedere in parallelo su alcune attività e ha richiesto un continuo allineamento sulle modifiche apportate alle varie parti del progetto.
