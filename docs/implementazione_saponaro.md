@@ -3,7 +3,7 @@
 ### Sistema dei tipi
 
 Il sottosistema dei tipi modella sia l’insieme dei tipi elementali sia le regole di
-efficacia tra tipo attaccante e tipo difensore. L’implementazione è articolata in
+efficacia tra tipo che attacca e tipo che difende. L’implementazione è articolata in
 quattro file: `Type`, che definisce i tipi del dominio, `TypeEffectiveness`, che
 rappresenta l’esito di un matchup, `TypeChart`, che centralizza la tabella delle
 interazioni, e `TypeOps`, che espone un’interfaccia più espressiva tramite extension
