@@ -9,10 +9,10 @@ definizione del logging system.
 
 ## Stato e modificatori
 
-Il design descrive i combinatori granulari come "metodi che sollevano una funzione su un componente interno in una
-funzione sul componente corrente". Questa forma ricorrente è fattorizzata in un unico trait, `StateComponent`,
+I modificatori dello stato descritti nel design sono stati organizzati in moduli, uno per ogni livello di lifting.
+La forma ricorrente è fattorizzata in un unico trait, `StateComponent`,
 tramite membri di tipo astratti: ogni modulo dichiara il proprio `State` e il proprio `InnerState`, e ne deriva
-gli alias `Op` e `InnerOp` che compaiono in tutte le firme.
+gli alias `Op` e `InnerOp` che compaiono in tutte le firme e accorciano notevolmente le firme delle funzioni.
 
 ```scala
 trait StateComponent:
@@ -33,8 +33,8 @@ object BattleStateModuleImpl extends BattleStateModule:
 
 Ogni modulo fissa la coppia di tipi (qui `State = BattleState`, `InnerState = PlayerState`) e il relativo oggetto
 `Impl` fornisce i combinatori concreti, ciascuno una `copy` che ricostruisce il solo campo toccato. Poiché `Op` e
-`InnerOp` sono *membri di tipo* e non parametri generici, tutti i moduli parlano lo stesso vocabolario pur riferendosi
-ai propri tipi concreti
+`InnerOp` sono membri di tipo e non parametri generici, tutti i moduli hanno dichiarazioni simili, pur riferendosi
+ai propri tipi concreti.
 
 Per scelta gli alias sono trasparenti e non opachi, quindi dove i combinatori non bastano si può passare
 una lambda scritta a mano, rendendo esprimibile qualunque effetto custom non previsto dal DSL.
@@ -43,7 +43,7 @@ così che mosse, abilità e item li importino da un solo punto.
 
 ### Limitazioni
 
-Una limitazione riscontrata con l'architettura è stata l'impossibilità di ispezionare un'operazione per riconoscerne la natura,
+Una limitazione riscontrata con l'architettura è stata l'impossibilità di ispezionare un'operazione nel dettaglio,
 ad esempio stabilire se una mossa modifichi i punti salute. 
 Dato un `Op` arbitrario, la funzione catturata nella chiusura non è recuperabile, 
 e non si può decidere da quale combinatore provenga: una funzione è opaca al pattern matching.
@@ -54,15 +54,15 @@ object active:
   def unapply(op: Op): Option[InnerOp] = ???  // non implementabile
 ```
 L'introspezione richiederebbe di reificare gli effetti come tipo di dato (una ADT di comandi),
-rinunciando però alla componibilità e all'estensibilità aperta di `State => State`: è il compromesso accettato con la
+rinunciando però alla componibilità e all'estensibilità aperta di `State => State`: un compromesso accettato con la
 rappresentazione funzionale.
 
 ## Item a durata limitata
 
 Alcuni item hanno un effetto non istantaneo. Per descrivere in un unico punto l'intera specifica di un item,
-la case class `Item` — che è un `Action`, quindi già uno `StateTransformer` — aggiunge due campi opzionali:
+la case class `Item` (che è un `Action`, quindi uno `StateTransformer`) aggiunge due campi opzionali:
 `until`, l'insieme dei trigger che ne annullano l'effetto, e `onCancel`, la trasformazione da applicare all'annullamento.
-I default (`Set.empty` e `identity`) rendono il meccanismo di durata interamente opt-in:
+I default (`Set.empty` e `identity`) rendono il meccanismo di durata interamente opzionale:
 un item istantaneo si dichiara senza menzionarlo.
 
 ```scala
@@ -85,10 +85,10 @@ case class Item(
       updateLogs(logError(s"Item $name not found"))(bs)
 ```
 
-L'aspetto notevole è che l'intera logica — effetto, registrazione della scadenza, consumo dalla scorta, logging — 
+Come conseguenza dei moduli dello stato, l'intera logica — effetto, registrazione della scadenza, consumo dalla scorta, logging — 
 è una composizione di `StateTransformer` con `andThen`. 
-Anche le operazioni "di servizio" (rimuovere l'item, scrivere sul log) e quelle "di meta-livello"
-(registrare o rimuovere un effetto passivo) sono trasformazioni di stato ordinarie, non un meccanismo a parte.
+Anche le operazioni di servizio (rimuovere l'item, scrivere sul log) e quelle di meta-livello
+(registrare o rimuovere un effetto passivo) sono trasformazioni componibili tra loro.
 La scadenza è ottenuta registrando come effetto passivo, con chiave `name`, la funzione
  a ogni trigger del turno, se appartiene a `until` scatta `onTrigger`, altrimenti nulla.
 `onTrigger` applica `onCancel`, rimuove sé stesso dalle passive (`removePassiveEffect(name)`) e ne registra il log,
@@ -128,9 +128,8 @@ private type Game[A] = StateMonad[(BattleState, view.V), A]
 ```
 
 Il punto di innesto con la simulazione sfrutta il fatto che `runTurn` restituisce la tupla `(BattleState, TurnResult)`,
-che è esattamente la forma della funzione di run di una `StateMonad[BattleState, TurnResult]`:
-applicati parzialmente `choices` e `speedOf`, l'esito del turno si incapsula nella monade senza alcun adattamento,
-e `onFirst` lo solleva su `Game`.
+che corrisponde con la forma della funzione di run di una `StateMonad[BattleState, TurnResult]`, 
+l'esito del turno si incapsula quindi nella monade senza alcun adattamento, e `onFirst` lo solleva su `Game`.
 
 ```scala
 private def resolveTurn(orchestrator: BattleOrchestrator, choices: TurnChoices): Game[TurnResult] = for
