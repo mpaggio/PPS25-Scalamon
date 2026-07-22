@@ -66,7 +66,11 @@ object TurnResolutionImpl extends TurnResolutionModule:
       s.self.getActive.status.foldLeft(s)((st, status) => status.applyCondition(st))
     )
 
-  private def applyEndOfTurnAbilities: StateTransformer = forBothSides(applyPassiveEffects(OnTurnEnd))
+  private def applyEndOfTurnAbilities: StateTransformer =
+    forBothSides { state =>
+      if state.self.getActive.currentHp <= 0 then state
+      else applyPassiveEffects(OnTurnEnd)(state)
+    }
 
   private def applyWeatherEffects: StateTransformer = summon[WeatherEndTurnResolver].apply
 

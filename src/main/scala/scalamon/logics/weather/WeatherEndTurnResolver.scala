@@ -60,28 +60,30 @@ object WeatherEndTurnResolver:
      * @return the updated battle state for that side
      */
     private def applyAndLogCurrentSide(state: BattleState): BattleState =
-      val act = state.self.getActive
-      val weather = state.weather
-      val pokemonType = act.species.pokemonType
-      val maxHp = act.maxHp
+      if isKnockedOut(state.self) then state
+      else
+        val activePokemon = state.self.getActive
+        val weather = state.weather
+        val pokemonType = activePokemon.species.pokemonType
+        val maxHp = activePokemon.maxHp
 
-      val damage =
-        (maxHp * weatherSystem.endTurnDamageFraction(weather, pokemonType)).toInt
+        val damage =
+          (maxHp * weatherSystem.endTurnDamageFraction(weather, pokemonType)).toInt
 
-      val healAmount =
-        (maxHp * weatherSystem.endTurnHealFraction(weather, pokemonType)).toInt
+        val healAmount =
+          (maxHp * weatherSystem.endTurnHealFraction(weather, pokemonType)).toInt
 
-      val updatedState =
-        state.copy(self = applyToActive(state.self, damage, healAmount))
+        val updatedState =
+          state.copy(self = applyToActive(state.self, damage, healAmount))
 
-      val withDamageLog =
-        if damage > 0 then
-          updateLogs(BattleLogger.logWeatherDamage(act, weather, damage))(updatedState)
-        else updatedState
+        val withDamageLog =
+          if damage > 0 then
+            updateLogs(BattleLogger.logWeatherDamage(activePokemon, weather, damage))(updatedState)
+          else updatedState
 
-      if healAmount > 0 then
-        updateLogs(BattleLogger.logWeatherHeal(act, weather, healAmount))(withDamageLog)
-      else withDamageLog
+        if healAmount > 0 then
+          updateLogs(BattleLogger.logWeatherHeal(activePokemon, weather, healAmount))(withDamageLog)
+        else withDamageLog
 
     /**
      * Applies the resolved damage and healing to the active Pokémon of a player.
@@ -95,3 +97,6 @@ object WeatherEndTurnResolver:
       val act = player.getActive
       val updatedActive = heal(healAmount)(takeDamage(damage)(act))
       active(_ => updatedActive)(player)
+
+    private def isKnockedOut(player: PlayerState): Boolean =
+      player.getActive.currentHp <= 0
