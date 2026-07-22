@@ -76,7 +76,7 @@ final class BattleOrchestrator(using DamagePolicy):
 
   /** Applies a batch of forced switches in order (covers the "both KO" case). */
   def applyForcedSwitches(choices: List[(Side, PokemonRef)])(state: BattleState): BattleState =
-    choices.foldLeft(state) { case (s, (side, ref)) => (executeSwitch(side, ref, false) andThen updateLogs(_ => emptyLogger))(s) }
+    choices.foldLeft(state) { case (s, (side, ref)) => (updateLogs(_ => emptyLogger) andThen executeSwitch(side, ref, false))(s) }
 
   private def executeAction(battleAction: BattleAction)(state: BattleState): BattleState =
     battleAction match
