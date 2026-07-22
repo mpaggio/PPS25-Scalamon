@@ -33,7 +33,7 @@ object Utilities:
 
   def applyPassiveEffects(trigger: Trigger)(bs: BattleState): BattleState =
     val newBs = MyAbilityBook.runTrigger(trigger, bs.self.getActive.species.abilitySlot)(bs)
-    newBs.passiveEffects.foldLeft(newBs)((state, effect) => effect(trigger)(state))
+    newBs.passiveEffects.values.foldLeft(newBs)((state, effect) => effect(trigger)(state))
 
   def aliveBench(player: PlayerState): List[PokemonRef] =
     player.team.collect {

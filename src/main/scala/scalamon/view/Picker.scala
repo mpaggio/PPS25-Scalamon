@@ -22,7 +22,7 @@ private[view] object Picker:
   
 
   /** Lifts a fluent Frame operation into the State monad. */
-  private def io(f: Frame => Frame): StateMonad[Frame, Unit] = StateMonad(w => (f(w), ()))
+  def io(f: Frame => Frame): StateMonad[Frame, Unit] = StateMonad(w => (f(w), ()))
 
   /** Toggle-based selection loop: confirm succeeds only with exactly `p.size` items. */
   def pickExactly[A](p: Picker[A], title: String): StateMonad[Frame, List[A]] = for

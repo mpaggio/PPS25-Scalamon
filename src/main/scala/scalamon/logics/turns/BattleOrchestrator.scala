@@ -24,11 +24,11 @@ final class BattleOrchestrator(using DamagePolicy):
    * Orders the actions and applies their effects.
    * Applies end-of-turn effects and returns the new state and the turn result.
    */
-  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (TurnResult, BattleState) =
+  def runTurn(state: BattleState, choices: TurnChoices, speedOf: PlayerState => Speed): (BattleState, TurnResult) =
     val order = TurnFlow.actionOrdering(state, choices, speedOf)
     val allStateTransformers = startTurn concat orderedActions(order)(choices) concat endTurn
     val newState = allStateTransformers.foldLeft(state)((s, f) => f(s))
-    (getTurnResults(newState), newState)
+    (newState ,getTurnResults(newState))
 
   private def startTurn: List[StateTransformer] = List(
     updateLogs(_ => emptyLogger),
@@ -104,13 +104,20 @@ final class BattleOrchestrator(using DamagePolicy):
   private def executeDamageMove(move: DamageMove)(state: BattleState): BattleState =
     val withLastMove = self(updateFlags(_.copy(lastMove = Some(move))))(state)
     val afterMove = MoveAction(move)(withLastMove)
-    val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMove)
+    val afterMoveCleared = clearSwitchBlockOnKO(afterMove)
+    val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMoveCleared)
     val afterDamageTaken = asOpponent(applyPassiveEffects(OnDamageTaken(Self)))(afterDamageDealt)
     if isKnockedOut(afterDamageTaken.opponent.getActive) then
       val afterAttackerKO = applyPassiveEffects(OnKOTaken(Opponent))(afterDamageTaken)
       asOpponent(applyPassiveEffects(OnKOTaken(Self)))(afterAttackerKO)
     else
       afterDamageTaken
+
+  private def clearSwitchBlockOnKO: StateTransformer = battleState =>
+    if battleState.opponent.getActive.currentHp <= 0 && battleState.opponent.flags.isSwitchBlocked then
+      opponent(updateFlags(_.copy(isSwitchBlocked = false)))(battleState)
+    else
+      battleState
 
   private def executeNonDamageMove(move: Move)(state: BattleState): BattleState =
     val stateWithResetFlag = self(updateFlags(_.copy(lastMove = None)))(state)

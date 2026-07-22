@@ -108,7 +108,7 @@ Durante una battaglia, alcuni attributi della mossa devono poter cambiare. Il ca
 
 Le modifiche allo stato della mossa vengono effettuate attraverso funzioni pure che restituiscono nuove versioni dello stato. Ad esempio, la riduzione dei PP viene implementata tramite `decreasePPBy(value)`, che utilizza internamente una trasformazione del tipo `PP => PP` applicata allo stato corrente. La modifica non avviene tramite mutazione dell'oggetto esistente, ma tramite la creazione di una nuova istanza della *case class* interna `Ms`.
 
-![Diagramma di Move State](resources/moves_dynamic.png)
+![Diagramma del Move State](resources/moves_dynamic.png)
 
 ## Azione relativa alle mosse
 Le azioni rappresentano le operazioni che possono essere eseguite durante una battaglia e sono state modellate da Pasini come trasformazioni dello stato globale del combattimento. L'astrazione principale è rappresentata dal trait `Action`, che estende direttamente `StateTransformer`. In questo modo, ogni azione può essere vista come una funzione che riceve un `BattleState` e restituisce una nuova versione aggiornata dello stesso stato.

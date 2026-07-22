@@ -75,7 +75,7 @@ class TurnFlowTest extends AnyFunSuite:
    assert(action.priority == 1)
  }
 
- test("SwitchPokemon has default priority 0") {
+ test("SwitchPokemon has default priority 100") {
    val action = SwitchPokemon(PokemonRef("bulbasaur"))
-   assert(action.priority == 0)
+   assert(action.priority == 100)
  }

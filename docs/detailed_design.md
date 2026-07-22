@@ -72,3 +72,4 @@ La soluzione adotta il pattern **State monad**: una computazione con stato è un
 
 La scelta di dettaglio caratterizzante è lo **stato composto** `(BattleState, view.V)`: battaglia e vista evolvono nella stessa catena monadica, ma restano incapsulate. Due combinatori (`onFirst`/`onSecond`) sollevano una computazione su una sola metà della coppia in una computazione sul totale, così ogni passo del loop dichiara esplicitamente su quale porzione di stato ha effetto.
 Poiché la vista è astratta dentro la porta `GameView`, con tipo di stato opaco `V`, il loop è identico per Swing o per un ipotetico terminale.
+![Diagramma di sequenza del BattleLogger](resources/state_monad.svg)

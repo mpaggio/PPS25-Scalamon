@@ -1,6 +1,6 @@
-## Saponaro
+# Mattia Saponaro
 
-### Sistema dei tipi
+## Sistema dei tipi
 
 Il sottosistema dei tipi modella sia l’insieme dei tipi elementali sia le regole di
 efficacia tra tipo che attacca e tipo che difende. L’implementazione è articolata in
@@ -28,7 +28,7 @@ methods, mantenendo il modello leggero e leggibile.
 
 ![Diagramma Tipi](resources/TypeDiagram.png)
 
-### Gestione dei turni
+## Gestione dei turni
 
 Il sottosistema dei turni è responsabile di: rappresentazione delle azioni scelte dai
 giocatori, calcolo del loro ordine di esecuzione e orchestrazione completa di un
@@ -66,7 +66,7 @@ passi indipendenti, evitando una logica monolitica e troppo imperativa.
 
 ![Diagramma della gestione del turno](resources/TurnDiagram.png)
 
-### Sistema meteo
+## Sistema meteo
 
 Il sottosistema del meteo modella le condizioni atmosferiche di battaglia e gli effetti
 che queste producono durante l’esecuzione del combattimento. L’implementazione è suddivisa
@@ -108,7 +108,7 @@ rende l’algoritmo più compatto, espressivo e aderente a uno stile funzionale 
 
 ![Diagramma del sistema meteo](resources/WeatherSystemDiagram.png)
 
-### Battle Logger
+## Battle Logger
 
 Il `BattleLogger` è il sottosistema incaricato di raccogliere e uniformare i messaggi prodotti
 durante la battaglia, così da rendere osservabili in modo chiaro tutti gli eventi rilevanti del

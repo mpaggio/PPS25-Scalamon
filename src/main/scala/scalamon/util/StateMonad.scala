@@ -35,19 +35,19 @@ object StateMonad:
 
     /** Monadic composition: passes the result of this computation to the next. */
     def flatMap[B](f: A => StateMonad[S, B]): StateMonad[S, B] = StateMonad: s =>
-      val (s2, a) = m.run(s)
-      f(a).run(s2)
+      val (newS, a) = m.run(s)
+      f(a).run(newS)
 
     /** Transforms the result without modifying the state. */
     def map[B](f: A => B): StateMonad[S, B] = m.flatMap(a => unit(f(a)))
 
     /** Lifts a computation on S into a computation on the first component of a pair state. */
     def onFirst[S2]: StateMonad[(S, S2), A] = StateMonad: (s, other) =>
-      val (s2, a) = m.run(s)
-      ((s2, other), a)
+      val (newS, a) = m.run(s)
+      ((newS, other), a)
 
     /** Lifts a computation on S into a computation on the second component of a pair state. */
     def onSecond[S1]: StateMonad[(S1, S), A] = StateMonad: (other, s) =>
-      val (s2, a) = m.run(s)
-      ((other, s2), a)
+      val (newS, a) = m.run(s)
+      ((other, newS), a)
 
