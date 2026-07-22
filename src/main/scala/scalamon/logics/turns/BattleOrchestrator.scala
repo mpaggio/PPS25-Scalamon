@@ -13,6 +13,7 @@ import scalamon.logics.log.BattleLogger.emptyLogger
 import scalamon.logics.turns.ActionOrder.*
 import Utilities.*
 import scalamon.logics.damage.DamagePolicy
+import scalamon.domain.pokemon.abilities.Ability
 
 /**
  * Coordinates the execution of a battle turn.
@@ -51,9 +52,23 @@ final class BattleOrchestrator(using DamagePolicy):
   private def executeSwitch(side: Side, newActive: PokemonRef): StateTransformer =
     onSide(side)(
       applyPassiveEffects(OnSwitchOut(Self)) andThen
+      clearLeavingPokemonFlags andThen
       SwitchAction(newActive.value) andThen
-      applyPassiveEffects(OnSwitchIn(Self))
+      applyPassiveEffects(OnSwitchIn(Self)) andThen
+      recomputeWeatherSuppression
     )
+
+  private def clearLeavingPokemonFlags: StateTransformer = state =>
+    val selfCleared = self(updateFlags(_.copy(flashFireActive = false)))(state)
+    opponent(updateFlags(_.copy(isSwitchBlocked = false)))(selfCleared)
+
+  private def recomputeWeatherSuppression: StateTransformer = state =>
+    def hasCloudNine(p: PokemonState): Boolean =
+      val slot = p.species.abilitySlot
+      List(Some(slot.primary), slot.secondary, slot.hidden).flatten.contains(Ability.CloudNine)
+    val suppressed = hasCloudNine(state.self.getActive) || hasCloudNine(state.opponent.getActive)
+    val state1 = self(updateFlags(_.copy(weatherSuppressed = suppressed)))(state)
+    opponent(updateFlags(_.copy(weatherSuppressed = suppressed)))(state1)
 
   /** Applies a batch of forced switches in order (covers the "both KO" case). */
   def applyForcedSwitches(choices: List[(Side, PokemonRef)])(state: BattleState): BattleState =

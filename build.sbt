@@ -10,6 +10,8 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "3.0.0"
 Compile / mainClass := Some("scalamon.runScalamonGUI")
 Compile / run / fork := true
 
+assembly / mainClass := Some("scalamon.runScalamonGUI")
+
 inThisBuild(
   List(
     semanticdbEnabled := true,
