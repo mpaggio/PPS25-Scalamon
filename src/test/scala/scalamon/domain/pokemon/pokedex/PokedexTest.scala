@@ -2,6 +2,7 @@ package scalamon.domain.pokemon.pokedex
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.*
+import scalamon.database.MyPokedex
 import scalamon.domain.types.Type
 import scalamon.domain.types.Type.*
 import scalamon.domain.pokemon.abilities.Ability.*
@@ -36,13 +37,13 @@ class PokedexTest extends AnyFunSuite:
     charmander.abilitySlot.hidden shouldBe Some(SolarScales)
   }
 
-  test("The DSL's extension methods should correctly assign secondary and hidden abilities to a Pokemon") {
+  test("The DSL's extension methods should correctly assign one between secondary and hidden abilities to a Pokemon") {
     val squirtle = MyPokedex.allPokemons.find(_.name == "Squirtle").get
 
     squirtle.pokemonType shouldBe Water
     squirtle.abilitySlot.primary shouldBe Torrent
     squirtle.abilitySlot.secondary shouldBe None
-    squirtle.abilitySlot.hidden shouldBe Some(EarlyBird)
+    squirtle.abilitySlot.hidden shouldBe Some(Hydration)
   }
 
   test("The DSL should prevent assigning both a secondary and a hidden ability to the same Pokemon") {

@@ -2,59 +2,40 @@ package scalamon.logics.state
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import scalamon.logics.state.BattleStateImpl.*
-import scalamon.logics.state.PlayerStateModuleImpl.*
-import scalamon.logics.state.PokemonStateModuleImpl.*
-import scalamon.logics.state.StatsStateModuleImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 
-class BattleStateTest extends AnyWordSpec with Matchers with StateFixtures:
+class BattleStateTest extends AnyWordSpec with Matchers with BattleFixtures:
+
+  private val rename: PlayerState => PlayerState = p => p.copy(name = "Renamed")
+
   "A BattleState" should:
 
-    "initialize with correct players and pokemons" in:
-      battle.self.team("Charmander").currentHp shouldEqual 39
-      battle.opponent.team("Squirtle").currentHp shouldEqual 44
+    "initialize with the given players and no passive effects" in:
+      battle.self shouldEqual player1
+      battle.opponent shouldEqual player2
+      battle.passiveEffects shouldBe empty
 
-    "correctly update active enemy pokemon" in:
-      type Move = BattleState => BattleState
-      val attackMove: Move = _ opponent (_ active (_ currentHp (_ decrease 10)))
-      val newState = attackMove(battle)
-      newState.opponent.team("Squirtle").currentHp shouldEqual 34
+    "apply a modifier to self only" in:
+      val b = self(rename)(battle)
+      b.self.name shouldEqual "Renamed"
+      b.opponent shouldEqual battle.opponent
 
-    "correctly update user bench pokemon" in:
-      type Move = BattleState => BattleState
-      val masochistMove: Move = _ self (_ bench (_ currentHp (_ decrease 5)))
-      val newState = masochistMove(battle)
-      newState.self.team("Charmander").currentHp shouldEqual 39
-      newState.self.team("Bulbasaur").currentHp shouldEqual 40
+    "apply a modifier to opponent only" in:
+      val b = opponent(rename)(battle)
+      b.opponent.name shouldEqual "Renamed"
+      b.self shouldEqual battle.self
 
-    "apply move conditionally to user team" in:
-      type Move = BattleState => BattleState
-      val healAllMove: Move = _ self (_.allThat(ps => ps.currentHp.toInt < 40)(_ currentHp (_ increase 10)))
-      // Charmander is 39 so it gets healed, Bulbasaur is 45 so it is skipped.
-      val newState = healAllMove(battle)
-      newState.self.team("Charmander").currentHp shouldEqual 49
-      newState.self.team("Bulbasaur").currentHp shouldEqual 45
+    "switch self and opponent" in:
+      val b = switchSelfOpponent(battle)
+      b.self shouldEqual battle.opponent
+      b.opponent shouldEqual battle.self
+      switchSelfOpponent(b).self shouldEqual battle.self
 
-    "modify stats to enemy active pokemon" in:
-      type Move = BattleState => BattleState
-      val weaknessMove: Move = _ opponent (_ active (_ modifyStats (_ attack (_ decrease 5))))
-      val newState = weaknessMove(battle)
-      newState.opponent.team("Squirtle").modifiedStats.attack shouldEqual 43
+    "set the weather" in:
+      setWeather(alternativeWeather)(battle).weather shouldEqual alternativeWeather
 
-    "chain multiple moves correctly" in:
-      type Move = BattleState => BattleState
-      val attackMove: Move = _ opponent (_ active (_ currentHp (_ decrease 10)))
-      val masochistMove: Move = _ self (_ bench (_ currentHp (_ decrease 5)))
-      val healAllMove: Move = _ self (_.allThat(ps => ps.currentHp.toInt < 40)(_ currentHp (_ increase 10)))
-      val weaknessMove: Move = _ opponent (_ active (_ modifyStats (_ attack (_ decrease 5))))
-      val chainedMove = attackMove andThen masochistMove andThen healAllMove andThen weaknessMove
-      val newState = chainedMove(battle)
-      // Initial: Enemy active(Squirtle)=44, Atk=48. User active(Charmander)=39, bench(Bulbasaur)=45
-      // attack: Enemy active HP -> 34
-      // masochist: User bench (Bulbasaur) HP -> 40
-      // healAll < 40: User active HP -> 49, User bench HP is 40 (so not <40) -> 40
-      // weakness: Enemy active Atk -> 43
-      newState.opponent.team("Squirtle").currentHp shouldEqual 34
-      newState.self.team("Charmander").currentHp shouldEqual 49
-      newState.self.team("Bulbasaur").currentHp shouldEqual 40
-      newState.opponent.team("Squirtle").modifiedStats.attack shouldEqual 43
+    "accumulate passive effects" in:
+      val effect: PassiveEffect = _ => bs => bs
+      val b = addPassiveEffect("e1", effect)(addPassiveEffect("e2", effect)(battle))
+      b.passiveEffects should have size 2
+      removePassiveEffect("e1")(b).passiveEffects should have size 1

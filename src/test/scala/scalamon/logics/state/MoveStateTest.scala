@@ -20,33 +20,52 @@ class MoveStateTest extends org.scalatest.funsuite.AnyFunSuite:
 
   test("Decrease PP should correctly reduce current PP"):
     val state = moveInitialState(swift)
-    val updatedState = state decreasePpBy 10
+    val updatedState = decreasePpBy(10)(state)
     updatedState.currentPp shouldBe (swift.pp.asInt - 10)
 
   test("Decrease PP should not let current PP go below zero"):
     val state = moveInitialState(swift)
-    val updatedState = state decreasePpBy 40
+    val updatedState = decreasePpBy(40)(state)
     updatedState.currentPp shouldBe 0
 
   test("Increase PP should correctly increase current PP"):
-    val state = moveInitialState(swift).currentPp(_ => 10)
-    val updatedState = state increasePpBy 5
+    val state = currentPp(_ => 10)(moveInitialState(swift))
+    val updatedState = increasePpBy(5)(state)
     updatedState.currentPp shouldBe 15
 
   test("Increase PP should not let current PP exceed maximum PP"):
     val state = moveInitialState(swift)
-    val updatedState = state increasePpBy 5
+    val updatedState = increasePpBy(5)(state)
     updatedState.currentPp shouldBe swift.pp.asInt
 
   test("Current PP transformer should apply clamping logic"):
-    val state = moveInitialState(swift).currentPp(_ => 10)
-    val underflowState = state currentPp (_ - 37)
+    val state = currentPp(_ => 10)(moveInitialState(swift))
+    val underflowState = currentPp(_ - 37)(state)
     underflowState.currentPp shouldBe 0
-    val overflowState = state currentPp (_ + 100)
+    val overflowState = currentPp(_ + 100)(state)
     overflowState.currentPp shouldBe swift.pp.asInt
 
   test("Move state transformations should be referentially transparent"):
     val state = moveInitialState(swift)
-    val state2 = state decreasePpBy 5
+    val state2 = decreasePpBy(5)(state)
     state.currentPp shouldBe swift.pp.asInt
     state2.currentPp shouldBe (swift.pp.asInt - 5)
+
+  test("AccuracyPercent transformer should correctly decrement move accuracy"):
+    val state = moveInitialState(swift)
+    val updatedState = accuracyPercent(_ - 20)(state)
+    updatedState.move.accuracy.asInt shouldBe 80
+    state.move.accuracy.asInt shouldBe 100
+
+  test("AccuracyPercent transformer should correctly increment move accuracy"):
+    val state = moveInitialState(swift)
+    val updatedState = accuracyPercent(_ - 30 + 20)(state)
+    updatedState.move.accuracy.asInt shouldBe 90
+    state.move.accuracy.asInt shouldBe 100
+
+  test("AccuracyPercent transformer should clamp move accuracy between 0 and 100"):
+    val state = moveInitialState(swift)
+    val overflowState = accuracyPercent(_ + 20)(state)
+    overflowState.move.accuracy.asInt shouldBe 100
+    val underflowState = accuracyPercent(_ - 120)(state)
+    underflowState.move.accuracy.asInt shouldBe 0

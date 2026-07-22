@@ -7,9 +7,8 @@ import scalamon.domain.pokemon.abilities.AbilitySlot
 import scalamon.domain.pokemon.statistics.Stats
 
 /**
- * Represents an immutable Pokémon entity.
- * Thic class is the static model of the Pokémon and does not contain
- * the logic of the combat, which will be handled in a dynamic model.
+ * Represents an immutable Pokémon entity, the static model of the Pokémon.
+ * Does not contain the logic of the combat, which will be handled in a dynamic model.
  * @param pokedexId the unique identifier of the Pokèmon in the Pokèdex.
  * @param name the name of the Pokèmon,
  * @param pokemonType the elemental type of the Pokèmon.

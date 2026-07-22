@@ -7,9 +7,10 @@ import StatusMoveCategory.*
 import MoveDSL.*
 import MoveEffectDSL.*
 import MoveEffectDSL.Effect.*
-import MoveEffect.*
 import Accuracy.*
-import scalamon.domain.pokemon.statistics.StatADT.StatKind.*
+import scalamon.domain.alteredStatus.AlteredStatus.*
+import scalamon.logics.state.StatsStateModuleImpl.*
+import scalamon.domain.pokemon.abilities.Target.*
 
 class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
 
@@ -46,7 +47,10 @@ class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
     thunder.accuracy.asInt shouldBe 70
     thunder.moveType shouldBe Electric
     thunder.category shouldBe Special
-    thunder.effect shouldBe Some(AlteredState(Paralyzed, accuracyFromPercent(10)))
+    thunder.effect shouldBe defined
+    val effect = thunder.effect.get.asInstanceOf[AlteredState]
+    effect.probability shouldBe accuracyFromPercent(10)
+    effect.statusFactory() shouldBe Paralyzed
 
   test("DSL should create a StatusMove with a side effect with a fluent syntax"):
     val thunder: NonDamagingMove = move
@@ -64,15 +68,16 @@ class MoveDSLTest extends org.scalatest.funsuite.AnyFunSuite:
     thunder.effect shouldBe Heal(50)
 
   test("DSL should correctly chain complex effect like StatChanges"):
+    val modifier: StatsState => StatsState = specialDefense( decrease(1))
     val psychic = move
       .named("Psychic")
       .withPower(90)
       .withPP(16)
       .withAccuracy(100)
       .withType(Psychic)
-      .withEffect(Effect changing SpecialDefense by -1 withProbability 10)
+      .withEffect(Effect changing modifier ofTarget Opponent withProbability 10)
       .as(Special)
-    psychic.effect shouldBe Some(StatChange(SpecialDefense, -1, accuracyFromPercent(10)))
+    psychic.effect shouldBe Some(StatChange(modifier, Opponent, accuracyFromPercent(10)))
 
   test("DSL should fail if mandatory fields are missing"):
     shouldFail(

@@ -44,3 +44,9 @@ class AccuracyTest extends org.scalatest.funsuite.AnyFunSuite:
     ratio.asString shouldBe "Accuracy: 20%"
     ratio.asDouble shouldBe 20.0
     ratio.asInt shouldBe 20
+
+  test("Accuracy operators should clamp results between 0 and 100"):
+    val baseAcc: Accuracy = accuracyFromPercent(80)
+    (baseAcc + 30).asInt shouldBe 100
+    (baseAcc - 90).asInt shouldBe 0
+    (baseAcc * 2.0).asInt shouldBe 100

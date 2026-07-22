@@ -1,26 +1,51 @@
 package scalamon.logics.state
 
+/**
+ * A module that defines the state and operations for Pokémon stats.
+ * It extends the StateComponent trait, providing a structure for managing
+ * the state of a Pokémon's stats, including operations to modify them.
+ */
 trait StatsStateModule extends StateComponent:
   type StatsState
-  type Stats
   type Stat
-  override type SubComponent = Stat
+  override protected type State = StatsState
+  override protected type InnerState = Stat
+  type Stats
 
+  /**
+   * Creates the initial state of a Pokémon's stats given its base stats.
+   */
   def statsInitialState(value: Stats): StatsState
 
-  extension (ss: StatsState)
-    def attack(f: Modifier): StatsState
-    def defense(f: Modifier): StatsState
-    def specialAttack(f: Modifier): StatsState
-    def specialDefense(f: Modifier): StatsState
-    def speed(f: Modifier): StatsState
+  /**
+   * Operations to modify individual stats. Each operation takes a function
+   * that transforms the current stat value and returns a new stat value.
+   */
+  def maxHp(f: InnerOp): Op
+  def attack(f: InnerOp): Op
+  def defense(f: InnerOp): Op
+  def specialAttack(f: InnerOp): Op
+  def specialDefense(f: InnerOp): Op
+  def speed(f: InnerOp): Op
+
+  /**
+   * Basic operations to modify a stat by decreasing, increasing, or multiplying it.
+   */
+  def decrease(amount: Int): InnerOp
+  def increase(amount: Int): InnerOp
+  def multiply(factor: Double): InnerOp
 
   extension (s: Stat)
-    infix def decrease(amount: Int): Stat
-    infix def increase(amount: Int): Stat
-    infix def multiply(factor: Double): Stat
+    /** Clamps the stat value between a minimum and maximum value. */
+    def clamped(min: Int, max: Int): Stat
+    /** Ensures the stat value is non-negative. */
+    def positive: Stat
 
-
+/**
+ * Concrete implementation of the StatsStateModule.
+ * It defines the internal representation of the stats state and provides operations to manipulate it.
+ * In addition, it exposes the parameters of the stats values as Int.
+ */
 object StatsStateModuleImpl extends StatsStateModule:
 
   case class Ss(hp: Stat, attack: Stat, defense: Stat, specialAttack: Stat, specialDefense: Stat, speed: Stat)
@@ -36,15 +61,17 @@ object StatsStateModuleImpl extends StatsStateModule:
     value.speed.toInt
   )
 
-  extension (ss: StatsState)
-    infix def maxHp(f: Modifier): StatsState = ss.copy(hp = f(ss.hp))
-    infix def attack(f: Modifier): StatsState = ss.copy(attack = f(ss.attack))
-    infix def defense(f: Modifier): StatsState = ss.copy(defense = f(ss.defense))
-    infix def specialAttack(f: Modifier): StatsState = ss.copy(specialAttack = f(ss.specialAttack))
-    infix def specialDefense(f: Modifier): StatsState = ss.copy(specialDefense = f(ss.specialDefense))
-    infix def speed(f: Modifier): StatsState = ss.copy(speed = f(ss.speed))
+  def maxHp(f: InnerOp): Op = ss => ss.copy(hp = f(ss.hp))
+  def attack(f: InnerOp): Op = ss => ss.copy(attack = f(ss.attack))
+  def defense(f: InnerOp): Op = ss => ss.copy(defense = f(ss.defense))
+  def specialAttack(f: InnerOp): Op = ss => ss.copy(specialAttack = f(ss.specialAttack))
+  def specialDefense(f: InnerOp): Op = ss => ss.copy(specialDefense = f(ss.specialDefense))
+  def speed(f: InnerOp): Op = ss => ss.copy(speed = f(ss.speed))
+
+  def decrease(amount: Int): Stat => Stat = _ - amount
+  def increase(amount: Int): Stat => Stat = _ + amount
+  def multiply(factor: Double): Stat => Stat = s => (s * factor).toInt
 
   extension (s: Stat)
-    infix def decrease(amount: Int): Stat = s - amount
-    infix def increase(amount: Int): Stat = s + amount
-    infix def multiply(factor: Double): Stat = (s * factor).toInt
+    def clamped(min: Int, max: Int): Stat = s.max(min).min(max)
+    def positive: Stat = s.max(0)

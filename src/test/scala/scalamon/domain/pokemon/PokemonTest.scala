@@ -31,7 +31,7 @@ class PokemonTest extends AnyFunSuite:
     charmander.abilitySlot shouldBe testAbilitySlot
   }
 
-  test("A pokemon created with a pokdexId <= 0 should throw an IllegalArgumentException") {
+  test("A Pokemon created with a pokdexId <= 0 should throw an IllegalArgumentException") {
       a[IllegalArgumentException] should be thrownBy Pokemon(
         pokedexId = PokedexADT.fromInt(-1),
         name = "Charmander",
@@ -49,7 +49,7 @@ class PokemonTest extends AnyFunSuite:
       )
   }
 
-  test("A pokemon created with an empty name or an only whitespace name should throw an IllegalArgumentException") {
+  test("A Pokemon created with an empty name or an only whitespace name should throw an IllegalArgumentException") {
     a[IllegalArgumentException] should be thrownBy Pokemon(
       pokedexId = validPokedexId,
       name = "",
@@ -66,7 +66,7 @@ class PokemonTest extends AnyFunSuite:
     )
   }
 
-  test("A pokemon created with Normal Type should throw an IllegalArgumentException") {
+  test("A Pokemon created with Normal Type should throw an IllegalArgumentException") {
     a[IllegalArgumentException] should be thrownBy Pokemon(
       pokedexId = validPokedexId,
       name = "NormalPokemon",

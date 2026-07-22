@@ -2,24 +2,28 @@ package scalamon.logics.turns
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{a, be, shouldBe, shouldEqual, shouldNot}
-import scalamon.logics.state.BattleStateImpl.*
+import scalamon.logics.state.BattleStateModuleImpl.*
 import scalamon.logics.state.PlayerStateModuleImpl.*
+import scalamon.logics.state.PokemonStateModuleImpl.*
 import scalamon.logics.state.StateFixtures
 import scalamon.logics.state.StatsStateModuleImpl.*
 import scalamon.logics.turns.PokemonRef
 import scalamon.logics.turns.TurnResolutionImpl.*
 import scalamon.logics.turns.TurnResult.*
+import scalamon.domain.moves.Accuracy.given
+import scalamon.logics.turns.Side.{Opponent, Self}
 
 class TurnResolutionTest extends AnyFunSuite with StateFixtures:
 
-  private val charmanderAlmostKO = player1 active (_ currentHp (_ decrease 38))
+  private val charmanderAlmostKO =  active(currentHp(decrease(38)))(player1)
 
-  private val onlyCharmanderPlayer = playerState(
+  private val onlyCharmanderPlayer = playerInitialState(
+    "Player1",
     Map("Charmander" -> myPokemon),
     "Charmander"
   )
 
-  private val onlyCharmanderPlayerAlmostKO = onlyCharmanderPlayer active (_ currentHp (_ decrease 38))
+  private val onlyCharmanderPlayerAlmostKO = active(currentHp(decrease(38)))(onlyCharmanderPlayer)
 
   private val battleActiveLowHP = battleState(charmanderAlmostKO, player2)
 
@@ -30,17 +34,17 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   }
 
   test("isKnockedOut returns false for a Pokemon with 1 HP remaining") {
-    val almostDead = myPokemon currentHp (_ decrease 38)  /* Charmander has 39 HP */
+    val almostDead = currentHp(decrease(38))(myPokemon)  /* Charmander has 39 HP */
     isKnockedOut(almostDead) shouldBe false
   }
 
   test("isKnockedOut returns true for a Pokémon with 0 HP") {
-    val knockedOut = myPokemon currentHp (_ decrease 39)
+    val knockedOut = currentHp(decrease(39))(myPokemon)
     isKnockedOut(knockedOut) shouldBe true
   }
 
   test("isKnockedOut returns true for a Pokémon with negative HP") {
-    val killed = myPokemon currentHp (_ decrease 999)
+    val killed = currentHp(decrease(999))(myPokemon)
     isKnockedOut(killed) shouldBe true
   }
 
@@ -57,12 +61,12 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   }
 
   test("isDefeated returns true for a single-pokemon team when the only Pokemon is knocked out") {
-    val soloKO = onlyCharmanderPlayer active (_ currentHp (_ decrease 999))
+    val soloKO = active(currentHp(decrease(999)))(onlyCharmanderPlayer)
     isDefeated(soloKO) shouldBe true
   }
 
   test("isDefeated returns true when all team Pokemon are knocked out") {
-    val allKO = player1 all (_ currentHp (_ decrease 999))
+    val allKO = all(currentHp(decrease(999)))(player1)
     isDefeated(allKO) shouldBe true
   }
 
@@ -75,94 +79,104 @@ class TurnResolutionTest extends AnyFunSuite with StateFixtures:
   }
 
   test("needsForcedSwitch returns false when all team members are at 1 HP"){
-    val allLow = player1 all (_ currentHp (_ decrease 38))
+    val allLow =  all(currentHp(decrease(38)))(player1)
     needsForcedSwitch(allLow) shouldBe false
   }
 
   test("needsForcedSwitch returns true when active is KO but bench is alive"){
-    val activeKO = player1 active (_ currentHp (_ decrease 999))
+    val activeKO = active(currentHp(decrease(999)))(player1)
     needsForcedSwitch(activeKO) shouldBe true
   }
 
   test("needsForcedSwitch returns false when active is KO and all the bench is also KO"){
-    val allKO = player1 all (_ currentHp (_ decrease 999))
+    val allKO = all(currentHp(decrease(999)))(player1)
     needsForcedSwitch(allKO) shouldBe false
   }
 
   test("resolveTurn returns Ongoing when no Pokemon is knocked out") {
-    resolveTurn(battle) shouldBe Ongoing(battle)
+    getTurnResults(battle) shouldBe Ongoing
   }
 
   test("resolveTurn returns Ongoing when both sides have damaged but alive Pokemon"){
-    val damaged = battle
-      .self(_ active (_ currentHp (_ decrease 10)))
-      .opponent(_ active (_ currentHp (_ decrease 10)))
-    resolveTurn(damaged) shouldBe Ongoing(damaged)
+    val damaged = self(active(currentHp(decrease(10))))(opponent(active(currentHp(decrease(10))))(battle))
+    getTurnResults(damaged) shouldBe Ongoing
   }
-
+  
   test("resolveTurn SelfWins is triggered when all opponent's Pokemon are knocked out"){
-    val opponentAllKO = battle opponent(_ all (_ currentHp (_ decrease 999)))
-    resolveTurn(opponentAllKO) shouldBe SelfWins(opponentAllKO)
+    val opponentAllKO = opponent( all( currentHp( decrease( 999)))) (battle)
+    getTurnResults(opponentAllKO) shouldBe Victory(opponentAllKO.self.name)
   }
 
   test("resolveTurn SelfWins takes priority over ForcedSwitch on a simultaneous KO"){
-    val simultaneousKO = battleActiveLowHP
-      .self(_ active (_ currentHp (_ decrease 1)))
-      .opponent(_ all (_ currentHp (_ decrease 999)))
-    resolveTurn(simultaneousKO) shouldBe SelfWins(simultaneousKO)
+    val simultaneousKO = self(active(currentHp(decrease(1))))(opponent(all(currentHp(decrease(999))))(battleActiveLowHP))
+    getTurnResults(simultaneousKO) shouldBe Victory(simultaneousKO.self.name)
   }
 
   test("resolveTurn SelfLoses is triggered when all self's Pokemon are knocked out"){
-    val selfAllKO = battleOnlyLowHP self(_ active (_ currentHp (_ decrease 1)))
-    resolveTurn(selfAllKO) shouldBe SelfLoses(selfAllKO)
+    val selfAllKO = self(active(currentHp(decrease(1))))(battleOnlyLowHP)
+    getTurnResults(selfAllKO) shouldBe Victory(selfAllKO.opponent.name)
   }
 
   test("resolveTurn returns ForcedSwitch when self's active Pokemon is KO but bench is alive") {
-    val activeKO = battleActiveLowHP self (_ active (_ currentHp (_ decrease 1)))
-    resolveTurn(activeKO) shouldBe a [ForcedSwitch]
+    val activeKO = self (active( currentHp ( decrease (1))))(battleActiveLowHP)
+    getTurnResults(activeKO) shouldBe a [ForcedSwitch]
   }
 
   test("resolveTurn ForcedSwitch candidates contain only alive bench Pokemon"){
-    val activeKO = battleActiveLowHP self (_ active (_ currentHp (_ decrease 1)))
-    resolveTurn(activeKO) match
-      case ForcedSwitch(_, candidates) =>
-        assert(candidates.nonEmpty)
-        assert(candidates.forall(ref => !isKnockedOut(player1.team(ref.value))))
+    val activeKO = self ( active ( currentHp ( decrease(1))))(battleActiveLowHP)
+    getTurnResults(activeKO) match
+      case ForcedSwitch(switchRequests) =>
+        assert(switchRequests.nonEmpty)
+        assert(switchRequests.head.candidates.forall(ref => !isKnockedOut(player1.team(ref.value))))
       case _ => fail("Expected ForcedSwitch result")
   }
 
-  test("applyForcedSwitch changes the active Pokemon with the requested one"){
-    val switched = applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    switched.activeId shouldBe "Bulbasaur"
+
+  test("resolveTurn returns OpponentForcedSwitch when opponent's active Pokemon is KO but bench is alive") {
+    val opponentWithBench = playerInitialState(
+      "Player2",
+      Map("Squirtle" -> enemyPokemon, "Bulbasaur" -> enemyPokemon),
+      "Squirtle"
+    )
+    val battleWithBench = battleState(player1, opponentWithBench)
+    val opponentActiveKO = opponent( active ( currentHp( decrease(999))))(battleWithBench)
+    getTurnResults(opponentActiveKO) shouldBe a [ForcedSwitch]
+    getTurnResults(opponentActiveKO) match
+      case ForcedSwitch(switchRequests) =>
+        assert(switchRequests.nonEmpty)
+        assert(switchRequests.head.side == Opponent)
   }
 
-  test("applyForcedSwitch does not alter the team HP values"){
-    val switched = applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    switched.team("Charmander").currentHp shouldEqual
-      player1.team("Charmander").currentHp
-    switched.team("Bulbasaur").currentHp shouldEqual
-      player1.team("Bulbasaur").currentHp
-  }
-
-  test("applyForcedSwitch returns unchanged PlayerState for unknown PokemonRef"){
-    val unchanged = applyForcedSwitch(player1, PokemonRef("MewTwo"))
-    unchanged.activeId shouldBe player1.activeId
-    unchanged.activeId shouldNot be ("MewTwo")
-  }
-
-  test("applyForcedSwitch does not modify original PlayerState"){
-    applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    player1.activeId shouldBe "Charmander"
-  }
-
-  test("applyForcedSwitch result has the new pokemon as the active one"){
-    val switched = applyForcedSwitch(player1, PokemonRef("Bulbasaur"))
-    switched.getActive shouldEqual player1.team("Bulbasaur")
+  test("resolveTurn returns BothForcedSwitch when both active Pokemon are KO but both sides have alive bench Pokemon") {
+    val opponentWithBench = playerInitialState(
+      "Player2",
+      Map("Squirtle" -> enemyPokemon, "Bulbasaur" -> enemyPokemon),
+      "Squirtle"
+    )
+    val battleWithBench = battleState(player1, opponentWithBench)
+    val bothActiveKO = self(active(currentHp(decrease(999))))(opponent(active(currentHp(decrease(999))))(battleWithBench))
+    getTurnResults(bothActiveKO) shouldBe a [ForcedSwitch]
+    getTurnResults(bothActiveKO) match
+      case ForcedSwitch(switchRequests) =>
+        assert(switchRequests.size == 2)
+        assert(switchRequests.exists(_.side == Self))
+        assert(switchRequests.exists(_.side == Opponent))
+      case _ => fail("Expected ForcedSwitch result")
   }
 
   test("endTurn does not mutate the original BattleState"){
-    endTurn(battle)
+    endTurn.foldLeft(battle)((state, transformer) => transformer(state))
     battle.self.activeId shouldBe "Charmander"
     battle.self.getActive.currentHp shouldBe 39
     battle.opponent.activeId shouldBe "Squirtle"
+  }
+
+  test("endTurn applies burn damage to the active burned Pokemon") {
+    import scalamon.domain.alteredStatus.AlteredStatusModule.applyCondition
+    import scalamon.domain.alteredStatus.AlteredStatus.Burned
+    val burned = self(active(addStatus(Burned)))(battle)
+    val hpBefore = burned.self.getActive.currentHp
+    val afterBurn = Burned.applyCondition(burned)
+    val expectedDamage = burned.self.getActive.maxHp / 8
+    afterBurn.self.getActive.currentHp shouldBe (hpBefore - expectedDamage)
   }
