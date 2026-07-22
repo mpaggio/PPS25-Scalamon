@@ -200,9 +200,12 @@ object MyAbilityBook:
     },
 
     OnTrigger(OnSwitchOut(Self)) define Regenerator as { state =>
-      val maxHp = state.self.getActive.maxHp
-      val loggedState = log(s"[Regenerator] ${state.self.getActive.species.name} regenerates 1/3 of its max HP while leaving!")(state)
-      self(active(heal(maxHp / 3)))(loggedState)
+      if state.self.getActive.currentHp <= 0
+        then state
+      else
+        val maxHp = state.self.getActive.maxHp
+        val loggedState = log(s"[Regenerator] ${state.self.getActive.species.name} regenerates 1/3 of its max HP while leaving!")(state)
+        self(active(heal(maxHp / 3)))(loggedState)
     },
 
     // ELECTRIC ABILITIES
