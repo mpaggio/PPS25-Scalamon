@@ -39,8 +39,13 @@ case class MoveAction(move: Move, target: Target = Opponent)
    * @return A new [[BattleState]] reflecting all changes.
    */
   override def apply(bs: BattleState): BattleState =
-    val ignoresAccuracy = weather.ignoresAccuracy(bs.weather, move.moveType)
-    val accuracyMultiplier = weather.accuracyMultiplier(bs.weather)
+    val ignoresAccuracy =
+      if bs.self.flags.weatherSuppressed then false
+      else weather.ignoresAccuracy(bs.weather, move.moveType)
+
+    val accuracyMultiplier =
+      if bs.self.flags.weatherSuppressed then 1.0
+      else weather.accuracyMultiplier(bs.weather)
 
     val isHit =
       if ignoresAccuracy then true

@@ -49,9 +49,13 @@ final class BattleOrchestrator(using DamagePolicy):
       case Player2First => turnOrder.reverse
 
   /** Applies a forced switch for the given side, then its switch-in effects. */
-  private def executeSwitch(side: Side, newActive: PokemonRef): StateTransformer =
+  private def executeSwitch(side: Side, newActive: PokemonRef, voluntary: Boolean = true): StateTransformer =
+    val switchedOut =
+      if voluntary then applyPassiveEffects(OnSwitchOut(Self))
+      else applyPassiveEffects(OnForcedSwitchOut(Self))
+
     onSide(side)(
-      applyPassiveEffects(OnSwitchOut(Self)) andThen
+      switchedOut andThen
       clearLeavingPokemonFlags andThen
       SwitchAction(newActive.value) andThen
       applyPassiveEffects(OnSwitchIn(Self)) andThen
@@ -72,7 +76,7 @@ final class BattleOrchestrator(using DamagePolicy):
 
   /** Applies a batch of forced switches in order (covers the "both KO" case). */
   def applyForcedSwitches(choices: List[(Side, PokemonRef)])(state: BattleState): BattleState =
-    choices.foldLeft(state) { case (s, (side, ref)) => (executeSwitch(side, ref) andThen updateLogs(_ => emptyLogger))(s) }
+    choices.foldLeft(state) { case (s, (side, ref)) => (executeSwitch(side, ref, false) andThen updateLogs(_ => emptyLogger))(s) }
 
   private def executeAction(battleAction: BattleAction)(state: BattleState): BattleState =
     battleAction match
@@ -118,10 +122,16 @@ final class BattleOrchestrator(using DamagePolicy):
    */
   private def executeDamageMove(move: DamageMove)(state: BattleState): BattleState =
     val withLastMove = self(updateFlags(_.copy(lastMove = Some(move))))(state)
+    val oldHp = withLastMove.opponent.getActive.currentHp
     val afterMove = MoveAction(move)(withLastMove)
+    val newHp = afterMove.opponent.getActive.currentHp
     val afterMoveCleared = clearSwitchBlockOnKO(afterMove)
-    val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMoveCleared)
-    val afterDamageTaken = asOpponent(applyPassiveEffects(OnDamageTaken(Self)))(afterDamageDealt)
+    val afterDamageTaken =
+      if newHp < oldHp then
+        val afterDamageDealt = applyPassiveEffects(OnDamageTaken(Opponent))(afterMoveCleared)
+        asOpponent(applyPassiveEffects(OnDamageTaken(Self)))(afterDamageDealt)
+      else
+        afterMoveCleared
     if isKnockedOut(afterDamageTaken.opponent.getActive) then
       val afterAttackerKO = applyPassiveEffects(OnKOTaken(Opponent))(afterDamageTaken)
       asOpponent(applyPassiveEffects(OnKOTaken(Self)))(afterAttackerKO)

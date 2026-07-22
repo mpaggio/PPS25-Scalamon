@@ -14,5 +14,6 @@ enum AbilityTrigger:
   case OnTurnEnd
   case OnSwitchIn(target: Target)
   case OnSwitchOut(target: Target)
+  case OnForcedSwitchOut(target: Target)
   case OnDamageTaken(target: Target)
   case OnKOTaken(target: Target)

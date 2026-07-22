@@ -73,7 +73,9 @@ object AlteredStatusModule:
         else
           val a = battleState.self.getActive
           val baseDamage = a.species.baseStats.hp.toInt / statusDamageDivisor
-          val weatherMultiplier = weather.residualDamageMultiplier(battleState.weather, status)
+          val weatherMultiplier =
+            if battleState.self.flags.weatherSuppressed then 1.0
+            else weather.residualDamageMultiplier(battleState.weather, status)
           val damageAmount = (baseDamage * weatherMultiplier).toInt
           val damageState = self(active(takeDamage(damageAmount)))(battleState)
 
